@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form</title>
+    <link rel="stylesheet" href="./Styles/style_2-Form_1.css">
 </head>
 
 <body>
@@ -16,23 +17,26 @@
             Уже есть аккаунт? <a href="/sign_in" target="_blank">Войти</a>
         </p>
         <form action="#">
-            <div>
-                <input size="48" type="text" name="my_company" id="my_company" placeholder="Моя компания" />
+            <div class="field">
+                <input type="text" name="my_company" id="username" placeholder="Имя пользователя" />
             </div>
-            <div>
-                <input size="21" type="text" name="name" id="name" placeholder="Имя" />
-                <input size="21" type="text" name="surname" id="surname" placeholder="Фамилия" />
+            <div class="field">
+                <input type="text" name="name" id="name" placeholder="Имя" />
+                <input type="text" name="surname" id="surname" placeholder="Фамилия" />
             </div>
-            <div>
-                <input size="48" type="email" name="email" id="email" placeholder="Введите E-mail" />
+            <div class="field">
+                <input type="email" name="email" id="email" placeholder="Введите E-mail" />
             </div>
-            <div>
-                <button>Зарегистрироваться &#8594;</button>
+            <div class="button">
+                <button>Зарегистрироваться</button>
+                <img src="./images/image_2-Form_1.svg" alt="#" />
             </div>
-            <div>
-                <input type="checkbox" name="agree" id="agree">
-                <label for="agree">Я прочитал и принимаю <a href="/terms_of_use" target="_blank">Условия
-                        использования</a></label>
+            <div class="agree">
+                <input type="checkbox" class="custom_checkbox" name="agree" id="agree">
+                <label for="agree">Я прочитал и принимаю&nbsp;&nbsp;&nbsp;<a href="/terms_of_use"
+                        target="_blank">Условия
+                        использования</a>
+                </label>
             </div>
         </form>
     </main>
