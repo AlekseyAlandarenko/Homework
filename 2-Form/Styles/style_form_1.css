@@ -37,6 +37,15 @@ p a {
     text-decoration-line: underline;
 }
 
+::placeholder {
+    color: #999999;
+    font-family: 'Open Sans', monospace;
+    font-size: 16px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: normal;
+}
+
 input {
     color: #333333;
     border-radius: 5px;
@@ -69,15 +78,6 @@ input {
     border-radius: 0 5px 5px 0;
 }
 
-::placeholder {
-    color: #999999;
-    font-family: 'Open Sans', monospace;
-    font-size: 16px;
-    font-style: italic;
-    font-weight: 400;
-    line-height: normal;
-}
-
 button {
     width: 100%;
     height: 44px;
@@ -98,7 +98,7 @@ button {
     position: relative;
 }
 
-img[src="./images/image_2-Form_1.svg"] {
+.image_1 {
     position: absolute;
     width: 22px;
     height: 22px;
@@ -155,5 +155,5 @@ label a {
 .custom_checkbox:checked+label::before {
     border-color: #089FE0;
     background-color: #089FE0;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
+    background-image: url("../Images/image_form_1_2.svg");
 }

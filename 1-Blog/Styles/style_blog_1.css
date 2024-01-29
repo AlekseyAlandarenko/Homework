@@ -31,15 +31,30 @@ nav ul {
     font-size: 18px;
 }
 
-img[src="./images/image_1-Blog_1.svg"] {
+#blog_B {
+    position: absolute;
+    left: -34px;
+    font-size: 18px
+}
+
+.image_1 {
     position: absolute;
     width: 35px;
     height: 35px;
-    top: -7px;
-    left: -47px;
+    top: -6.5px;
+    left: -46px;
     border-radius: 3px;
     background: #4B5563;
     box-shadow: 0px 15px 30px 0px #00000026;
+}
+
+::placeholder {
+    color: #ffffff99;
+    font-family: 'Roboto', monospace;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
 }
 
 input {
@@ -60,19 +75,10 @@ form {
     position: relative;
 }
 
-img[src="./images/image_1-Blog_2.svg"] {
+.image_2 {
     position: absolute;
     top: 13px;
     left: 18px;
-}
-
-::placeholder {
-    color: #ffffff99;
-    font-family: 'Roboto', monospace;
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
 }
 
 section div {
@@ -89,31 +95,25 @@ section span {
     line-height: normal;
 }
 
-img[src="./images/image_1-Blog_3.svg"] {
-    width: 4px;
-    height: 4px;
-    margin: 0px 9px 3px 9px;
+.middot {
+    -webkit-text-stroke: 1.5px #ffffff99;
+    margin: 0px 8px;
 }
 
-img[src="./images/image_1-Blog_4.png"] {
+.image_3 {
     width: 50px;
     height: 50px;
     flex-shrink: 0;
 }
 
-section p {
+#NatalyaVasilyeva {
     color: #ffffff;
-    font-family: 'Roboto', monospace;
     font-size: 16px;
-    font-style: normal;
-    font-weight: 400;
     line-height: 28px;
     margin: 0;
 }
 
 #developer {
-    color: #ffffff99;
-    font-size: 14px;
     line-height: 28px;
     margin: 0;
 }
@@ -129,7 +129,7 @@ h1 {
     margin: 0 0 30px 0;
 }
 
-img[src="./images/image_1-Blog_5.png"] {
+.image_4 {
     border-radius: 5px;
     width: 896px;
     height: 594px;
