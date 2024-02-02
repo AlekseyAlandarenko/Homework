@@ -1,0 +1,159 @@
+body {
+    background: linear-gradient(243deg, #FDC5C5 25.45%, rgba(242, 152, 222, 0.00) 100%), linear-gradient(243deg, #FFA5A5 32.96%, rgba(255, 255, 255, 0.00) 82.03%), #F39494;
+    background-attachment: fixed;
+}
+
+main {
+    background-color: #FFFEFE;
+    box-shadow: 0px 4px 4px 0px #00000040;
+    border-radius: 10px;
+    padding: 72px 93px 93px;
+}
+
+h1 {
+    color: #333333;
+    text-align: center;
+    font-family: 'Open Sans', monospace;
+    font-size: 36px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: normal;
+    margin: 0;
+}
+
+p {
+    color: #666666;
+    text-align: center;
+    font-family: 'Open Sans', monospace;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    margin: 0 0 47px 0;
+}
+
+p a {
+    color: #089FE0;
+    text-decoration-line: underline;
+}
+
+::placeholder {
+    color: #999999;
+    font-family: 'Open Sans', monospace;
+    font-size: 16px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: normal;
+}
+
+input {
+    color: #333333;
+    border-radius: 5px;
+    border: none;
+    background-color: #F5F5F5;
+    font-family: 'Open Sans', monospace;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+    width: calc(100% - 22px);
+    height: 26px;
+    padding: 9px 11px 9px;
+    margin: 0 0 22px 0;
+}
+
+#username {
+    border-radius: 5px;
+    border: 1px solid #F5F5F5;
+    background-color: #FFFFFF;
+}
+
+#name {
+    width: calc(50% - 24px);
+    border-radius: 5px 0 0 5px;
+}
+
+#surname {
+    width: calc(50% - 24px);
+    border-radius: 0 5px 5px 0;
+}
+
+button {
+    width: 100%;
+    height: 44px;
+    border-radius: 5px;
+    border: none;
+    background-color: #089FE0;
+    color: #FFFFFF;
+    font-family: 'Open Sans', monospace;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    padding: 9px 102px 9px;
+    margin: 0 0 22px 0;
+}
+
+.button {
+    position: relative;
+}
+
+.image_1 {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    top: 11px;
+    right: 20px;
+}
+
+label {
+    color: #666666;
+    font-family: 'Open Sans', monospace;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+}
+
+label a {
+    color: #089FE0;
+    text-decoration-line: none;
+}
+
+.agree {
+    text-align: center;
+}
+
+.custom_checkbox {
+    position: absolute;
+    width: 0%;
+    opacity: 0;
+}
+
+.custom_checkbox+label {
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+}
+
+.custom_checkbox+label::before {
+    content: '';
+    display: inline-block;
+    background-color: #f5f5f5;
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    border-radius: 5px;
+    border: 1px solid #eeeeee;
+    margin-right: 4px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 75% 75%;
+}
+
+.custom_checkbox:checked+label::before {
+    border-color: #089FE0;
+    background-color: #089FE0;
+    background-image: url("../Images/image_form_1_2.svg");
+}
