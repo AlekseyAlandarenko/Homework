@@ -5,37 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form</title>
-    <link rel="stylesheet" href="./Styles/style_form_1.css">
+    <link rel="stylesheet" href="./Styles/form.css">
 </head>
 
 <body>
-    <main>
-        <h1>
-            Регистрация
-        </h1>
-        <p>
-            Уже есть аккаунт? <a href="/sign_in" target="_blank">Войти</a>
-        </p>
-        <form action="#">
-            <div class="field">
-                <input type="text" name="my_company" id="username" placeholder="Имя пользователя" />
+    <main class="main">
+        <div class="registration">
+            <h1 class="registration_h1">
+                Регистрация
+            </h1>
+            <div class="registration_account">
+                <span>Уже есть аккаунт?</span>
+                <a href="/sign_in" target="_blank">Войти</a>
             </div>
-            <div class="field">
-                <input type="text" name="name" id="name" placeholder="Имя" />
-                <input type="text" name="surname" id="surname" placeholder="Фамилия" />
+        </div>
+        <form class="form" action="#">
+            <div class="form__username">
+                <input class="form__input" type="text" name="my_company" id="username" placeholder="Имя пользователя" />
             </div>
-            <div class="field">
-                <input type="email" name="email" id="email" placeholder="Введите E-mail" />
+            <div class="form__namesurname">
+                <input class="form__input" type="text" name="name" id="name" placeholder="Имя" />
+                <input class="form__input" type="text" name="surname" id="surname" placeholder="Фамилия" />
             </div>
-            <div class="button">
+            <div>
+                <input class="form__input" type="email" name="email" id="email" placeholder="Введите E-mail" />
+            </div>
+            <div class="form__button">
                 <button>Зарегистрироваться</button>
-                <img class="image_1" src="./images/image_form_1_1.svg" alt="#" />
+                <img src="./images/image_form_1_1.svg" alt="#" />
             </div>
-            <div class="agree">
-                <input type="checkbox" class="custom_checkbox" name="agree" id="agree">
-                <label for="agree">Я прочитал и принимаю&nbsp;&nbsp;&nbsp;<a href="/terms_of_use"
-                        target="_blank">Условия
-                        использования</a>
+            <div class="form__agree">
+                <input type="checkbox" name="agree" id="agree">
+                <label for="agree">
+                    Я прочитал и принимаю
+                </label>
+                <label for="agree">
+                    <a href="/terms_of_use" target="_blank">Условия использования</a>
                 </label>
             </div>
         </form>
