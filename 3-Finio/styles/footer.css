@@ -1,0 +1,109 @@
+.footer__inner {
+    padding-top: var(--section-padding-y-medium);
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--section-padding-y-small);
+}
+
+.footer__body {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: var(--row-gap-medium);
+    border-bottom: var(--border-footer);
+}
+
+.footer__wrapper {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--row-gap-constant-small);
+    width: 260px;
+}
+
+.footer__text,
+.footer__feedback-item,
+.footer__copyright {
+    color: var(--color-light-grey);
+}
+
+.footer__relinking-list,
+.footer__linking-list,
+.footer__feedback-list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 6.8px;
+}
+
+.footer__relinking-link,
+.footer__linking-link,
+.footer__feedback-link {
+    color: var(--color-medium-grey);
+}
+
+.footer__relinking-link:hover,
+.footer__linking-link:hover,
+.footer__feedback-link:hover {
+    color: var(--color-light-grey);
+    transition-duration: var(--transition-duration);
+}
+
+.footer__extra {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row-reverse;
+    padding-bottom: var(--section-padding-y-small);
+}
+
+.footer__payment-methods-list {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    column-gap: var(--row-gap-constant-medium);
+}
+
+@media(max-width:1248px) {
+    .footer__body {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        row-gap: var(--row-gap-medium);
+    }
+
+    .footer__relinking {
+        order: 1;
+    }
+
+    .footer__linking {
+        order: 1;
+        justify-self: end;
+    }
+
+    .footer__feedback {
+        justify-self: end;
+    }
+}
+
+@media(max-width:767px) {
+    .footer__body {
+        grid-template-columns: 1fr;
+    }
+
+    .footer__linking {
+        order: 1;
+        justify-self: start;
+    }
+
+    .footer__feedback {
+        justify-self: start;
+    }
+
+    .footer__extra {
+        flex-direction: column;
+        align-items: start;
+        row-gap: var(--row-gap-constant-medium);
+    }
+
+    .footer__payment-methods-list {
+        justify-content: start;
+        align-items: start;
+    }
+}

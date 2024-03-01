@@ -1,0 +1,118 @@
+:root {
+    --color-light: #ffffff;
+    --color-accent: #357efe;
+    --color-dark-text: #000000;
+    --color-medium-grey-text: #4e5d7c;
+    --color-light-grey-text: #a6aebd;
+    --color-light-text: #d7e5ff;
+    --color-dark-grey: #1a1d25;
+    --color-medium-grey: #8d8e92;
+    --color-light-grey: #bbbcbe;
+    --color-header-line: #5593fe;
+    --color-section-line: #f1f2f5;
+    --color-footer-line: #2c2f36;
+    --color-yellow: #ffc736;
+    --color-green: #1abc9c;
+
+    --border: 1px solid currentColor;
+    --border-light: 1px solid var(--color-light);
+    --border-header: 1px solid var(--color-header-line);
+    --border-section: 1px solid var(--color-section-line);
+    --border-footer: 1px solid var(--color-footer-line);
+
+    --border-radius-small: 8px;
+    --border-radius-medium: 16px;
+    --border-radius-large: 32px;
+
+    --shadow-light: 0px 0px 32px 0px #4E5D7C29;
+    --shadow-dark: 0px 0px 32px 0px #4E5D7C52;
+
+    --font-family-base: 'Inter', sans-serif;
+
+    --container-width: 1400px;
+
+    --container-padding-x: 24px;
+
+    --item-container: clamp(325px, calc(325px + (400 - 325) * ((100vw - 768px) / (1024 - 768))), 400px);
+
+    --icone-small: clamp(48px, calc(48px + (64 - 48) * ((100vw - 768px) / (1024 - 768))), 64px);
+    --icone-large: clamp(64px, calc(64px + (80 - 64) * ((100vw - 768px) / (1024 - 768))), 80px);
+
+    --row-gap-constant-small: 16px;
+    --row-gap-constant-medium: 24px;
+    --row-gap-constant-large: 32px;
+
+    --row-gap-small: clamp(24px, calc(24px + (32 - 24) * ((100vw - 1024px) / (1248 - 1024))), 32px);
+    --row-gap-medium: clamp(36px, calc(36px + (48 - 36) * ((100vw - 1024px) / (1248 - 1024))), 48px);
+    --row-gap-large: clamp(48px, calc(48px + (64 - 48) * ((100vw - 1024px) / (1248 - 1024))), 64px);
+
+    --font-size-title-small: clamp(18px, calc(18px + (24 - 18) * ((100vw - 768px) / (1024 - 768))), 24px);
+    --font-size-title-medium: clamp(24px, calc(24px + (32 - 24) * ((100vw - 768px) / (1024 - 768))), 32px);
+    --font-size-title-large: clamp(30px, calc(30px + (40 - 30) * ((100vw - 768px) / (1024 - 768))), 40px);
+
+    --section-padding-x: min(calc(100 * ((100vw - 1248px) / (1448 - 1248))), 100px);
+
+    --section-padding-y-small: clamp(24px, calc(24px + (40 - 24) * ((100vw - 1024px) / (1248 - 1024))), 40px);
+    --section-padding-y-medium: clamp(48px, calc(48px + (80 - 48) * ((100vw - 1024px) / (1248 - 1024))), 80px);
+    --section-padding-y-large: clamp(72px, calc(72px + (120 - 72) * ((100vw - 1024px) / (1248 - 1024))), 120px);
+
+    --puddle-padding-inline: 8px;
+
+    --button-padding-inline: 32px;
+
+    --button-height: 48px;
+
+    --transition-duration: 0.2s;
+}
+
+body {
+    font-family: var(--font-family-base);
+    color: var(--color-light-grey-text);
+    background-color: var(--color-light);
+    font-weight: 500;
+    font-size: 17px;
+    line-height: 1.4;
+}
+
+a {
+    text-decoration: none;
+}
+
+.container {
+    max-width: calc(var(--container-width) + var(--container-padding-x) * 2);
+    margin-inline: auto;
+    padding-inline: var(--container-padding-x);
+}
+
+.section {
+    padding-top: var(--section-padding-y-medium);
+}
+
+.section_padding-top-large {
+    padding-top: var(--section-padding-y-large);
+}
+
+.section_padding-top-0 {
+    padding-top: 0;
+}
+
+.background-accent {
+    background-color: var(--color-accent);
+}
+
+.background-dark {
+    background-color: var(--color-dark-grey);
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    border: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+    clip-path: inset(100%) !important;
+    clip: rect(0 0 0 0) !important;
+    overflow: hidden !important;
+}

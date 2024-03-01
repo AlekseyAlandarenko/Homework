@@ -1,0 +1,142 @@
+.tariffs {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--row-gap-medium);
+    padding-inline: var(--section-padding-x);
+}
+
+.tariffs__body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    row-gap: var(--row-gap-constant-medium);
+}
+
+.tariffs__list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--row-gap-constant-medium);
+}
+
+.tariffs__item {
+    max-width: clamp(327px, calc(327px + (384 - 327) * ((100vw - 768px) / (1024 - 768))), 384px);
+}
+
+.tariffs-card {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--row-gap-constant-large);
+    padding-block: 48px;
+    padding-inline: clamp(24px, calc(24px + (52.5 - 24) * ((100vw - 768px) / (1024 - 768))), 52.5px);
+    border-radius: var(--border-radius-small);
+    box-shadow: var(--shadow-light);
+}
+
+.tariffs-card__inner-top {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--row-gap-constant-small);
+}
+
+.tariffs-card__discount {
+    color: var(--color-light);
+    width: 121.05px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-inline: var(--puddle-padding-inline);
+    border-radius: var(--border-radius-small);
+}
+
+.tariffs-card__discount_green {
+    background-color: var(--color-green);
+}
+
+.tariffs-card__title {
+    color: var(--color-dark-text);
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.tariffs-card__title_light {
+    color: var(--color-light);
+}
+
+.tariffs-card__description_light {
+    color: var(--color-light-text);
+}
+
+.tariffs-card__inner-middle {
+    display: grid;
+    row-gap: 8px;
+}
+
+.tariffs-card__wrapper {
+    display: grid;
+    grid-template-columns: 161px 118px;
+    padding-bottom: 8px;
+    border-bottom: var(--border-section);
+}
+
+.tariffs-card__wrapper_light {
+    border-bottom: var(--border-header);
+}
+
+.tariffs-card__wrapper:last-child {
+    padding-bottom: 0px;
+    border-bottom: none;
+}
+
+.tariffs-card__text {
+    color: var(--color-medium-grey-text);
+    padding-block: 4px;
+}
+
+.tariffs-card__text-price {
+    color: var(--color-medium-grey-text);
+    padding-inline: 8px;
+    padding-block: 4px;
+    padding-inline: var(--puddle-padding-inline);
+    border-radius: var(--border-radius-small);
+}
+
+.tariffs-card__text_light {
+    color: var(--color-light)
+}
+
+.tariffs-card__text-price_yellow {
+    background-color: var(--color-yellow);
+}
+
+@media(max-width:1248px) {
+    .tariffs__list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tariffs__item:nth-child(odd) {
+        justify-self: end;
+    }
+
+    .tariffs__item:nth-child(even) {
+        justify-self: start;
+    }
+}
+
+@media(max-width:767px) {
+    .tariffs__body {
+        align-items: start;
+    }
+
+    .tariffs__list {
+        grid-template-columns: 1fr;
+    }
+
+    .tariffs__item {
+        max-width: clamp(327px, calc(327px + (384 - 327) * ((100vw - 375px) / (767 - 375))), 384px);
+        justify-self: start !important;
+    }
+
+    .tariffs-card {
+        padding-inline: clamp(24px, calc(24px + (52.5 - 24) * ((100vw - 375px) / (767 - 375))), 52.5px);
+    }
+}

@@ -1,0 +1,98 @@
+.possibilities-top__list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: var(--row-gap-constant-large);
+    border-bottom: var(--border-section);
+    padding-bottom: var(--section-padding-y-medium);
+}
+
+.possibilities-top__item {
+    max-width: var(--item-container);
+    display: flex;
+    column-gap: var(--row-gap-constant-medium);
+    align-items: center;
+}
+
+.possibilities-top__image {
+    width: var(--icone-small);
+    aspect-ratio: 1;
+    height: auto;
+}
+
+.possibilities-top__text {
+    color: var(--color-dark-text);
+    font-size: var(--font-size-title-small);
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.possibilities {
+    padding-bottom: var(--section-padding-y-large);
+}
+
+.possibilities__list {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--section-padding-y-medium);
+}
+
+
+.possibilities__item:nth-child(odd) .possibilities-card {
+    flex-direction: row-reverse;
+}
+
+.possibilities-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: var(--row-gap-large);
+    border-bottom: var(--border-section);
+    padding-bottom: var(--section-padding-y-medium);
+}
+
+.possibilities__item:last-child .possibilities-card {
+    padding-bottom: 0;
+    border: none;
+}
+
+.possibilities__item:nth-child(odd) .possibilities-card__body {
+    padding-left: var(--section-padding-x);
+}
+
+.possibilities__item:nth-child(even) .possibilities-card__body {
+    padding-right: var(--section-padding-x);
+}
+
+.possibilities-card__body {
+    max-width: calc(50% - var(--row-gap-small));
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--row-gap-constant-medium);
+}
+
+@media(max-width:1248px) {
+    .possibilities-top__list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media(max-width:767px) {
+    .possibilities-top__list {
+        grid-template-columns: 1fr;
+    }
+
+    .possibilities__item:nth-child(odd) .possibilities-card {
+        flex-direction: column;
+    }
+
+    .possibilities-card {
+        display: flex;
+        flex-direction: column;
+        row-gap: var(--row-gap-constant-large);
+    }
+
+    .possibilities-card__body {
+        max-width: 100%;
+    }
+}
