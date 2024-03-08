@@ -21,13 +21,13 @@
 }
 
 .slider__slider-button-left {
-    top: clamp(164.9px, calc(164.9px + (207.33 - 164.9) * ((100vw - 1024px) / (1248 - 1024))), 207.33px);
+    top: calc(50% - 20px);
     left: max(calc(50% - (468px + (580 - 468) * ((100vw - 1024px) / (1248 - 1024)))), calc(50% - 580px));
     Z-index: 9999;
 }
 
 .slider__slider-button-right {
-    top: clamp(164.9px, calc(164.9px + (207.33 - 164.9) * ((100vw - 1024px) / (1248 - 1024))), 207.33px);
+    top: calc(50% - 20px);
     right: max(calc(50% - (468px + (580 - 468) * ((100vw - 1024px) / (1248 - 1024)))), calc(50% - 580px));
     Z-index: 9999;
 }
