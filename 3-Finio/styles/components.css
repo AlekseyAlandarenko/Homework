@@ -1,0 +1,210 @@
+.title {
+    font-size: var(--font-size-title-large);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.title_light {
+    color: var(--color-light);
+}
+
+.title_dark {
+    color: var(--color-dark-text);
+}
+
+.button {
+    border-radius: var(--border-radius-large);
+    height: var(--button-height);
+    font-size: 17px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.button:hover {
+    cursor: pointer;
+    transition-duration: var(--transition-duration);
+}
+
+.button_light {
+    color: var(--color-accent);
+    background-color: var(--color-light);
+    border: var(--border);
+}
+
+.button_light:hover {
+    color: var(--color-light);
+    background-color: var(--color-accent);
+    border: var(--border);
+}
+
+.button_accent {
+    color: var(--color-light);
+    background-color: var(--color-accent);
+    border: var(--border);
+}
+
+.button_accent:hover {
+    color: var(--color-accent);
+    background-color: var(--color-light);
+    border: var(--border);
+}
+
+.burger-button {
+    padding: 0;
+    background-color: transparent;
+    border: 1px solid transparent;
+    width: 38px;
+    aspect-ratio: 1;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.burger-button:hover {
+    background-color: var(--color-accent);
+    border-radius: var(--border-radius-small);
+    border: 1px solid var(--color-light);
+    cursor: pointer;
+    transition-duration: var(--transition-duration);
+}
+
+.crose-button {
+    padding: 0;
+    background-color: transparent;
+    border: 1px solid transparent;
+    width: 38px;
+    aspect-ratio: 1;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.crose-button:hover {
+    background-color: var(--color-accent);
+    border-radius: var(--border-radius-small);
+    border: 1px solid var(--color-light);
+    cursor: pointer;
+    transition-duration: var(--transition-duration);
+}
+
+.burger-button__icon path,
+.crose-button__icon path {
+    fill: var(--color-light);
+    fill-rule: nonzero
+}
+
+.slider-button-big {
+    position: absolute;
+    width: 40px;
+    aspect-ratio: 1;
+    color: var(--color-accent);
+    background-color: var(--color-light);
+    border: 0;
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: var(--shadow-dark);
+}
+
+.slider-button-big::before {
+    position: absolute;
+    content: '';
+    top: 15px;
+    left: 8px;
+    width: 6px;
+    height: 10px;
+    background: url(../images/possibilities-banner-image_2.svg) center/contain no-repeat;
+}
+
+.slider-button-big::after {
+    position: absolute;
+    content: '';
+    top: 15px;
+    right: 8px;
+    width: 6px;
+    height: 10px;
+    background: url(../images/possibilities-banner-image_3.svg) center/contain no-repeat;
+}
+
+.slider-button-big:hover {
+    background-color: var(--color-accent);
+    cursor: pointer;
+    transition-duration: var(--transition-duration);
+}
+
+.slider-button-big:hover::before {
+    background: url(../images/possibilities-banner-image_4.svg) center/contain no-repeat;
+    transition-duration: var(--transition-duration);
+}
+
+.slider-button-big:hover::after {
+    background: url(../images/possibilities-banner-image_5.svg) center/contain no-repeat;
+    transition-duration: var(--transition-duration);
+}
+
+.slider-button {
+    position: absolute;
+    width: 40px;
+    aspect-ratio: 1;
+    color: var(--color-accent);
+    background-color: var(--color-light-text);
+    border: 0;
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: var(--shadow-dark);
+}
+
+.slider-button-left::before {
+    position: absolute;
+    content: '';
+    bottom: 10px;
+    left: 12px;
+    width: 12px;
+    height: 20px;
+    background: url(../images/possibilities-banner-image_2.svg) center/contain no-repeat;
+}
+
+.slider-button-right::before {
+    position: absolute;
+    content: '';
+    top: 10px;
+    right: 12px;
+    width: 12px;
+    height: 20px;
+    background: url(../images/possibilities-banner-image_3.svg) center/contain no-repeat;
+}
+
+.slider-button:hover {
+    background-color: var(--color-light);
+    cursor: pointer;
+    transition-duration: var(--transition-duration);
+}
+
+.button-dot {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
+    background-color: transparent;
+    border: none;
+}
+
+.button-dot::before {
+    content: '';
+    background-color: var(--color-light-text);
+    width: 8px;
+    aspect-ratio: 1;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+}
+
+.button-dot_is-current::before {
+    background-color: var(--color-light);
+}
+
+.button-dot:not(.button-dot_is-current):hover::before {
+    cursor: pointer;
+    background-color: transparent;
+    border: var(--border-light);
+    transition-duration: var(--transition-duration);
+}
