@@ -17,11 +17,10 @@ function encryptPassword(password) {
         encryptedPassword.unshift(`${encryptedPassword[Math.floor(encryptedPassword.length / 2)]}`);
         encryptedPassword.splice((Math.floor(encryptedPassword.length / 2 + 1)), 1);
     }
-    return encryptedPassword.reverse().join('');
+    return encryptedPassword.join('');
 }
 
 function decryptPassword(encryptedPassword) {
-    encryptedPassword.reverse();
     if (password.length % 2 === 0) {
         encryptedPassword.pop(encryptedPassword.splice((Math.floor(encryptedPassword.length / 2)), 0, encryptedPassword[encryptedPassword.length - 1]));
     }

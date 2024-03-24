@@ -13,28 +13,57 @@ function sourceArray() {
     return input;
 }
 
-function sortingAlgorithm(input) {
+function sortingAlgorithm() {
+    sourceArray()
+    output = [...input];
     do {
         sortOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
-        if (!validChoices.hasOwnProperty(sortOrder)) alert('Нет такого параметра сортировки!');
-    } while (!validChoices.hasOwnProperty(sortOrder));
-    switch (true) {
-        case sortOrder === 'min':
-            while (input.length) {
-                output.push(input.splice(input.indexOf(Math.max(...input)), 1));
+        if (!validChoices[sortOrder]) alert('Нет такого параметра сортировки!');
+    } while (!validChoices[sortOrder]);
+    if (sortOrder === 'min') {
+        for (let j = 0; j < output.length; j++) {
+            for (let i = 0; i < output.length - 1; i++) {
+                if (output[i] < output[i + 1]) {
+                    output[i] = [output[i + 1], output[i + 1] = output[i]][0]
+                }
             }
-        case sortOrder === 'max':
-            while (input.length) {
-                output.push(input.splice(input.indexOf(Math.min(...input)), 1));
-            }
+        }
     }
-    console.log(output, sortOrder);
-    return [output, sortOrder];
+    else {
+        for (let j = 0; j < output.length; j++) {
+            for (let i = 0; i < output.length - 1; i++) {
+                if (output[i] > output[i + 1]) {
+                    output[i] = [output[i + 1], output[i + 1] = output[i]][0]
+                }
+            }
+        }
+    }
+    return [input, output, sortOrder];
 }
 
-alert(`Введенный массив: ${sourceArray()}`);
-sortingAlgorithm(input);
-alert(`Массив отсортированный в порядке ${sortOrder === 'min' ? 'убывания' : 'возрастания'}: ${output}`);
+/*function sortingAlgorithm() {
+    sourceArray()
+    temp = [...input];
+    do {
+        sortOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
+        if (!validChoices[sortOrder]) alert('Нет такого параметра сортировки!');
+    } while (!validChoices[sortOrder]);
+    if (sortOrder === 'min') {
+        while (temp.length) {
+            output.push(temp.splice(temp.indexOf(Math.max(...temp)), 1));
+        }
+    }
+    else {
+        while (temp.length) {
+            output.push(temp.splice(temp.indexOf(Math.min(...temp)), 1));
+        }
+    }
+    return [input, output, sortOrder];
+}*/
+
+sortingAlgorithm()
+alert(`Введенный массив: ${input}
+Массив отсортированный в порядке ${sortOrder === 'min' ? 'убывания' : 'возрастания'}: ${output}`);
 
 
 
