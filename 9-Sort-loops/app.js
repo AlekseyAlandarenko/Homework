@@ -1,69 +1,98 @@
 const validChoices = { min: true, max: true };
-let input = [];
-let output = [];
+let inputArr = [];
+let outputArr = [];
 
 function sourceArray() {
     alert('Введите элементы массива.')
     for (let i = 0; ; i++) {
         let p = prompt(`Введите ${i + 1} элемент массива:`)
         if (p === null) break;
-        if (Boolean(Number(p)) === true || Number(p) === 0) input.push(Number(p));
+        if (Boolean(Number(p)) === true || Number(p) === 0) inputArr.push(Number(p));
         else alert('Вы ввели не число!'), --i;
     }
-    return input;
+    return inputArr;
 }
 
 function sortingAlgorithm() {
-    sourceArray()
-    output = [...input];
+    outputArr = [...inputArr];
     do {
         sortOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
         if (!validChoices[sortOrder]) alert('Нет такого параметра сортировки!');
     } while (!validChoices[sortOrder]);
     if (sortOrder === 'min') {
-        for (let j = 0; j < output.length; j++) {
-            for (let i = 0; i < output.length - 1; i++) {
-                if (output[i] < output[i + 1]) {
-                    output[i] = [output[i + 1], output[i + 1] = output[i]][0]
+        for (let i = 0; i < outputArr.length; i++) {
+            for (let j = 0; j < outputArr.length - 1; j++) {
+                if (outputArr[j] < outputArr[j + 1]) {
+                    let temp = outputArr[j];
+                    outputArr[j] = outputArr[j + 1];
+                    outputArr[j + 1] = temp;
                 }
             }
         }
     }
     else {
-        for (let j = 0; j < output.length; j++) {
-            for (let i = 0; i < output.length - 1; i++) {
-                if (output[i] > output[i + 1]) {
-                    output[i] = [output[i + 1], output[i + 1] = output[i]][0]
+        for (let i = 0; i < outputArr.length; i++) {
+            for (let j = 0; j < outputArr.length - 1; j++) {
+                if (outputArr[j] > outputArr[j + 1]) {
+                    let temp = outputArr[j];
+                    outputArr[j] = outputArr[j + 1];
+                    outputArr[j + 1] = temp;
                 }
             }
         }
     }
-    return [input, output, sortOrder];
+    return [inputArr, outputArr, sortOrder];
 }
 
 /*function sortingAlgorithm() {
-    sourceArray()
-    temp = [...input];
+    outputArr = [...inputArr];
     do {
         sortOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
         if (!validChoices[sortOrder]) alert('Нет такого параметра сортировки!');
     } while (!validChoices[sortOrder]);
     if (sortOrder === 'min') {
-        while (temp.length) {
-            output.push(temp.splice(temp.indexOf(Math.max(...temp)), 1));
+        for (let i = 0; i < outputArr.length; i++) {
+            for (let j = 0; j < outputArr.length - 1; j++) {
+                if (outputArr[j] < outputArr[j + 1]) {
+                    outputArr[j] = [outputArr[j + 1], outputArr[j + 1] = outputArr[j]][0];
+                }
+            }
         }
     }
     else {
-        while (temp.length) {
-            output.push(temp.splice(temp.indexOf(Math.min(...temp)), 1));
+        for (let i = 0; i < outputArr.length; i++) {
+            for (let j = 0; j < outputArr.length - 1; j++) {
+                if (outputArr[j] > outputArr[j + 1]) {
+                    outputArr[j] = [outputArr[j + 1], outputArr[j + 1] = outputArr[j]][0];
+                }
+            }
         }
     }
-    return [input, output, sortOrder];
+    return [inputArr, outputArr, sortOrder];
 }*/
 
-sortingAlgorithm()
-alert(`Введенный массив: ${input}
-Массив отсортированный в порядке ${sortOrder === 'min' ? 'убывания' : 'возрастания'}: ${output}`);
+/*function sortingAlgorithm() {
+    tempArr = [...inputArr];
+    do {
+        sortOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
+        if (!validChoices[sortOrder]) alert('Нет такого параметра сортировки!');
+    } while (!validChoices[sortOrder]);
+    if (sortOrder === 'min') {
+        while (tempArr.length) {
+            outputArr.push(tempArr.splice(tempArr.indexOf(Math.max(...tempArr)), 1));
+        }
+    }
+    else {
+        while (tempArr.length) {
+            outputArr.push(tempArr.splice(tempArr.indexOf(Math.min(...tempArr)), 1));
+        }
+    }
+    return [inputArr, outputArr, sortOrder];
+}*/
+
+sortingAlgorithm(sourceArray());
+alert(`Введенный массив: ${inputArr}
+Массив отсортированный в порядке ${sortOrder === 'min' ? 'убывания' : 'возрастания'}: ${outputArr}`);
 
 
 

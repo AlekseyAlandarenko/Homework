@@ -2,9 +2,6 @@ const validChoices = { rub: true, usd: true, eur: true };
 const rub = 1;
 const usd = 90;
 const eur = 100;
-let sourceCurrency;
-let targetCurrency;
-let sum;
 
 function valueValidation() {
     do {
@@ -23,7 +20,6 @@ function valueValidation() {
 }
 
 function convertingTo() {
-    valueValidation()
     if (sourceCurrency === targetCurrency) return message = 'В данной конвертации нет смысла!';
     transfer = (sourceCurrency === 'eur') ? sum * eur : (sourceCurrency === 'usd') ? sum * usd : sum * rub;
     switch (true) {
@@ -36,7 +32,7 @@ function convertingTo() {
     }
 }
 
-convertingTo();
+convertingTo(valueValidation());
 alert((sourceCurrency === targetCurrency) ? message : 'Сумма конвертации равна ' + message);
 
 
