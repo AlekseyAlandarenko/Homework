@@ -1,9 +1,8 @@
-const validChoices = { rub: true, usd: true, eur: true };
-const rub = 1;
-const usd = 90;
-const eur = 100;
-
 function valueValidation() {
+    let sourceCurrency;
+    let targetCurrency;
+    let sum;
+    const validChoices = { rub: true, usd: true, eur: true };
     do {
         sourceCurrency = prompt('Введите валюту для продажи: rub, usd, eur');
         if (!validChoices[sourceCurrency]) alert('Мы не покупаем данную валюту!');
@@ -19,20 +18,21 @@ function valueValidation() {
     return [sourceCurrency, targetCurrency, sum];
 }
 
-function convertingTo() {
-    if (sourceCurrency === targetCurrency) return message = 'В данной конвертации нет смысла!';
+function convertingTo(fn) {
+    [rub, usd, eur] = [1, 90, 100];
+    [sourceCurrency, targetCurrency, sum] = fn();
+    if (sourceCurrency === targetCurrency) return alert('В данной конвертации нет смысла!');
     transfer = (sourceCurrency === 'eur') ? sum * eur : (sourceCurrency === 'usd') ? sum * usd : sum * rub;
     switch (true) {
         case targetCurrency === 'rub':
-            return message = `${transfer / rub} \u20bd`;
+            return alert(`Сумма конвертации равна ${transfer / rub} \u20bd`);
         case targetCurrency === 'usd':
-            return message = `${transfer / usd} \u0024`;
+            return alert(`Сумма конвертации равна ${transfer / usd} \u0024`);
         case targetCurrency === 'eur':
-            return message = `${transfer / eur} \u20ac`;
+            return alert(`Сумма конвертации равна ${transfer / eur} \u20ac`);
     }
 }
 
-convertingTo(valueValidation());
-alert((sourceCurrency === targetCurrency) ? message : 'Сумма конвертации равна ' + message);
+convertingTo(valueValidation);
 
 
