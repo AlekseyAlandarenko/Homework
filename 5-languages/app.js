@@ -3,17 +3,17 @@ let language = navigatorLanguage.split(' ')[0];
 
 switch (language) {
     case 'ru':
-        console.log('Привет!');
+        alert('Привет!');
         break;
 
     case 'en':
-        console.log('Hello!');
+        alert('Hello!');
         break;
 
     case 'de':
-        console.log('Hallo!');
+        alert('Hallo!');
         break;
 
     default:
-        console.log('(・_・)ノ');
+        alert('(・_・)ノ');
 } 
