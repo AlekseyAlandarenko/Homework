@@ -1,11 +1,9 @@
-const password = prompt('Введите пароль');
-let encryptedPassword = [];
-let decryptedPassword = [];
-
-function encryptPassword(password) {
-    const trash = '0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
+function encryptPassword() {
+    let password = prompt('Введите пароль:');
+    let encryptedPassword = [];
     for (let i = 0; i < password.length; i++) {
-        position = Math.floor(Math.random() * (trash.length - 1));
+        let trash = '0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
+        let position = Math.floor(Math.random() * (trash.length - 1));
         encryptedPassword += password[i] + trash.substring(position, position + 1);
     }
     encryptedPassword = encryptedPassword.split('')
@@ -17,25 +15,29 @@ function encryptPassword(password) {
         encryptedPassword.unshift(`${encryptedPassword[Math.floor(encryptedPassword.length / 2)]}`);
         encryptedPassword.splice((Math.floor(encryptedPassword.length / 2 + 1)), 1);
     }
-    return encryptedPassword.join('');
+    return [password, encryptedPassword.join('')];
 }
 
-function decryptPassword(encryptedPassword) {
+function decryptPassword(fn) {
+    let password, encryptedPassword = [], tempArr = [], decryptedPassword = [];
+    [password, encryptedPassword] = fn();
+    tempArr = encryptedPassword.split('')
     if (password.length % 2 === 0) {
-        encryptedPassword.pop(encryptedPassword.splice((Math.floor(encryptedPassword.length / 2)), 0, encryptedPassword[encryptedPassword.length - 1]));
+        tempArr.pop(tempArr.splice((Math.floor(tempArr.length / 2)), 0, tempArr[tempArr.length - 1]));
     }
     else {
-        encryptedPassword.shift(encryptedPassword.splice((Math.floor(encryptedPassword.length / 2 + 1)), 0, encryptedPassword[0]));
+        tempArr.shift(tempArr.splice((Math.floor(tempArr.length / 2 + 1)), 0, tempArr[0]));
     }
-    for (let i = 0; i < encryptedPassword.length; i += 2) {
-        decryptedPassword += encryptedPassword[i];
+    for (let i = 0; i < tempArr.length; i += 2) {
+        decryptedPassword += tempArr[i];
     }
-    return (password !== decryptedPassword) ? 'не тождественен' : 'тождественен';
+    return alert(`Исходный пароль: ${password}.
+Зашифрованный пароль: ${encryptedPassword}. 
+Раcшифрованный пароль ${((password === decryptedPassword) ? 'тождественен' : 'не тождественен')} исходному.`);
 }
 
-alert(`Исходный пароль: ${password} 
-Зашифрованный пароль: ${encryptPassword(password)} 
-Раcшифрованный пароль ${decryptPassword(encryptedPassword)} исходному.`);
+decryptPassword(encryptPassword)
+
 
 
 

@@ -4,4 +4,4 @@ let destinationLatitude = prompt('Введите местоположение т
 let destinationLongitude = prompt('Введите местоположение точки назначения по y:');
 let distance = Math.sqrt((destinationLatitude - positionLatitude) ** 2 + (destinationLongitude - positionLongitude) ** 2);
 
-console.log(`Расстояние до точки назначения равно ${distance}`);
+alert(`Расстояние до точки назначения равно ${distance}.`);
