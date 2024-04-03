@@ -14,12 +14,10 @@ function filter(fn1, fn2) {
     let inputArr = fn1();
     let limit = prompt(`Введите предел для элементов массива чисел:`);
     let outputArr = inputArr.filter(item => fn2(item, limit) !== true);
-    return alert(`Введенный массив чисел: ${inputArr}
-Отфильтрованный массив чисел: ${outputArr}`);
+    return alert(`Введенный массив чисел: ${inputArr}.
+Отфильтрованный массив чисел: ${outputArr}.`);
 }
 
 filter(sourceArray, (item, limit) => {
     if (item > limit) return true;
 });
-
-

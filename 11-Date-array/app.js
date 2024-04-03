@@ -5,8 +5,7 @@ function sourceString() {
 
 function sortingAlgorithm(fn) {
     let inputStr = fn()
-    let outputStr = inputStr.replace(/\s+/g, '').split(',').map(item => item.split(/[\/\-\.]/));
-    outputStr = outputStr.map(item => {
+    let outputStr = inputStr.replace(/\s+/g, '').split(',').map(item => item.split(/[\/\-\.]/)).map(item => {
         if (item[1] > 12) item[1] = [item[0], item[0] = item[1]][0];
         return item;
     }).filter(item => {
@@ -29,4 +28,3 @@ function sortingAlgorithm(fn) {
 }
 
 sortingAlgorithm(sourceString);
-
