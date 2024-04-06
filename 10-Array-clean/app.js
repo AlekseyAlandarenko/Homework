@@ -15,7 +15,7 @@ function filter(fn1, fn2) {
     let outputArr = [...inputArr];
     let limit = prompt(`Введите предел для элементов массива чисел:`);
     for (let i = outputArr.length; i >= 0; i--) {
-        if (fn2(outputArr[i], limit) === true)
+        if (fn2(outputArr[i], limit))
             outputArr.splice(i, 1);
     }
     return alert(`Введенный массив чисел: ${inputArr}.
