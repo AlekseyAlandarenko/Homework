@@ -12,8 +12,12 @@ function sourceArray() {
 
 function filter(fn1, fn2) {
     let inputArr = fn1();
+    let outputArr = [...inputArr];
     let limit = prompt(`Введите предел для элементов массива чисел:`);
-    let outputArr = inputArr.filter(item => fn2(item, limit) !== true);
+    for (let i = outputArr.length; i >= 0; i--) {
+        if (fn2(outputArr[i], limit) === true)
+            outputArr.splice(i, 1);
+    }
     return alert(`Введенный массив чисел: ${inputArr}.
 Отфильтрованный массив чисел: ${outputArr}.`);
 }
