@@ -22,6 +22,4 @@ function filter(fn1, fn2) {
 Отфильтрованный массив чисел: ${outputArr}.`);
 }
 
-filter(sourceArray, (item, limit) => {
-    if (item > limit) return true;
-});
+filter(sourceArray, (item, limit) => item > limit);
