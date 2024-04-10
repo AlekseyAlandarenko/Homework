@@ -11,17 +11,17 @@ function sourceStr() {
 
 function checkLuhn(fn) {
     let creditCardNumber = fn();
-    let sum = creditCardNumber.replace(/-/g, '').split('').map((item, index) => {
+    let sum = creditCardNumber.replace(/-/g, '').split('').reduce((acc, item, index) => {
         let number = Number(item);
         if (index % 2 === 0) {
             number *= 2;
             if (number > 9) {
-                return number -= 9;
+                return acc + number - 9;
             }
-            else { return number; }
+            else { return acc + number; }
         }
-        else { return number; }
-    }).reduce((previousValue, currentValue) => previousValue + currentValue);
+        else { return acc + number; }
+    }, 0);
     return alert(`Введенный номер кредитной карты (${creditCardNumber}) ${((sum % 10) === 0 ? 'прошёл' : 'не прошёл')} проверку.`);
 }
 
