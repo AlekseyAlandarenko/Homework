@@ -21,7 +21,7 @@ function checkLuhn(fn) {
             else { return number; }
         }
         else { return number; }
-    }).reduce((previousValue, currentValue) => { return previousValue + currentValue; });
+    }).reduce((previousValue, currentValue) => previousValue + currentValue);
     return alert(`Введенный номер кредитной карты (${creditCardNumber}) ${((sum % 10) === 0 ? 'прошёл' : 'не прошёл')} проверку.`);
 }
 
