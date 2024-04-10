@@ -11,16 +11,16 @@ function sourceStr() {
 
 function checkLuhn(fn) {
     let creditCardNumber = fn();
-    let sum = creditCardNumber.replace(/-/g, '').split('').reduce((acc, item, index) => {
-        let number = Number(item);
+    let sum = creditCardNumber.replace(/-/g, '').split('').reduce((res, num, index) => {
+        num = Number(num);
         if (index % 2 === 0) {
-            number *= 2;
-            if (number > 9) {
-                return acc + number - 9;
+            num *= 2;
+            if (num > 9) {
+                return res + num - 9;
             }
-            else { return acc + number; }
+            else { return res + num; }
         }
-        else { return acc + number; }
+        else { return res + num; }
     }, 0);
     return alert(`Введенный номер кредитной карты (${creditCardNumber}) ${((sum % 10) === 0 ? 'прошёл' : 'не прошёл')} проверку.`);
 }

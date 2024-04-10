@@ -10,6 +10,10 @@ function sourceArray() {
     return inputArr;
 }
 
+function check(num, limit) {
+    return num > limit;
+}
+
 function filter(fn1, fn2) {
     let inputArr = fn1();
     let outputArr = [...inputArr];
@@ -22,4 +26,4 @@ function filter(fn1, fn2) {
 Отфильтрованный массив чисел: ${outputArr}.`);
 }
 
-filter(sourceArray, (item, limit) => item > limit);
+filter(sourceArray, check);
