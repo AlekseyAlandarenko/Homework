@@ -1,5 +1,5 @@
-function sourceArray() {
-    let inputArr = ['10.02.2022', 'test', '11.12.2023', '00.13.2023', '41.12.2023'];
+function enterArr() {
+    let inputArr = prompt('Введите строку, содержащую потенциальные даты. Форматы дат: DD.MM.YY, MM.DD.YY, DD/MM/YY, MM/DD/YY, DD-MM-YY, MM-DD-YY.').replace(/[\s+\']/g, '').split(',');
     return inputArr;
 }
 
@@ -38,10 +38,10 @@ function checkDate(array) {
     if (array[1] > 12) {
         array[1] = [array[0], array[0] = array[1]][0];
     }
-    if ((array[1] == 1 || array[1] == 3 || array[1] == 5 || array[1] == 7 || array[1] == 8 || array[1] == 10 || array[1] == 12)) {
+    if ((array[1] === 1 || array[1] === 3 || array[1] === 5 || array[1] === 7 || array[1] === 8 || array[1] === 10 || array[1] === 12)) {
         return isDay31(array[0]) && isMonth(array[1]) && isYear(array[2]);
     }
-    if (array[1] == 4 || array[1] == 6 || array[1] == 9 || array[1] == 11) {
+    if (array[1] === 4 || array[1] === 6 || array[1] === 9 || array[1] === 11) {
         return isDay30(array[0]) && isMonth(array[1]) && isYear(array[2]);
     }
     if (array[2] % 4 === 0 && (array[2] % 100 !== 0 || array[2] % 400 === 0)) {
@@ -52,18 +52,17 @@ function checkDate(array) {
     }
 }
 
-function filterArray(fn1, fn2) {
-    let inputArr = fn1();
-    const outputArr = inputArr.reduce((acc, valueArr) => {
-        const date = valueArr.split(/[\/\-\.]/);
-        if (fn2(date)) {
-            [date[0], date[1], date[2]] = [date[0].padStart(2, '0'), date[1].padStart(2, '0'), date[2].padStart(4, '0')]
-            acc.push(date.join('-'))
+function filterArray(fn) {
+    let inputArr = fn();
+    let outputArr = inputArr.reduce((res, valueArr) => {
+        let date = valueArr.split(/[\/\-\.]/);
+        if (checkDate(date)) {
+            res.push([date[0].padStart(2, '0'), date[1].padStart(2, '0'), date[2].padStart(4, '0')].join('-'))
         }
-        return acc;
-    }, [])
+        return res;
+    }, []);
     return alert(`Введенный массив строк: ${inputArr}.
 Отфильтрованный массив строк: ${outputArr}.`);
 }
 
-filterArray(sourceArray, checkDate);
+filterArray(enterArr);

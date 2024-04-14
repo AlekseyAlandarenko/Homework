@@ -1,8 +1,8 @@
-function sourceArray() {
+function enterArray() {
     let inputArr = [];
-    alert('Введите элементы массива чисел.')
+    alert('Введите элементы массива чисел.');
     for (let i = 0; ; i++) {
-        let p = prompt(`Введите ${i + 1} элемент массива чисел:`)
+        let p = prompt(`Введите ${i + 1} элемент массива чисел:`);
         if (p === null) break;
         if (Boolean(Number(p)) === true || Number(p) === 0) inputArr.push(Number(p));
         else alert('Вы ввели не число!'), --i;
@@ -10,11 +10,11 @@ function sourceArray() {
     return inputArr;
 }
 
-function check(num, limit) {
+function checkNumber(num, limit) {
     return num > limit;
 }
 
-function filter(fn1, fn2) {
+function filterArray(fn1, fn2) {
     let inputArr = fn1();
     let outputArr = [...inputArr];
     let limit = prompt(`Введите предел для элементов массива чисел:`);
@@ -26,4 +26,4 @@ function filter(fn1, fn2) {
 Отфильтрованный массив чисел: ${outputArr}.`);
 }
 
-filter(sourceArray, check);
+filterArray(enterArray, checkNumber);
