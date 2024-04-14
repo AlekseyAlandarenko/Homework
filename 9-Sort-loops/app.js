@@ -1,8 +1,8 @@
-function sourceArray() {
+function enterArray() {
     let inputArr = [];
-    alert('Введите элементы массива.')
+    alert('Введите элементы массива чисел.')
     for (let i = 0; ; i++) {
-        let p = prompt(`Введите ${i + 1} элемент массива:`)
+        let p = prompt(`Введите ${i + 1} элемент массива чисел:`)
         if (p === null) break;
         if (Boolean(Number(p)) === true || Number(p) === 0) inputArr.push(Number(p));
         else alert('Вы ввели не число!'), --i;
@@ -10,15 +10,14 @@ function sourceArray() {
     return inputArr;
 }
 
-function sortingAlgorithm(fn) {
-    let validChoices = { min: true, max: true };
+function sortArray(fn) {
     let inputArr = fn();
-    let sortOrder, outputArr = [...inputArr];
+    let sortingOrder, outputArr = [...inputArr];
     do {
-        sortOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
-        if (!validChoices[sortOrder]) alert('Нет такого параметра сортировки!');
-    } while (!validChoices[sortOrder]);
-    if (sortOrder === 'min') {
+        sortingOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
+        if (sortingOrder !== 'min' && sortingOrder !== 'max') alert('Нет такого параметра сортировки!');
+    } while (sortingOrder !== 'min' && sortingOrder !== 'max');
+    if (sortingOrder === 'min') {
         for (let i = 0; i < outputArr.length; i++) {
             for (let j = 0; j < outputArr.length - 1; j++) {
                 if (outputArr[j] < outputArr[j + 1]) {
@@ -36,35 +35,11 @@ function sortingAlgorithm(fn) {
             }
         }
     }
-    return alert(`Введенный массив: ${inputArr}.
-Массив отсортированный в порядке ${sortOrder === 'min' ? 'убывания' : 'возрастания'}: ${outputArr}.`);
+    return alert(`Введенный массив чисел: ${inputArr}.
+Массив чисел отсортированный в порядке ${sortingOrder === 'min' ? 'убывания' : 'возрастания'}: ${outputArr}.`);
 }
 
-/*function sortingAlgorithm(fn) {
-    let validChoices = { min: true, max: true };
-    let inputArr = fn();
-    let sortOrder, outputArr = [], tempArr = [...inputArr];
-    do {
-        sortOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
-        if (!validChoices[sortOrder]) alert('Нет такого параметра сортировки!');
-    } while (!validChoices[sortOrder]);
-    if (sortOrder === 'min') {
-        while (tempArr.length) {
-            outputArr.push(tempArr.splice(tempArr.indexOf(Math.max(...tempArr)), 1));
-            console.log(outputArr);
-        }
-    }
-    else {
-        while (tempArr.length) {
-            outputArr.push(tempArr.splice(tempArr.indexOf(Math.min(...tempArr)), 1));
-            console.log(outputArr);
-        }
-    }
-    return alert(`Введенный массив: ${inputArr}
-Массив отсортированный в порядке ${sortOrder === 'min' ? 'убывания' : 'возрастания'}: ${outputArr}`);
-}*/
-
-sortingAlgorithm(sourceArray);
+sortArray(enterArray);
 
 
 

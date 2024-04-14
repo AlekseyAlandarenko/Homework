@@ -1,5 +1,4 @@
-let navigatorLanguage = window.navigator.language;
-let language = navigatorLanguage.split(' ')[0];
+let language = this.navigator.language.slice(0, 2);
 
 switch (language) {
     case 'ru':
