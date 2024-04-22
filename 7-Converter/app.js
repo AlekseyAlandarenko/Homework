@@ -1,3 +1,5 @@
+'use strict';
+
 function enterValue() {
     let sourceCurrency, targetCurrency, sum;
     do {
@@ -11,7 +13,7 @@ function enterValue() {
     if (sourceCurrency === targetCurrency) return [sourceCurrency, targetCurrency, sum];
     do {
         sum = prompt('Введите сумму для конвертации:');
-        if (Boolean(Number(sum)) !== true || Number(sum) === 0) alert('Вы не ввели сумму для конвертации!');
+        if (Boolean(Number(sum)) !== true) alert('Вы не ввели сумму для конвертации!');
     } while (Boolean(Number(sum)) !== true);
     return [sourceCurrency, targetCurrency, sum];
 }
@@ -42,5 +44,3 @@ function convertingTo(fn) {
 }
 
 convertingTo(enterValue);
-
-

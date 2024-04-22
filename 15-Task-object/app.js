@@ -3,10 +3,10 @@
 let toDoList = {
     tasks:[],
     startToDoList() {
-        let key, validChoices = {add: true, delete: true, update: true, sort: true}
+        let key, validChoices = {add: true, delete: true, update: true, sort: true};
         while (true) {
             do {
-                key = prompt('Введите ключ метода.');
+                key = prompt('Введите ключ метода: add, delete, update, sort.');
                 if (key === null) return alert(toDoList.tasks.map((item)=>JSON.stringify(item, null, 2)));
                 if (key === 'add') {
                     this.addTask();
@@ -25,7 +25,7 @@ let toDoList = {
         }
     },
     findById(num) {
-        return this.tasks.findIndex(item => item.id === Number(num))
+        return this.tasks.findIndex(item => item.id === Number(num));
     },
     addTask() {
         let title, priority;
@@ -50,21 +50,21 @@ let toDoList = {
             if (Boolean(Number(id)) !== true) alert('Вы не ввели id задачи для удаления!');
         } while (Boolean(Number(id)) !== true);
         if (this.findById(id) !== -1) {
-            this.tasks.splice(this.findById(id), 1)
+            this.tasks.splice(this.findById(id), 1);
         }
         else {
-            return alert('Нет задачи с таким id!')
+            return alert('Нет задачи с таким id!');
         }
     },
     updateTask() {
         let id, key, validChoices = {title: true, priority: true};
         do {
-            id = prompt('Введите id задачи для обновления :');
+            id = prompt('Введите id задачи для обновления:');
             if (Boolean(Number(id)) !== true) alert('Вы не ввели id задачи для обновления!');
         } while (Boolean(Number(id)) !== true);
         if (this.findById(id) !== -1) {
             do {
-                key = prompt('Введите ключ задачи для обновления.');
+                key = prompt('Введите ключ задачи для обновления: title, priority.');
                 if (!validChoices[key]) alert('Нет такого ключа задачи!');
             } while (!validChoices[key]);
             if (key === 'title') {
@@ -85,7 +85,7 @@ let toDoList = {
             }
         }
         else {
-            return alert('Нет задачи с таким id!')
+            return alert('Нет задачи с таким id!');
         }
     }, 
     sortTask() {
@@ -103,4 +103,4 @@ let toDoList = {
     },
 }
 
-toDoList.startToDoList()
+toDoList.startToDoList();

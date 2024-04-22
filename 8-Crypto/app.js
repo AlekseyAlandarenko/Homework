@@ -1,3 +1,5 @@
+'use strict';
+
 function encryptPassword() {
     let enteredPassword = prompt('Введите пароль:');
     let encryptedPassword = [];
@@ -35,7 +37,3 @@ function decryptPassword(fn) {
 }
 
 decryptPassword(encryptPassword);
-
-
-
-

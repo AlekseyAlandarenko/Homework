@@ -1,4 +1,6 @@
-let language = this.navigator.language.slice(0, 2);
+'use strict';
+
+let language = navigator.language.slice(0, 2);
 
 switch (language) {
     case 'ru':

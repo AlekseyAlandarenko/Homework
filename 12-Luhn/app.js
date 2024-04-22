@@ -1,3 +1,5 @@
+'use strict';
+
 function enterString() {
     let inputStr;
     do {
@@ -27,5 +29,4 @@ function checkLuhn(fn) {
     return alert(`Введенный номер кредитной карты (${creditCardNumber.match(/.{1,4}/g).join('-')}) ${((sum % 10) === 0 ? 'прошёл' : 'не прошёл')} проверку.`);
 }
 
-checkLuhn(enterString)
-
+checkLuhn(enterString);

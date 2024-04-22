@@ -1,3 +1,5 @@
+'use strict';
+
 let positionLatitude = prompt('Введите местоположение точки отправления по x:');
 let positionLongitude = prompt('Введите местоположение точки отправления по y:');
 let destinationLatitude = prompt('Введите местоположение точки назначения по x:');
