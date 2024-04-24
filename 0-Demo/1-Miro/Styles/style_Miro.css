@@ -1,0 +1,154 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+h1 {
+    margin: 0 0 17px 0;
+}
+
+h2 {
+    margin: 80px 0 19px 0;
+}
+
+h3 {
+    margin: 10px 0 19px 0;
+}
+
+h1,
+h2,
+h3 {
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 56px;
+    color: #050038;
+}
+
+p {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 24px;
+}
+
+header {
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 60px;
+}
+
+header a {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    color: #050038;
+    text-decoration: none;
+}
+
+nav {
+    padding: 33px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 34px;
+}
+
+section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    margin-bottom: 140px;
+}
+
+footer {
+    background: #050038;
+    padding: 47px 40px;
+    color: white;
+}
+
+footer>div {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    padding: 0 40px;
+    gap: 20px;
+}
+
+footer a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.heroform {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.heroform+p {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: #050038;
+    margin: 8px 0 52 px 0;
+}
+
+.heroform input {
+    border-radius: 32px;
+    height: 50px;
+    border: 1px solid #9b99af;
+    padding: 5px 10px;
+}
+
+.heroform button {
+    border-radius: 32px;
+    height: 50px;
+    border: 1px solid #4262ff;
+    padding: 10px 20px;
+}
+
+.link {
+    color: #4262ff;
+    text-decoration: underline;
+}
+
+.herologos {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.herotext {
+    color: #050038;
+    margin: 0 0 55px 0;
+}
+
+.sectiontext {
+    color: #696688;
+    margin: 0 0 40px 0;
+}
+
+#herobutton {
+    background-color: #4262ff;
+    color: #fff
+}
+
+.sectionlist {
+    list-style: url(../Images/image_Miro_4.svg);
+}
+
+.section {
+    display: flex;
+    gap: 100px;
+}
+
+.image {
+    width: 550px;
+}

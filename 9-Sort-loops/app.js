@@ -1,8 +1,9 @@
+'use strict';
+
 function enterArray() {
     let inputArr = [];
-    alert('Введите элементы массива чисел.')
     for (let i = 0; ; i++) {
-        let p = prompt(`Введите ${i + 1} элемент массива чисел:`)
+        let p = prompt(`Введите ${i + 1} элемент массива чисел:`);
         if (p === null) break;
         if (Boolean(Number(p)) === true || Number(p) === 0) inputArr.push(Number(p));
         else alert('Вы ввели не число!'), --i;
@@ -40,10 +41,3 @@ function sortArray(fn) {
 }
 
 sortArray(enterArray);
-
-
-
-
-
-
-
