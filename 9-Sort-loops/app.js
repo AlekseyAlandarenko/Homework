@@ -3,9 +3,9 @@
 function enterArray() {
     let inputArr = [];
     for (let i = 0; ; i++) {
-        let p = prompt(`Введите ${i + 1} элемент массива чисел:`);
-        if (p === null) break;
-        if (Boolean(Number(p)) === true || Number(p) === 0) inputArr.push(Number(p));
+        let num = prompt(`Введите ${i + 1} элемент массива чисел:`);
+        if (num === null) break;
+        if (!isNaN(num) && num !== '') inputArr.push(Number(num));
         else alert('Вы ввели не число!'), --i;
     }
     return inputArr;

@@ -7,7 +7,7 @@ let toDoList = {
         while (true) {
             do {
                 key = prompt('Введите ключ метода: add, delete, update, sort.');
-                if (key === null) return alert(toDoList.tasks.map((item)=>JSON.stringify(item, null, 2)));
+                if (key === null) return alert(this.tasks.map((item)=>JSON.stringify(item, null, 2)));
                 if (key === 'add') {
                     this.addTask();
                 }
@@ -35,8 +35,8 @@ let toDoList = {
         } while (!title);
         do {
             priority = prompt('Введите приоритет задачи:');
-            if (Boolean(Number(priority)) !== true) alert('Вы не ввели приоритет задачи!');
-        } while (Boolean(Number(priority)) !== true);
+            if (!(!isNaN(priority) && priority !== '' && priority !== null)) alert('Вы не ввели приоритет задачи!');
+        } while (!(!isNaN(priority) && priority !== '' && priority !== null));
         this.tasks.push({
             title,
             id : this.tasks.length + 1,
@@ -47,8 +47,8 @@ let toDoList = {
         let id;
         do {
             id = prompt('Введите id задачи для удаления:');
-            if (Boolean(Number(id)) !== true) alert('Вы не ввели id задачи для удаления!');
-        } while (Boolean(Number(id)) !== true);
+            if (!(!isNaN(id) && id !== '' && id !== null)) alert('Вы не ввели id задачи для удаления!');
+        } while (!(!isNaN(id) && id !== '' && id !== null));
         if (this.findById(id) !== -1) {
             this.tasks.splice(this.findById(id), 1);
         }
@@ -60,8 +60,8 @@ let toDoList = {
         let id, key, validChoices = {title: true, priority: true};
         do {
             id = prompt('Введите id задачи для обновления:');
-            if (Boolean(Number(id)) !== true) alert('Вы не ввели id задачи для обновления!');
-        } while (Boolean(Number(id)) !== true);
+            if (!(!isNaN(id) && id !== '' && id !== null)) alert('Вы не ввели id задачи для обновления!');
+        } while (!(!isNaN(id) && id !== '' && id !== null));
         if (this.findById(id) !== -1) {
             do {
                 key = prompt('Введите ключ задачи для обновления: title, priority.');
@@ -79,8 +79,8 @@ let toDoList = {
                 let priority;
                 do {
                     priority = prompt('Введите новый приоритет задачи:');
-                    if (Boolean(Number(priority)) !== true) alert('Вы не ввели новый приоритет задачи!');
-                } while (Boolean(Number(priority)) !== true);
+                    if (!(!isNaN(priority) && priority !== '' && priority !== null)) alert('Вы не ввели новый приоритет задачи!');
+                } while (!(!isNaN(priority) && priority !== '' && priority !== null));
                 this.tasks[this.findById(id)][key] = priority;
             }
         }
@@ -101,6 +101,6 @@ let toDoList = {
             this.tasks.sort((a,b) => a.priority - b.priority);
         }
     },
-}
+};
 
 toDoList.startToDoList();
