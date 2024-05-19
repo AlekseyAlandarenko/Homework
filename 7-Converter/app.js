@@ -13,8 +13,8 @@ function enterValue() {
     if (sourceCurrency === targetCurrency) return [sourceCurrency, targetCurrency, sum];
     do {
         sum = prompt('Введите сумму для конвертации:');
-        if (Boolean(Number(sum)) !== true) alert('Вы не ввели сумму для конвертации!');
-    } while (Boolean(Number(sum)) !== true);
+        if (!(Boolean(Number(sum)))) alert('Вы не ввели сумму для конвертации!');
+    } while (!(Boolean(Number(sum))));
     return [sourceCurrency, targetCurrency, sum];
 }
 

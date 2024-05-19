@@ -103,4 +103,85 @@ let toDoList = {
     },
 };
 
-toDoList.startToDoList();
+let updatedToDoList = {
+    tasks:[],
+};
+
+function copyMethods(toDoList) {
+    for (let key in toDoList) {
+        if (typeof toDoList[key] == 'function') {
+            updatedToDoList[key] = toDoList[key];
+            if (toDoList[key] == toDoList.addTask) {
+                updatedToDoList.addTask = function addTask() {
+                    let title, description, priority;
+                    do {
+                        title = prompt(`Введите название задачи:`);
+                        if (!title) alert('Вы не ввели название задачи!');
+                    } while (!title);
+                    do {
+                        description = prompt(`Введите описание задачи:`);
+                        if (!description) alert('Вы не ввели описание задачи!');
+                    } while (!description);
+                    do {
+                        priority = prompt('Введите приоритет задачи:');
+                        if (!(!isNaN(priority) && priority !== '' && priority !== null)) alert('Вы не ввели приоритет задачи!');
+                    } while (!(!isNaN(priority) && priority !== '' && priority !== null));
+                    this.tasks.push({
+                        title,
+                        description,
+                        id : this.tasks.length + 1,
+                        priority,
+                    });
+                }
+            }
+            if (toDoList[key] == toDoList.updateTask) {
+                updatedToDoList.updateTask = function updateTask() {
+                    let id, key, validChoices = {title: true, description: true, priority: true};
+                    do {
+                        id = prompt('Введите id задачи для обновления:');
+                        if (!(!isNaN(id) && id !== '' && id !== null)) alert('Вы не ввели id задачи для обновления!');
+                    } while (!(!isNaN(id) && id !== '' && id !== null));
+                    if (this.findById(id) !== -1) {
+                        do {
+                            key = prompt('Введите ключ задачи для обновления: title, description, priority.');
+                            if (!validChoices[key]) alert('Нет такого ключа задачи!');
+                        } while (!validChoices[key]);
+                        if (key === 'title') {
+                            let title;
+                            do {
+                                title = prompt(`Введите новое название задачи:`);
+                                if (!title) alert('Вы не ввели новое название задачи!');
+                            } while (!title);
+                            this.tasks[this.findById(id)][key] = title;
+                        }
+                        else if (key === 'description') {
+                            let description;
+                            do {
+                                description = prompt(`Введите новое описание задачи:`);
+                                if (!description) alert('Вы не ввели новое описание задачи!');
+                            } while (!description);
+                            this.tasks[this.findById(id)][key] = description;
+                        }
+                        else if (key === 'priority') {
+                            let priority;
+                            do {
+                                priority = prompt('Введите новый приоритет задачи:');
+                                if (!(!isNaN(priority) && priority !== '' && priority !== null)) alert('Вы не ввели новый приоритет задачи!');
+                            } while (!(!isNaN(priority) && priority !== '' && priority !== null));
+                            this.tasks[this.findById(id)][key] = priority;
+                        }
+                    }
+                    else {
+                        return alert('Нет задачи с таким id!');
+                    }
+                }
+            }
+        }
+    }
+}
+
+copyMethods(toDoList);
+
+let startToDoList = updatedToDoList.startToDoList.bind(updatedToDoList);
+
+startToDoList();

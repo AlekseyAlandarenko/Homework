@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habbit App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/css-normalize.css">
+    <link rel="stylesheet" href="./styles/main.css">
+</head>
+
+<body>
+    <div class="app">
+        <div class="panel">
+            <img class="panel__logo" src="./images/habbit-App_1.svg" alt="Логотип Habbit App" width="70px" height="75px">
+            <nav class="panel__menu">
+                <div class="panel__menu-list"></div>
+                <button class="panel__menu-add-button" onclick="togglePopup()">
+                    <img src="./images/habbit-App_5.svg" alt="Добавить привычку" width="25px" height="25px">
+                </button>
+            </nav>
+        </div>
+        <div class="content">
+            <header class="content__header header">
+                <h1 class="header__title">
+                    Начните сейчас!
+                </h1>
+                <div class="header__progress">
+                    <div class="header__progress-text">
+                        <div class="header__progress-name">
+                            Прогресс
+                        </div>
+                        <div class="header__progress-percent">
+                            0 %
+                        </div>
+                    </div>
+                    <div class="header__progress-bar">
+                        <div class="header__progress-cover-bar"></div>
+                    </div>
+                </div>
+            </header>
+            <main class="content__main main">
+                <div class="main__days"></div>
+                <div class="main__habbit">
+                    <div class="main__habbit-day">
+                         День 1
+                    </div>
+                    <form class="main__habbit-form" onsubmit="addDays(event)">
+                        <input type="text" name="comment" class="main__habbit-input" placeholder="Комментарий">    
+                            <img class="main__input-icon" src="./images/habbit-App_6.svg" alt=""  width="16px" height="16px"> 
+                        <button class="main__input-button" type="submit">
+                            Готово
+                        </button>              
+                    </form>
+                </div>
+            </main>
+        </div>
+        <div class="cover cover_hidden">
+            <div class="cover__popup popup">
+                <h2 class="popup__title">
+                    Новая привычка
+                </h2>
+                <div class="popup__icon-label">
+                    Иконка
+                </div>
+                <div class="popup__icon-select">
+                    <button class="popup__icon popup__icon_active" onclick="setIcon(this, 'habbit-App_2')">
+                        <img src="./images/habbit-App_2.svg" alt="Спорт" width="25px" height="25px">
+                    </button>
+                    <button class="popup__icon" onclick="setIcon(this, 'habbit-App_3')">
+                        <img src="./images/habbit-App_3.svg" alt="Напитки" width="25px" height="25px">
+                    </button>
+                    <button class="popup__icon" onclick="setIcon(this, 'habbit-App_4')">
+                        <img src="./images/habbit-App_4.svg" alt="Еда" width="25px" height="25px">
+                    </button>
+                </div>
+                <form class="popup__form" onsubmit="addHabbit(event)">
+                    <input type="text" name="name" class="popup_input" placeholder="Название">
+                    <input type="text" name="icon" class="popup_input" hidden placeholder="Иконка" value="habbit-App_2">
+                    <input type="number" name="target" class="popup_input" placeholder="Цель"> 
+                    <button class="popup__button" type="submit">
+                        Добавить
+                    </button>   
+                </form>
+                <button class="popup__close" onclick="togglePopup()">
+                     <img src="./images/habbit-App_7.svg" alt="Закрыть попап"  width="16px" height="16px"> 
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="./scripts/app.js"></script>
+</body>
+
+</html>
