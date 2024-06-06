@@ -26,11 +26,27 @@ ${JSON.stringify(arrOfObj, null, 2)}.`);
     return arrOfObj;
 }
 
-function uniqueizeArrayOfObjects(fn) {
+ /*function uniqueizeArrayOfObjects(fn) {
     let arrOfObj = fn();
-    let uniqueArrOfObj = Array.from(new Set(arrOfObj.map(item => item.id))).map(id => arrOfObj.find(item => item.id === id));
+    let uniqueArrOfObj = [...new Set(arrOfObj.map(item => item.id))].map(id => arrOfObj.find(item => item.id === id));
     alert(`Уникализированный массив объектов: 
 ${JSON.stringify(uniqueArrOfObj, null, 2)}.`);
 }
 
+uniqueizeArrayOfObjects(enterArrayOfObjects);*/
+
+function uniqueizeArrayOfObjects(fn) {
+    let arrOfObj = fn();
+    let set = new Set, size;
+    let uniqueArrOfObj = arrOfObj.reduce((acc, item) => {
+    if (set.add(item.id).size != size) {
+        size = set.add(item.id).size;
+        acc.push(item);
+    }
+    return acc; 
+    }, []);
+    alert(`Уникализированный массив объектов: 
+${JSON.stringify(uniqueArrOfObj, null, 2)}.`);
+}
+    
 uniqueizeArrayOfObjects(enterArrayOfObjects);
