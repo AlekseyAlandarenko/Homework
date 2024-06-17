@@ -33,7 +33,6 @@ Elf.prototype.cast = function() {
 }
 
 let Start = function() {
-    Character.call(this);
 }
 
 Start.prototype.createNewCharacter = function(race,name,language) {
