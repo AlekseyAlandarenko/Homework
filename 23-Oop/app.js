@@ -1,6 +1,6 @@
 'use strict';
 
-let Character  = function(race,name,language) {
+let Character = function(race,name,language) {
     this.race = race;
     this.name = name;
     this.language = language;
@@ -10,7 +10,33 @@ Character.prototype.speak = function() {
     alert(`Я ${this.race} по имени ${this.name}, говорю ${this.language}.`);
 }
 
-Character.prototype.start = function(race,name,language) {
+let Orc = function(weapon) {
+    Character.call(this,'орк','Орк','по-оркски');
+    this.weapon = weapon;
+}
+
+Orc.prototype = Object.create(Character.prototype);
+Orc.prototype.constructor = Orc;
+Orc.prototype.attack = function() { 
+    alert(`Бью ${this.weapon}.`); 
+}
+
+let Elf = function(spell) {
+    Character.call(this,'эльф','Эльф','по-эльфийски');
+    this.spell = spell;
+}
+
+Elf.prototype = Object.create(Character.prototype);
+Elf.prototype.constructor = Elf;
+Elf.prototype.cast = function() { 
+    alert(`Создаю ${this.spell}.`); 
+}
+
+let Start = function() {
+    Character.call(this);
+}
+
+Start.prototype.createNewCharacter = function(race,name,language) {
     let key, validChoices = {new: true, orc: true, elf: true,};
     while (true) {
         do {
@@ -57,26 +83,4 @@ Character.prototype.start = function(race,name,language) {
     }
 }
 
-let Orc = function(weapon) {
-    Character.call(this, 'орк','Орк','по-оркски');
-    this.weapon = weapon;
-}
-
-Orc.prototype = Object.create(Character.prototype);
-Orc.prototype.constructor = Orc;
-Orc.prototype.attack = function() { 
-    alert(`Бью ${this.weapon}.`); 
-}
-
-let Elf = function(spell) {
-    Character.call(this, 'эльф','Эльф','по-эльфийски');
-    this.spell = spell;
-}
-
-Elf.prototype = Object.create(Character.prototype);
-Elf.prototype.constructor = Elf;
-Elf.prototype.cast = function() { 
-    alert(`Создаю ${this.spell}.`); 
-}
-
-Character.prototype.start();
+Start.prototype.createNewCharacter();
