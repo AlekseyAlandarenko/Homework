@@ -3,19 +3,19 @@
 class Car {
     #make;
     #model;
-    #_mileage;
+    #mileage;
     constructor(make, model, mileage) {
         this.#make = make;
         this.#model = model;
         this.#mileage = mileage;
     }
 
-    set #mileage(mileage) {
-        this.#_mileage = mileage;
+    set mileage(mileage) {
+        this.#mileage = mileage;
     }
 
-    get #mileage() {
-        return this.#_mileage;
+    get mileage() {
+        return this.#mileage;
     }
 
     #checkMileage(mileage) {

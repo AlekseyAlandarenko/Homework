@@ -4,56 +4,73 @@ function declensionDate(num, word) {
   return word[(num % 100 > 4 && num % 100 < 20) ? 2 : [2, 0, 1, 1, 1, 2][(num % 10 < 5) ? num % 10 : 5]];
 }
 
+function daysLeftInYear(num) {
+  return Math.floor(num / 1000 / 60 / 60 / 24);
+}
+
+function hoursLeftInDay(num) {
+  return Math.floor(num / 1000 / 60 / 60) % 24;
+}
+
+function minutesLeftInHour(num) {
+  return  Math.floor(num / 1000 / 60) % 60;
+}
+
+function secondsLeftInMinute(num) {
+  return  Math.floor(num / 1000) % 60;
+}
+
 function updateCountdown() {
   let timerId = setInterval(() => {
     let diff = new Date(new Date().getFullYear() + 1, 0, 1) - new Date();
+    console.log(diff);
     if (diff < 0) {
       clearInterval(timerId);
     }
     let monthsLeft = 11 - new Date().getMonth();
     let daysLeft;
     if (new Date().getMonth() == 0 && (new Date().getFullYear() % 4 === 0 && (new Date().getFullYear() % 100 !== 0 || new Date().getFullYear() % 400 === 0))) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 335;
+      daysLeft = daysLeftInYear(diff) - 335;
     }
     if (new Date().getMonth() == 0 && (new Date().getFullYear() % 4 !== 0 || new Date().getFullYear() % 100 === 0)) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 334;
+      daysLeft = daysLeftInYear(diff) - 334;
     }
     if (new Date().getMonth() == 1) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 306;
+      daysLeft = daysLeftInYear(diff) - 306;
     }
     if (new Date().getMonth() == 2) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 275;
+      daysLeft = daysLeftInYear(diff) - 275;
     }
     if (new Date().getMonth() == 3) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 245;
+      daysLeft = daysLeftInYear(diff) - 245;
     }
     if (new Date().getMonth() == 4) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 214;
+      daysLeft = daysLeftInYear(diff) - 214;
     }
     if (new Date().getMonth() == 5) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 184;
+      daysLeft = daysLeftInYear(diff) - 184;
     }
     if (new Date().getMonth() == 6) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 153;
+      daysLeft = daysLeftInYear(diff) - 153;
     }
     if (new Date().getMonth() == 7) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 122;
+      daysLeft = daysLeftInYear(diff) - 122;
     }
     if (new Date().getMonth() == 8) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 92;
+      daysLeft = daysLeftInYear(diff) - 92;
     }
     if (new Date().getMonth() == 9) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 61;
+      daysLeft = daysLeftInYear(diff) - 61;
     }
     if (new Date().getMonth() == 10) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24) - 31;
+      daysLeft = daysLeftInYear(diff) - 31;
     }
     if (new Date().getMonth() == 11) {
-      daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24);
+      daysLeft = daysLeftInYear(diff);
     }
-    let hoursLeft = Math.floor(diff / 1000 / 60 / 60) % 24;
-    let minutesLeft = Math.floor(diff / 1000 / 60) % 60;
-    let secondsLeft = Math.floor(diff / 1000) % 60;
+    let hoursLeft = hoursLeftInDay(diff);
+    let minutesLeft = minutesLeftInHour(diff);
+    let secondsLeft = secondsLeftInMinute(diff);
     document.querySelector('.timer__item_months').textContent = monthsLeft < 10 ? `0${monthsLeft}` : monthsLeft;
     document.querySelector('.timer__item_days').textContent = daysLeft < 10 ? `0${daysLeft}` : daysLeft;
     document.querySelector('.timer__item_hours').textContent = hoursLeft < 10 ? `0${hoursLeft}` : hoursLeft;
