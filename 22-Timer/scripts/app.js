@@ -6,16 +6,15 @@ function declensionDate(num, word) {
 
 function updateCountdown() {
   let timerId = setInterval(() => {
-    let diff1 = new Date(new Date().getFullYear() + 1, 0, 1) - new Date();
-    let diff2 = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1) - new Date();
-    if (diff1 < 0) {
+    let diff = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1) - new Date();
+    if ((new Date(new Date().getFullYear() + 1, 0, 1) - new Date()) < 0) {
       clearInterval(timerId);
     }
     let monthsLeft = 11 - new Date().getMonth();
-    let daysLeft = Math.floor(diff2 / 1000 / 60 / 60 / 24);
-    let hoursLeft = Math.floor(diff1 / 1000 / 60 / 60) % 24;
-    let minutesLeft = Math.floor(diff1 / 1000 / 60) % 60;
-    let secondsLeft = Math.floor(diff1 / 1000) % 60;
+    let daysLeft = Math.floor(diff / 1000 / 60 / 60 / 24);
+    let hoursLeft = Math.floor(diff / 1000 / 60 / 60) % 24;
+    let minutesLeft = Math.floor(diff / 1000 / 60) % 60;
+    let secondsLeft = Math.floor(diff / 1000) % 60;
     document.querySelector('.timer__item_months').textContent = monthsLeft < 10 ? `0${monthsLeft}` : monthsLeft;
     document.querySelector('.timer__item_days').textContent = daysLeft < 10 ? `0${daysLeft}` : daysLeft;
     document.querySelector('.timer__item_hours').textContent = hoursLeft < 10 ? `0${hoursLeft}` : hoursLeft;
