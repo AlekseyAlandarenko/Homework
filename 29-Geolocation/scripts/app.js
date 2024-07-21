@@ -13,5 +13,3 @@ function getLocation() {
         );
     });
 }
-
-doSomething().then(resolve, reject);

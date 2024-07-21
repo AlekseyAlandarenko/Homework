@@ -9,7 +9,7 @@ let promises = [
 
 function race(promises) {
 	return new Promise((resolve, reject) => {
-        Promise.all(promises.map(promise => promise.then(resolve).catch(reject)));   
+        promises.forEach(promise => promise.then(resolve).catch(reject));   
     });
 }
 
