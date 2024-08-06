@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "rollup -i ./index.js -o ./bundle.js",
     "start": "live-server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rollup -i ./index.js -o ./bundle.js"
   },
   "author": "",
   "license": "ISC",

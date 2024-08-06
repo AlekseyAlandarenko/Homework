@@ -25,6 +25,7 @@ elementButtons.appendChild(buttons);
 
 
 elementButtons.addEventListener('click', (e) => {
+  if (e.target.tagName != 'BUTTON') return;
   counter++;
   elementText.innerHTML = `Счетчик нажатий: ${counter} ${declensionDate(counter, ['нажатие', 'нажатия', 'нажатий'])}.`;
   [...elementButtons.children].forEach(item => {
