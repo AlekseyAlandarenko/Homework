@@ -21,8 +21,8 @@ function sortArray(fn) {
     if (sortingOrder === 'min') {
         for (let i = 0; i < outputArr.length; i++) {
             for (let j = 0; j < outputArr.length - 1; j++) {
-                if (outputArr[j] < outputArr[j + 1]) {
-                    outputArr[j] = [outputArr[j + 1], outputArr[j + 1] = outputArr[j]][0];
+                if (outputArr[i] > outputArr[j]) {
+                    [outputArr[i], outputArr[j]] = [outputArr[j], outputArr[i]];
                 }
             }
         }
@@ -30,8 +30,8 @@ function sortArray(fn) {
     else {
         for (let i = 0; i < outputArr.length; i++) {
             for (let j = 0; j < outputArr.length - 1; j++) {
-                if (outputArr[j] > outputArr[j + 1]) {
-                    outputArr[j] = [outputArr[j + 1], outputArr[j + 1] = outputArr[j]][0];
+                if (outputArr[i] < outputArr[j]) {
+                    [outputArr[i], outputArr[j]] = [outputArr[j], outputArr[i]];
                 }
             }
         }
