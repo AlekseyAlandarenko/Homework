@@ -28,7 +28,7 @@
   column-gap: 1vw;  
 }
 
-button {
+.buttons__button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,4 +39,10 @@ button {
   padding: 1vw;
   cursor: pointer;
   margin-block: 1vw;
+}
+
+.buttons__button_active {
+  color: var(--color-title);
+  background: var(--color-light);
+  border: 1px solid var(--color-title);
 }

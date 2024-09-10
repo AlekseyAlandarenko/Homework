@@ -41,7 +41,7 @@ class HashMap<K, V> {
         }
         for (let i = 0; i < this.buckets[index].length; i++) {
             if (this.buckets[index][i][0] === key) {
-                if (this.buckets[index].length >= 2) {
+                if (this.buckets[index].length > 1) {
                     this.buckets[index].splice(i, 1);
                 } else {
                     delete this.buckets[index];

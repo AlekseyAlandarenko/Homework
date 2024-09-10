@@ -11,25 +11,31 @@ function declensionDate(num, word) {
   return word[(num % 100 > 4 && num % 100 < 20) ? 2 : [2, 0, 1, 1, 1, 2][(num % 10 < 5) ? num % 10 : 5]];
 }
 
-function createButton() {
+function createButton(i) {
     let button = document.createElement('button');
     button.innerHTML = 'Нажми меня!';
+    button.classList.add('buttons__button')
+    button.setAttribute('id', i + 1)
     buttons.appendChild(button);
 }
 
 for (let i = 0; i < 5; i++) {
-  createButton();
+  createButton(i);
 }
 
 elementButtons.appendChild(buttons);
-
 
 elementButtons.addEventListener('click', (e) => {
   if (e.target.tagName != 'BUTTON') return;
   counter++;
   elementText.innerHTML = `Счетчик нажатий: ${counter} ${declensionDate(counter, ['нажатие', 'нажатия', 'нажатий'])}.`;
   [...elementButtons.children].forEach(item => {
-    item.innerHTML = 'Нажми меня!';
+    if (item.getAttribute('id') === e.target.getAttribute('id')) {
+      item.innerHTML = 'Нажата!';
+      item.classList.add('buttons__button_active')
+    } else {
+      item.innerHTML = 'Нажми меня!';
+      item.classList.remove('buttons__button_active')
+    };
   });
-  e.target.innerHTML = 'Нажата!';
 });
