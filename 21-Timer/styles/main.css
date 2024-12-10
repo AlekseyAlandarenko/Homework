@@ -1,0 +1,51 @@
+:root {
+  --color-light: #ffffff;
+  --color-title: #000000;
+  --font-family: 'Comfortaa', cursive;
+}
+
+.timer {
+  margin: 0;
+  font-family: var(--font-family);
+  font-size: 4vw;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--color-title);
+  background-color: var(--color-light);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.timer__items {
+  display: flex;
+  gap: 1vw;
+}
+
+.timer__item {
+  position: relative;
+  min-width: 12vw;
+  text-align: center;
+}
+
+.timer__item::before {
+  content: attr(data-title);
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: -1vw;
+  transform: translateX(-50%);
+  font-size: 1vw;
+}
+
+.timer__item:not(:last-child)::after {
+  content: ':';
+  position: absolute;
+  right: -1vw;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 4vw;
+  color: var(--color-title);
+}

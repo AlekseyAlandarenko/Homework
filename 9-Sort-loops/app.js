@@ -1,43 +1,126 @@
 'use strict';
 
-function enterArray() {
-    let inputArr = [];
-    for (let i = 0; ; i++) {
-        let num = prompt(`Введите ${i + 1} элемент массива чисел:`);
-        if (num === null) break;
-        if (!isNaN(num) && num !== '') inputArr.push(Number(num));
-        else alert('Вы ввели не число!'), --i;
+function promptForInput(message, parseFunction = input => input) {
+    while (true) {
+        const input = prompt(message);
+        if (input === null) return null;
+
+        const trimmedInput = input.trim();
+        if (!trimmedInput) {
+            alert('Поле не может быть пустым! Пожалуйста, введите значение.');
+            continue;
+        }
+
+        const result = parseFunction(trimmedInput);
+        if (result === null) continue;
+
+        return result;
     }
-    return inputArr;
 }
 
-function sortArray(fn) {
-    let inputArr = fn();
-    let sortingOrder, outputArr = [...inputArr];
-    do {
-        sortingOrder = prompt('Введите порядок сортировки: по убыванию(min) или по возрастанию(max).');
-        if (sortingOrder !== 'min' && sortingOrder !== 'max') alert('Нет такого параметра сортировки!');
-    } while (sortingOrder !== 'min' && sortingOrder !== 'max');
-    if (sortingOrder === 'min') {
-        for (let i = 0; i < outputArr.length; i++) {
-            for (let j = 0; j < outputArr.length - 1; j++) {
-                if (outputArr[i] > outputArr[j]) {
-                    [outputArr[i], outputArr[j]] = [outputArr[j], outputArr[i]];
-                }
+function promptForNumberInput(message) {
+    return promptForInput(
+        message,
+        input => {
+            const number = Number(input);
+            if (isNaN(number)) {
+                alert('Введенное значение недопустимо! Пожалуйста, введите числовое значение.');
+                return null;
             }
+            return number;
         }
-    }
-    else {
-        for (let i = 0; i < outputArr.length; i++) {
-            for (let j = 0; j < outputArr.length - 1; j++) {
-                if (outputArr[i] < outputArr[j]) {
-                    [outputArr[i], outputArr[j]] = [outputArr[j], outputArr[i]];
-                }
-            }
-        }
-    }
-    return alert(`Введенный массив чисел: ${inputArr}.
-Массив чисел отсортированный в порядке ${sortingOrder === 'min' ? 'убывания' : 'возрастания'}: ${outputArr}.`);
+    );
 }
 
-sortArray(enterArray);
+function promptForValidInput(message, validOptions) {
+    return promptForInput(
+        message,
+        input => {
+            const trimmedInput = input.trim().toLowerCase();
+            if (!validOptions[trimmedInput]) {
+                alert(`Введенное значение недопустимо! Допустимые значения: ${formatValidInput(validOptions)}.`);
+                return null;
+            }
+            return trimmedInput;
+        }
+    );
+}
+
+function formatValidInput(validOptions) {
+    return Object.entries(validOptions)
+        .map(([key, desc]) => `${desc} (${key})`)
+        .join(', ');
+}
+
+function promptForNumberArrayInput() {
+    const numbersArray = [];
+    let index = 1;
+
+    while (true) {
+        const number = promptForNumberInput(
+            `Введите ${index}-й элемент массива чисел или нажмите "Отмена" для выхода.`
+        );
+        if (number === null) break;
+
+        numbersArray.push(number);
+        index++;
+    }
+
+    return numbersArray.length !== 0 ? numbersArray : null;
+}
+
+function getSortingDirection() {
+    const sortingDirections = { asc: 'сортировка по возрастанию', desc: 'сортировка по убыванию' };
+
+    return promptForValidInput(
+        `Введите параметр сортировки: ${formatValidInput(sortingDirections)} или нажмите "Отмена" для выхода.`,
+        sortingDirections
+    );
+}
+
+function sortArrayWithBubbleSort(array, sortingOrder) {
+    const compare = sortingOrder === 'asc'
+        ? (a, b) => a > b
+        : (a, b) => a < b;
+
+    const sortedArray = [...array];
+    let swapped;
+
+    for (let i = 0; i < sortedArray.length - 1; i++) {
+        swapped = false;
+        for (let j = 0; j < sortedArray.length - 1 - i; j++) {
+            if (compare(sortedArray[j], sortedArray[j + 1])) {
+                [sortedArray[j], sortedArray[j + 1]] = [sortedArray[j + 1], sortedArray[j]];
+                swapped = true;
+            }
+        }
+        if (!swapped) break;
+    }
+
+    return sortedArray;
+}
+
+function createSortedNumberArrayMessage(numbersArray, sortingOrder, sortedArray) {
+    const direction = sortingOrder === 'asc' ? 'возрастания' : 'убывания';
+    return `Входной массив чисел: ${numbersArray.join(', ')}.\n` +
+           `Отсортированный в порядке ${direction} массив чисел: ${sortedArray.join(', ')}.`;
+}
+
+function displaySortedNumberArray() {
+    const numbersArray = promptForNumberArrayInput();
+    if (!numbersArray) {
+        alert('Отмена! Программа завершена.');
+        return;
+    }
+
+    const sortingOrder = getSortingDirection();
+    if (!sortingOrder) {
+        alert('Отмена! Программа завершена.');
+        return;
+    }
+
+    const sortedArray = sortArrayWithBubbleSort(numbersArray, sortingOrder);
+    alert(createSortedNumberArrayMessage(numbersArray, sortingOrder, sortedArray));
+}
+
+displaySortedNumberArray();
