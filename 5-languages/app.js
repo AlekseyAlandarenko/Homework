@@ -1,17 +1,19 @@
 'use strict';
 
-let language = navigator.language.slice(0, 2);
+function getUserBrowserLanguage() {
+    return (navigator.language || navigator.userLanguage).slice(0, 2).toLowerCase();
+}
 
-switch (language) {
-    case 'ru':
-        alert('Привет!');
-        break;
-    case 'en':
-        alert('Hello!');
-        break;
-    case 'de':
-        alert('Hallo!');
-        break;
-    default:
-        alert('(・_・)ノ');
-} 
+function displayGreeting() {
+    const language = getUserBrowserLanguage();
+
+    const greetingMessages = {
+        ru: 'Привет!',
+        en: 'Hello!',
+        de: 'Hallo!',
+    };
+
+    alert(greetingMessages[language] || '(・_・)ノ');
+}
+
+displayGreeting();

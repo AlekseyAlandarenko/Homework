@@ -1,39 +1,73 @@
 'use strict';
 
-function encryptPassword() {
-    let enteredPassword = prompt('Введите пароль:');
-    let encryptedPassword = [];
-    for (let i = 0; i < enteredPassword.length; i++) {
-        let trash = '0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
-        let position = Math.floor(Math.random() * (trash.length - 1));
-        encryptedPassword.push(enteredPassword[i]);
-        encryptedPassword.push(trash.substring(position, position + 1));
+function promptForInput(message, parseFunction = input => input) {
+    while (true) {
+        const input = prompt(message);
+        if (input === null) return null;
+
+        const trimmedInput = input.trim();
+        if (!trimmedInput) {
+            alert('Поле не может быть пустым! Пожалуйста, введите значение.');
+            continue;
+        }
+
+        const result = parseFunction(trimmedInput);
+        if (result === null) continue;
+
+        return result;
     }
-    if (enteredPassword.length % 2 === 0) {
-        encryptedPassword.push(`${encryptedPassword[Math.floor(encryptedPassword.length / 2)]}`);
-        encryptedPassword.splice((Math.floor(encryptedPassword.length / 2)), 1);
-    }
-    else {
-        encryptedPassword.unshift(`${encryptedPassword[Math.floor(encryptedPassword.length / 2)]}`);
-        encryptedPassword.splice((Math.floor(encryptedPassword.length / 2 + 1)), 1);
-    }
-    alert(`Зашифрованный пароль: ${encryptedPassword.join('')}.`)
-    return [enteredPassword, encryptedPassword];
 }
 
-function decryptPassword(fn) {
-    let [enteredPassword, encryptedPassword] = fn();
-    let decryptedPassword = [];
-    if (enteredPassword.length % 2 === 0) {
-        encryptedPassword.pop(encryptedPassword.splice((Math.floor(encryptedPassword.length / 2)), 0, encryptedPassword[encryptedPassword.length - 1]));
-    }
-    else {
-        encryptedPassword.shift(encryptedPassword.splice((Math.floor(encryptedPassword.length / 2 + 1)), 0, encryptedPassword[0]));
-    }
-    for (let i = 0; i < encryptedPassword.length; i += 2) {
-        decryptedPassword.push(encryptedPassword[i]);
-    }
-    return alert(`Раcшифрованный пароль (${decryptedPassword.join('')}) ${((enteredPassword === decryptedPassword.join('')) ? 'тождественен' : 'не тождественен')} исходному.`);
+function promptForPassword() {
+    return promptForInput('Введите пароль или нажмите "Отмена" для выхода.');
 }
 
-decryptPassword(encryptPassword);
+function getRandomCharacter() {
+    const randomChars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    return randomChars[Math.floor(Math.random() * randomChars.length)];
+}
+
+function moveMiddleCharacter(array, originalLength) {
+    const middleIndex = Math.floor(array.length / 2);
+    const char = originalLength % 2 === 0 ? array.pop() : array.shift();
+    array.splice(middleIndex, 0, char);
+    return array;
+}
+
+function encryptPassword(password) {
+    const encryptedArray = password.split('').flatMap(char => [char, getRandomCharacter()]);
+    return moveMiddleCharacter(encryptedArray, password.length);
+}
+
+function restoreMiddleCharacter(array, originalLength) {
+    const middleIndex = Math.floor(array.length / 2);
+    const char = originalLength % 2 === 0 ? array.pop() : array.shift();
+    array.splice(middleIndex, 0, char);
+    return array;
+}
+
+function decryptPassword(encryptedArray, originalLength) {
+    restoreMiddleCharacter(encryptedArray, originalLength);
+    return encryptedArray.filter((_, index) => index % 2 === 0).join('');
+}
+
+function createPasswordValidationMessage(originalPassword, encryptedArray, decryptedPassword) {
+    const resultMessage = originalPassword === decryptedPassword ? 'совпадает' : 'не совпадает';
+    return `Оригинальный пароль: ${originalPassword}\n` +
+        `Зашифрованный пароль: ${encryptedArray.join('')}\n` +
+        `Расшифрованный пароль: ${decryptedPassword}, ${resultMessage} с исходным.`;
+}
+
+function displayPasswordValidation() {
+    const originalPassword = promptForPassword();
+    if (originalPassword === null) {
+        alert('Отмена! Программа завершена.');
+        return;
+    }
+
+    const encryptedArray = encryptPassword(originalPassword);
+    const decryptedPassword = decryptPassword([...encryptedArray], originalPassword.length);
+    alert(createPasswordValidationMessage(originalPassword, encryptedArray, decryptedPassword));
+}
+
+displayPasswordValidation();
