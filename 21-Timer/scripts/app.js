@@ -132,12 +132,10 @@ function startCountdown(targetDate, onUpdate, onComplete) {
 function initTimerApp() {
     createTimerInterface();
 
-    const nextMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-    const nextNewYear = new Date(new Date().getFullYear() + 1, 0, 1);
+    const now = new Date();
+    const nextNewYear = new Date(now.getFullYear() + 1, 0, 1);
 
-    startCountdown(nextMonth, updateTimerDisplay, () => {
-        startCountdown(nextNewYear, updateTimerDisplay, () => alert('С Новым Годом!'));
-    });
+    startCountdown(nextNewYear, updateTimerDisplay, () => alert('С Новым Годом!'));
 }
 
 initTimerApp();
