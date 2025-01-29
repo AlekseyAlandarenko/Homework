@@ -6,6 +6,39 @@ const subtract = require('./subtract');
 const multiply = require('./multiply');
 const divide = require('./divide');
 
+function main() {
+    try {
+        const [num1, num2, operation] = parseArguments();
+        const [number1, number2] = convertToNumbers(num1, num2);
+        const calculator = setupCalculator();
+        performOperation(calculator, operation, number1, number2);
+    } catch (error) {
+        console.error(error.message);
+        process.exit(1);
+    }
+}
+
+function parseArguments() {
+    const args = process.argv.slice(2);
+
+    if (args.length !== 3) {
+        throw new Error('Неверное число аргументов! Введите: node index.js <число1> <число2> <операция>.');
+    }
+
+    return args;
+}
+
+function convertToNumbers(num1, num2) {
+    const number1 = parseFloat(num1);
+    const number2 = parseFloat(num2);
+
+    if (isNaN(number1) || isNaN(number2)) {
+        throw new Error('Оба аргумента должны быть числами!');
+    }
+
+    return [number1, number2];
+}
+
 function setupCalculator() {
     const calculator = new EventEmitter();
 
@@ -23,45 +56,21 @@ function setupCalculator() {
     return calculator;
 }
 
-function exitWithError(message) {
-    console.error(message);
-    process.exit(1);
-}
-
-function parseArguments() {
-    const args = process.argv.slice(2);
-
-    if (args.length !== 3) {
-        exitWithError('Неверное число аргументов! Введите: node index.js <число1> <число2> <операция>.');
-    }
-
-    return args;
-}
-
-function convertToNumbers(num1, num2) {
-    const number1 = parseFloat(num1);
-    const number2 = parseFloat(num2);
-
-    if (isNaN(number1) || isNaN(number2)) {
-        exitWithError('Оба аргумента должны быть числами!');
-    }
-
-    return [number1, number2];
-}
-
 function validateOperation(operation) {
-    const validOperations = ['add', 'subtract', 'multiply', 'divide'];
-    if (!validOperations.includes(operation)) {
-        exitWithError('Недопустимая операция! Поддерживаемые операции: add, subtract, multiply, divide.');
+    const validOperations = {
+        add: true,
+        subtract: true,
+        multiply: true,
+        divide: true,
+    };
+
+    if (!validOperations[operation]) {
+        throw new Error('Недопустимая операция! Поддерживаемые операции: add, subtract, multiply, divide.');
     }
 }
 
-function main() {
-    const [num1, num2, operation] = parseArguments();
-    const [number1, number2] = convertToNumbers(num1, num2);
+function performOperation(calculator, operation, number1, number2) {
     validateOperation(operation);
-
-    const calculator = setupCalculator();
     calculator.emit(operation, number1, number2);
 }
 
