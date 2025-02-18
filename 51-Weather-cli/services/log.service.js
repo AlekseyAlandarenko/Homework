@@ -4,7 +4,7 @@ import { getLanguage } from './language.service.js';
 import { MESSAGES } from './messages.service.js';
 
 const printError = (error) => {
-    console.log(chalk.bgRed(' ERROR ') + ' ' + error);
+    console.log(chalk.bgRed(' ERROR ') + ' ' + (error instanceof Error ? error.message : error));
 };
 
 const printSuccess = (message) => {

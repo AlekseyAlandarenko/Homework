@@ -15,9 +15,7 @@ const WEATHER_ICONS = {
     '50': '🌫️ ',
 };
 
-const getIcon = (icon) => {
-    return WEATHER_ICONS[icon.slice(0, -1)] || '';
-};
+const getIcon = (icon) => WEATHER_ICONS[icon.slice(0, -1)] || '';
 
 const getWeather = async (city) => {
     const token = await getKeyValue(TOKEN_DICTIONARY.token);
@@ -32,12 +30,15 @@ const getWeather = async (city) => {
             params: {
                 q: city,
                 appid: token,
-                lang: await getKeyValue(TOKEN_DICTIONARY.lang) || 'en',
+                lang,
                 units: 'metric',
             },
         });
         return data;
     } catch (error) {
+        if (axios.isAxiosError(error)) {
+            throw new Error(`${MESSAGES[lang].WEATHER_FETCH_ERROR}: ${error.response?.data?.message || error.message}`);
+        }
         throw new Error(MESSAGES[lang].WEATHER_FETCH_ERROR);
     }
 };

@@ -6,16 +6,15 @@ import { MESSAGES } from './messages.service.js';
 const saveToken = async (token) => {
     const currentLang = await getLanguage();
 
-    if (!token) {
-        printError(MESSAGES[currentLang].API_KEY_NOT_PROVIDED);
-        return;
+    if (!token || !token.trim()) {
+        return printError(MESSAGES[currentLang].API_KEY_NOT_PROVIDED);
     }
 
     try {
-        await saveKeyValue(TOKEN_DICTIONARY.token, token);
+        await saveKeyValue(TOKEN_DICTIONARY.token, token.trim());
         printSuccess(MESSAGES[currentLang].API_KEY_SAVED);
     } catch (error) {
-        printError(error.message);
+        printError((error).message);
     }
 };
 

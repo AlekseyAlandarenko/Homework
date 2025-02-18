@@ -23,8 +23,9 @@ const saveKeyValue = async (key, value) => {
             if (error.code !== 'ENOENT') throw error;
         }
 
-        data[key] = value;
-        await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+        const updatedData = { ...data, [key]: value };
+
+        await fs.writeFile(filePath, JSON.stringify(updatedData, null, 2));
     } catch (error) {
         const lang = await getLanguage();
         console.error(MESSAGES[lang]?.ERROR_SAVING || MESSAGES.en.ERROR_SAVING, error.message);

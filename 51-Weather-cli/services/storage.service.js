@@ -1,6 +1,7 @@
 import { homedir } from 'os';
 import { join } from 'path';
 import { promises as fs } from 'fs';
+import { printError } from './log.service.js';
 import { getLanguage } from './language.service.js';
 import { MESSAGES } from './messages.service.js';
 
@@ -23,11 +24,12 @@ const saveKeyValue = async (key, value) => {
             if (error.code !== 'ENOENT') throw error;
         }
 
-        data[key] = value;
-        await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+        const updatedData = { ...data, [key]: value };
+
+        await fs.writeFile(filePath, JSON.stringify(updatedData, null, 2));
     } catch (error) {
         const lang = await getLanguage();
-        console.error(MESSAGES[lang]?.ERROR_SAVING || MESSAGES.en.ERROR_SAVING, error.message);
+        printError(`${MESSAGES[lang]?.ERROR_SAVING || MESSAGES.en.ERROR_SAVING} ${error.message}`);
     }
 };
 
@@ -39,7 +41,7 @@ const getKeyValue = async (key) => {
     } catch (error) {
         if (error.code !== 'ENOENT') {
             const lang = await getLanguage();
-            console.error(MESSAGES[lang]?.ERROR_READING || MESSAGES.en.ERROR_READING, error.message);
+            printError(`${MESSAGES[lang]?.ERROR_READING || MESSAGES.en.ERROR_READING} ${error.message}`);
         }
     }
     return undefined;

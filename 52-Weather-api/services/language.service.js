@@ -1,7 +1,7 @@
 import { saveKeyValue, getKeyValue, TOKEN_DICTIONARY } from './storage.service.js';
 import { MESSAGES } from './messages.service.js';
 
-const SUPPORTED_LANGUAGES = ['ru', 'en'];
+const SUPPORTED_LANGUAGES = Object.keys(MESSAGES);
 
 const saveLanguage = async (lang) => {
     const currentLang = await getLanguage();
@@ -14,7 +14,9 @@ const saveLanguage = async (lang) => {
 };
 
 const getLanguage = async () => {
-    return (await getKeyValue(TOKEN_DICTIONARY.lang)) || 'en';
+    const lang = await getKeyValue(TOKEN_DICTIONARY.lang);
+    if (typeof lang !== 'string') return 'en';
+    return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'en';
 };
 
 export { saveLanguage, getLanguage, SUPPORTED_LANGUAGES };

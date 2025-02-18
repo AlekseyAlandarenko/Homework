@@ -2,7 +2,7 @@ import { saveKeyValue, getKeyValue, TOKEN_DICTIONARY } from './storage.service.j
 import { printError, printSuccess } from './log.service.js';
 import { MESSAGES } from './messages.service.js';
 
-const SUPPORTED_LANGUAGES = ['ru', 'en'];
+const SUPPORTED_LANGUAGES = Object.keys(MESSAGES).filter((key) => key in MESSAGES);
 
 const saveLanguage = async (lang) => {
     const currentLang = await getLanguage();
@@ -15,13 +15,15 @@ const saveLanguage = async (lang) => {
     try {
         await saveKeyValue(TOKEN_DICTIONARY.lang, lang);
         printSuccess(MESSAGES[currentLang].LANGUAGE_SET.replace('{lang}', lang));
-    } catch (e) {
-        printError(e.message);
+    } catch (error) {
+        printError(error.message);
     }
 };
 
 const getLanguage = async () => {
-    return (await getKeyValue(TOKEN_DICTIONARY.lang)) || 'en';
+    const lang = await getKeyValue(TOKEN_DICTIONARY.lang);
+    if (typeof lang !== 'string') return 'en';
+    return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'en';
 };
 
-export { saveLanguage, getLanguage, SUPPORTED_LANGUAGES };
+export { saveLanguage, getLanguage };

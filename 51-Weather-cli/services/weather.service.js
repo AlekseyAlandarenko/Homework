@@ -13,11 +13,11 @@ const getCities = async () => {
 const errorHandler = (error, lang, messageKey) => {
     const message = MESSAGES[lang][messageKey] || MESSAGES[lang].ERROR_FETCHING_CITIES;
     printError(message.replace('{city}', error.city || ''));
-    printError(error.message);
+    printError(error.message || String(error));
 };
 
 const saveCity = async (city) => {
-    city = city?.trim();
+    city = city?.trim() || null;
     if (!city) {
         return printError(MESSAGES[await getLanguage()].CITY_NOT_PROVIDED);
     }
@@ -39,7 +39,7 @@ const saveCity = async (city) => {
 };
 
 const deleteCity = async (city) => {
-    city = city?.trim();
+    city = city?.trim() || null;
     if (!city) {
         return printError(MESSAGES[await getLanguage()].CITY_NOT_PROVIDED);
     }
