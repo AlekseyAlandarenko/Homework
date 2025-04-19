@@ -1,0 +1,22 @@
+import { IsString, IsNotEmpty, IsDateString } from 'class-validator';
+import { IsEndDateAfterStartDate } from './validators/end-date-after-start-date.validator';
+import { MESSAGES } from '../../common/messages';
+
+export class PromotionCreateOrProposeDto {
+	@IsString({ message: MESSAGES.INVALID_TITLE })
+	@IsNotEmpty({ message: MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Название') })
+	title!: string;
+
+	@IsString({ message: MESSAGES.INVALID_DESCRIPTION })
+	@IsNotEmpty({ message: MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Описание') })
+	description!: string;
+
+	@IsDateString({}, { message: MESSAGES.INVALID_DATE_FORMAT })
+	@IsNotEmpty({ message: MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Дата начала') })
+	startDate!: string;
+
+	@IsDateString({}, { message: MESSAGES.INVALID_DATE_FORMAT })
+	@IsNotEmpty({ message: MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Дата окончания') })
+	@IsEndDateAfterStartDate({ message: MESSAGES.INVALID_DATES })
+	endDate!: string;
+}
