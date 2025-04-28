@@ -20,7 +20,7 @@ export class App {
 	constructor(
 		@inject(TYPES.ILogger) private logger: ILogger,
 		@inject(TYPES.UsersController) private usersController: usersController,
-		@inject(TYPES.ExeptionFilter) private exeptionFilter: ExceptionFilter,
+		@inject(TYPES.ExceptionFilter) private exceptionFilter: ExceptionFilter,
 		@inject(TYPES.ConfigService) private configService: IConfigService,
 		@inject(TYPES.PrismaService) private prismaService: PrismaService,
 	) {
@@ -39,7 +39,7 @@ export class App {
 	}
 
 	useExeptionFilters(): void {
-		this.app.use(this.exeptionFilter.catch.bind(this.exeptionFilter));
+		this.app.use(this.exceptionFilter.catch.bind(this.exceptionFilter));
 	}
 
 	public async init(): Promise<void> {

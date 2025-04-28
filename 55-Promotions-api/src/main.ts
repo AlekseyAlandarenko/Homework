@@ -29,7 +29,7 @@ export interface IBootstrapReturn {
 
 export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 	bind<ILogger>(TYPES.ILogger).to(LoggerService).inSingletonScope();
-	bind<IExceptionFilter>(TYPES.ExeptionFilter).to(ExceptionFilter);
+	bind<IExceptionFilter>(TYPES.ExceptionFilter).to(ExceptionFilter);
 	bind<IUsersController>(TYPES.UsersController).to(UsersController);
 	bind<IPromotionsController>(TYPES.PromotionsController).to(PromotionsController);
 	bind<IUsersService>(TYPES.UsersService).to(UsersService);

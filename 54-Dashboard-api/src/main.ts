@@ -22,7 +22,7 @@ export interface IBootstrapReturn {
 
 export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 	bind<ILogger>(TYPES.ILogger).to(LoggerService).inSingletonScope();
-	bind<IExceptionFilter>(TYPES.ExeptionFilter).to(ExceptionFilter);
+	bind<IExceptionFilter>(TYPES.ExceptionFilter).to(ExceptionFilter);
 	bind<IUsersController>(TYPES.UsersController).to(usersController);
 	bind<IUsersService>(TYPES.UsersService).to(UsersService);
 	bind<PrismaService>(TYPES.PrismaService).to(PrismaService).inSingletonScope();

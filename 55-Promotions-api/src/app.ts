@@ -21,7 +21,7 @@ export class App {
 		@inject(TYPES.ILogger) private logger: ILogger,
 		@inject(TYPES.UsersController) private usersController: UsersController,
 		@inject(TYPES.PromotionsController) private promotionsController: PromotionsController,
-		@inject(TYPES.ExeptionFilter) private exceptionFilter: ExceptionFilter,
+		@inject(TYPES.ExceptionFilter) private exceptionFilter: ExceptionFilter,
 		@inject(TYPES.PrismaService) private prismaService: PrismaService,
 		@inject(TYPES.AuthMiddleware) private authMiddleware: AuthMiddleware,
 	) {
