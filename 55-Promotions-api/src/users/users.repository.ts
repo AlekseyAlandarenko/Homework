@@ -1,61 +1,80 @@
-import { UserModel, Role } from '@prisma/client';
+import { UserModel } from '@prisma/client';
 import { IUsersRepository, SupplierResponse } from './users.repository.interface';
 import { User } from './user.entity';
 import { inject, injectable } from 'inversify';
 import { PrismaService } from '../database/prisma.service';
 import { TYPES } from '../types';
+import { PaginatedResponse, DEFAULT_PAGINATION } from '../common/pagination.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { HTTPError } from '../errors/http-error.class';
+import { MESSAGES } from '../common/messages';
 
 @injectable()
 export class UsersRepository implements IUsersRepository {
 	constructor(@inject(TYPES.PrismaService) private prismaService: PrismaService) {}
 
-	async create({ email, password, name, role }: User): Promise<UserModel> {
+	async createUser({ email, password, name, role }: User): Promise<UserModel> {
 		return this.prismaService.client.userModel.create({
-			data: {
-				email,
-				password,
-				name,
-				role: role as Role,
-			},
+			data: { email, password, name, role },
 		});
 	}
 
-	async find(email: string): Promise<UserModel | null> {
-		return this.prismaService.client.userModel.findFirst({
-			where: { email },
-		});
+	async findByEmail(email: string): Promise<UserModel | null> {
+		return this.prismaService.client.userModel.findFirst({ where: { email } });
+	}
+
+	async findByEmailOrThrow(email: string): Promise<UserModel> {
+		const user = await this.findByEmail(email);
+		if (!user) {
+			throw new HTTPError(404, MESSAGES.USER_NOT_FOUND);
+		}
+		return user;
 	}
 
 	async findById(id: number): Promise<UserModel | null> {
-		return this.prismaService.client.userModel.findFirst({
-			where: { id },
-		});
+		return this.prismaService.client.userModel.findFirst({ where: { id } });
 	}
 
-	async findAllSuppliers(): Promise<SupplierResponse[]> {
-		return this.prismaService.client.userModel.findMany({
-			where: { role: 'SUPPLIER' },
-			select: {
-				id: true,
-				email: true,
-				name: true,
-				role: true,
-				createdAt: true,
-				updatedAt: true,
-			},
-		});
+	async findByIdOrThrow(id: number): Promise<UserModel> {
+		const user = await this.findById(id);
+		if (!user) {
+			throw new HTTPError(404, MESSAGES.USER_NOT_FOUND);
+		}
+		return user;
 	}
 
-	async update(id: number, data: Partial<UserModel>): Promise<UserModel | null> {
-		return this.prismaService.client.userModel.update({
-			where: { id },
-			data,
-		});
+	async findAllSuppliers(
+		pagination: PaginationDto = DEFAULT_PAGINATION,
+	): Promise<PaginatedResponse<SupplierResponse>> {
+		const { page, limit } = pagination;
+		const skip = (page - 1) * limit;
+
+		const [items, total] = await Promise.all([
+			this.prismaService.client.userModel.findMany({
+				where: { role: 'SUPPLIER' },
+				select: {
+					id: true,
+					email: true,
+					name: true,
+					role: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+				skip,
+				take: limit,
+			}),
+			this.prismaService.client.userModel.count({ where: { role: 'SUPPLIER' } }),
+		]);
+		return { items, total };
 	}
 
-	async delete(id: number): Promise<UserModel | null> {
-		return this.prismaService.client.userModel.delete({
-			where: { id },
-		});
+	async updateUser(id: number, data: Partial<UserModel>): Promise<UserModel> {
+		const user = await this.findByIdOrThrow(id);
+		return this.prismaService.client.userModel.update({ where: { id }, data });
+	}
+
+	async deleteUser(id: number): Promise<UserModel> {
+		const user = await this.findByIdOrThrow(id);
+		return this.prismaService.client.userModel.delete({ where: { id } });
 	}
 }

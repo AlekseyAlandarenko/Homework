@@ -5,28 +5,33 @@ import { IUsersService } from './users.service.interface';
 import { TYPES } from '../types';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
-import { Prisma, Role } from '@prisma/client';
 import 'reflect-metadata';
 import { HTTPError } from '../errors/http-error.class';
 import { MESSAGES } from '../common/messages';
+import { WarehouseManagerResponse } from './users.repository.interface';
+import { PaginatedResponse } from '../common/pagination.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { DEFAULT_PAGINATION } from '../common/constants';
 
 const ConfigServiceMock: IConfigService = {
 	get: jest.fn(),
 };
 
 const UsersRepositoryMock: IUsersRepository = {
-	find: jest.fn(),
-	create: jest.fn(),
+	createUser: jest.fn(),
+	findByEmail: jest.fn(),
+	findByEmailOrThrow: jest.fn(),
 	findById: jest.fn(),
-	update: jest.fn(),
-	delete: jest.fn(),
+	findByIdOrThrow: jest.fn(),
 	findAllWarehouseManagers: jest.fn(),
+	updateUser: jest.fn(),
+	deleteUser: jest.fn(),
 };
 
 const PrismaServiceMock = {
 	client: {
 		promotionModel: {
-			findMany: jest.fn(),
+			count: jest.fn(),
 		},
 	},
 };
@@ -53,7 +58,7 @@ describe('Сервис пользователей', () => {
 		email: 'test@example.com',
 		name: 'Test User',
 		password: 'hashed',
-		role: 'WAREHOUSE_MANAGER' as Role,
+		role: 'WAREHOUSE_MANAGER',
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	};
@@ -63,7 +68,7 @@ describe('Сервис пользователей', () => {
 		email: 'admin@example.com',
 		name: 'Admin User',
 		password: 'hashed',
-		role: 'ADMIN' as Role,
+		role: 'ADMIN',
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	};
@@ -73,10 +78,29 @@ describe('Сервис пользователей', () => {
 		email: 'superadmin@example.com',
 		name: 'SuperAdmin User',
 		password: 'hashed',
-		role: 'SUPERADMIN' as Role,
+		role: 'SUPERADMIN',
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	};
+
+	const mockWarehouseManagers: WarehouseManagerResponse[] = [
+		{
+			id: 1,
+			email: 'test@example.com',
+			name: 'Test User',
+			role: 'WAREHOUSE_MANAGER',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		},
+		{
+			id: 4,
+			email: 'warehouseManager2@example.com',
+			name: 'WarehouseManager 2',
+			role: 'WAREHOUSE_MANAGER',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		},
+	];
 
 	beforeEach(() => {
 		jest.clearAllMocks();
@@ -85,148 +109,137 @@ describe('Сервис пользователей', () => {
 	describe('Создание администратора', () => {
 		it('Должен создать администратора с хэшированным паролем', async () => {
 			configService.get = jest.fn().mockReturnValue('10');
-			usersRepository.find = jest.fn().mockResolvedValue(null);
-			usersRepository.create = jest.fn().mockResolvedValue(mockAdmin);
+			usersRepository.findByEmail = jest.fn().mockResolvedValue(null);
+			usersRepository.createUser = jest.fn().mockResolvedValue(mockAdmin);
 
-			const result = await usersService.createAdmin({
-				email: 'admin@example.com',
-				name: 'Admin User',
-				password: 'password123',
-			});
+			const result = await usersService.createUser(
+				{
+					email: 'admin@example.com',
+					name: 'Admin User',
+					password: 'password123',
+				},
+				'ADMIN',
+			);
 
 			expect(result).toEqual(mockAdmin);
-			expect(usersRepository.create).toHaveBeenCalled();
-			const createCall = (usersRepository.create as jest.Mock).mock.calls[0][0];
+			expect(usersRepository.createUser).toHaveBeenCalled();
+			const createCall = (usersRepository.createUser as jest.Mock).mock.calls[0][0];
 			expect(createCall.role).toBe('ADMIN');
+			expect(createCall.password).not.toBe('password123');
 		});
 
-		it('Должен выбросить HTTPError, если администратор уже существует', async () => {
-			usersRepository.find = jest.fn().mockResolvedValue(mockAdmin);
+		it('Должен выбросить ошибку 422, если администратор уже существует', async () => {
+			usersRepository.findByEmail = jest.fn().mockResolvedValue(mockAdmin);
 
 			await expect(
-				usersService.createAdmin({
-					email: 'admin@example.com',
-					name: 'Admin User',
-					password: 'password123',
-				}),
+				usersService.createUser(
+					{
+						email: 'admin@example.com',
+						name: 'Admin User',
+						password: 'password123',
+					},
+					'ADMIN',
+				),
 			).rejects.toThrowError(new HTTPError(422, MESSAGES.USER_ALREADY_EXISTS));
-		});
-
-		it('Должен обрабатывать ошибки базы данных', async () => {
-			usersRepository.find = jest.fn().mockResolvedValue(null);
-			usersRepository.create = jest.fn().mockRejectedValue(new Error('DB Error'));
-
-			await expect(
-				usersService.createAdmin({
-					email: 'admin@example.com',
-					name: 'Admin User',
-					password: 'password123',
-				}),
-			).rejects.toThrowError(new HTTPError(500, MESSAGES.SERVER_ERROR));
 		});
 	});
 
 	describe('Создание начальника склада', () => {
 		it('Должен создать начальника склада с хэшированным паролем', async () => {
 			configService.get = jest.fn().mockReturnValue('10');
-			usersRepository.find = jest.fn().mockResolvedValue(null);
-			usersRepository.create = jest.fn().mockResolvedValue(mockUser);
+			usersRepository.findByEmail = jest.fn().mockResolvedValue(null);
+			usersRepository.createUser = jest.fn().mockResolvedValue(mockUser);
 
-			const result = await usersService.createWarehouseManager({
-				email: 'test@example.com',
-				name: 'Test User',
-				password: 'password123',
-			});
+			const result = await usersService.createUser(
+				{
+					email: 'test@example.com',
+					name: 'Test User',
+					password: 'password123',
+				},
+				'WAREHOUSE_MANAGER',
+			);
 
 			expect(result).toEqual(mockUser);
-			expect(usersRepository.create).toHaveBeenCalled();
-			const createCall = (usersRepository.create as jest.Mock).mock.calls[0][0];
+			expect(usersRepository.createUser).toHaveBeenCalled();
+			const createCall = (usersRepository.createUser as jest.Mock).mock.calls[0][0];
 			expect(createCall.role).toBe('WAREHOUSE_MANAGER');
+			expect(createCall.password).not.toBe('password123');
 		});
 
-		it('Должен выбросить HTTPError, если пользователь уже существует', async () => {
-			usersRepository.find = jest.fn().mockResolvedValue(mockUser);
+		it('Должен выбросить ошибку 422, если пользователь уже существует', async () => {
+			usersRepository.findByEmail = jest.fn().mockResolvedValue(mockUser);
 
 			await expect(
-				usersService.createWarehouseManager({
-					email: 'test@example.com',
-					name: 'Test User',
-					password: 'password123',
-				}),
+				usersService.createUser(
+					{
+						email: 'test@example.com',
+						name: 'Test User',
+						password: 'password123',
+					},
+					'WAREHOUSE_MANAGER',
+				),
 			).rejects.toThrowError(new HTTPError(422, MESSAGES.USER_ALREADY_EXISTS));
-		});
-
-		it('Должен обрабатывать ошибки базы данных', async () => {
-			usersRepository.find = jest.fn().mockResolvedValue(null);
-			usersRepository.create = jest.fn().mockRejectedValue(new Error('DB Error'));
-
-			await expect(
-				usersService.createWarehouseManager({
-					email: 'test@example.com',
-					name: 'Test User',
-					password: 'password123',
-				}),
-			).rejects.toThrowError(new HTTPError(500, MESSAGES.SERVER_ERROR));
 		});
 	});
 
-	describe('Валидация пользователя', () => {
-		it('Должен подтвердить правильный пароль', async () => {
+	describe('Аутентификация пользователя', () => {
+		it('Должен успешно аутентифицировать с правильным паролем', async () => {
 			const user = new User('test@example.com', 'Test User', 'WAREHOUSE_MANAGER');
 			const salt = 10;
 			await user.setPassword('password123', salt);
+			usersRepository.findByEmail = jest.fn().mockResolvedValue({
+				email: 'test@example.com',
+				name: 'Test User',
+				role: 'WAREHOUSE_MANAGER',
+				password: user.password,
+			});
+			configService.get = jest.fn().mockReturnValue('secret');
 
-			usersRepository.find = jest.fn().mockResolvedValue({
+			const result = await usersService.login({
+				email: 'test@example.com',
+				password: 'password123',
+			});
+
+			expect(result).toBeDefined();
+			expect(typeof result).toBe('string');
+			expect(usersRepository.findByEmail).toHaveBeenCalledWith('test@example.com');
+		});
+
+		it('Должен выбросить ошибку 401, если пароль неверный', async () => {
+			const user = new User('test@example.com', 'Test User', 'WAREHOUSE_MANAGER');
+			const salt = 10;
+			await user.setPassword('password123', salt);
+			usersRepository.findByEmail = jest.fn().mockResolvedValue({
 				email: 'test@example.com',
 				name: 'Test User',
 				role: 'WAREHOUSE_MANAGER',
 				password: user.password,
 			});
 
-			const result = await usersService.validateUser({
-				email: 'test@example.com',
-				password: 'password123',
-			});
-
-			expect(result).toBe(true);
+			await expect(
+				usersService.login({
+					email: 'test@example.com',
+					password: 'wrongpassword',
+				}),
+			).rejects.toThrowError(new HTTPError(401, MESSAGES.INVALID_CREDENTIALS, 'login'));
 		});
 
-		it('Должен отклонить неверный пароль', async () => {
-			const user = new User('test@example.com', 'Test User', 'WAREHOUSE_MANAGER');
-			const salt = 10;
-			await user.setPassword('password123', salt);
+		it('Должен выбросить ошибку 401, если пользователь не найден', async () => {
+			usersRepository.findByEmail = jest.fn().mockResolvedValue(null);
 
-			usersRepository.find = jest.fn().mockResolvedValue({
-				email: 'test@example.com',
-				name: 'Test User',
-				role: 'WAREHOUSE_MANAGER',
-				password: user.password,
-			});
-
-			const result = await usersService.validateUser({
-				email: 'test@example.com',
-				password: 'wrongpassword',
-			});
-
-			expect(result).toBe(false);
-		});
-
-		it('Должен вернуть false, если пользователь не найден', async () => {
-			usersRepository.find = jest.fn().mockResolvedValue(null);
-
-			const result = await usersService.validateUser({
-				email: 'nonexistent@example.com',
-				password: 'password123',
-			});
-
-			expect(result).toBe(false);
+			await expect(
+				usersService.login({
+					email: 'nonexistent@example.com',
+					password: 'password123',
+				}),
+			).rejects.toThrowError(new HTTPError(401, MESSAGES.INVALID_CREDENTIALS, 'login'));
 		});
 	});
 
 	describe('Обновление пароля начальника склада', () => {
 		it('Должен успешно обновить пароль', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(mockUser);
-			usersRepository.update = jest.fn().mockResolvedValue({
+			usersRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockUser);
+			usersRepository.updateUser = jest.fn().mockResolvedValue({
 				...mockUser,
 				password: 'newhashed',
 			});
@@ -235,126 +248,136 @@ describe('Сервис пользователей', () => {
 			const result = await usersService.updateWarehouseManagerPassword(1, 'newpassword');
 
 			expect(result.password).toBe('newhashed');
-			expect(usersRepository.update).toHaveBeenCalled();
+			expect(usersRepository.updateUser).toHaveBeenCalledWith(
+				1,
+				expect.objectContaining({ password: expect.any(String) }),
+			);
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не найден', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(null);
+		it('Должен выбросить ошибку 404, если пользователь не найден', async () => {
+			usersRepository.findByIdOrThrow = jest
+				.fn()
+				.mockRejectedValue(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
 
 			await expect(
 				usersService.updateWarehouseManagerPassword(1, 'newpassword'),
 			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не является начальником склада', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(mockAdmin);
-
+		it('Должен выбросить ошибку 403, если пользователь не является начальником склада', async () => {
+			usersRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockAdmin);
 			await expect(
 				usersService.updateWarehouseManagerPassword(2, 'newpassword'),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
-		});
-
-		it('Должен обрабатывать ошибки Prisma', async () => {
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
-				code: 'P2025',
-				clientVersion: '1.0',
-			});
-			usersRepository.findById = jest.fn().mockResolvedValue(mockUser);
-			usersRepository.update = jest.fn().mockRejectedValue(prismaError);
-
-			await expect(
-				usersService.updateWarehouseManagerPassword(1, 'newpassword'),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
+			).rejects.toThrowError(
+				new HTTPError(403, MESSAGES.INVALID_ROLE.replace('{{role}}', 'ADMIN')),
+			);
 		});
 	});
 
 	describe('Удаление начальника склада', () => {
 		it('Должен успешно удалить начальника склада', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(mockUser);
-			PrismaServiceMock.client.promotionModel.findMany = jest.fn().mockResolvedValue([]);
-			usersRepository.delete = jest.fn().mockResolvedValue(mockUser);
-
+			usersRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockUser);
+			PrismaServiceMock.client.promotionModel.count = jest.fn().mockResolvedValue(0);
+			usersRepository.deleteUser = jest.fn().mockResolvedValue(mockUser);
 			const result = await usersService.deleteWarehouseManager(1);
-
 			expect(result).toEqual(mockUser);
-			expect(usersRepository.delete).toHaveBeenCalledWith(1);
+			expect(usersRepository.deleteUser).toHaveBeenCalledWith(1);
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не найден', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(null);
-
+		it('Должен выбросить ошибку 404, если пользователь не найден', async () => {
+			usersRepository.findByIdOrThrow = jest
+				.fn()
+				.mockRejectedValue(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
 			await expect(usersService.deleteWarehouseManager(1)).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
 			);
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не является начальником склада', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(mockAdmin);
-
+		it('Должен выбросить ошибку 403, если пользователь не является начальником склада', async () => {
+			usersRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockAdmin);
 			await expect(usersService.deleteWarehouseManager(2)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
-			);
-		});
-
-		it('Должен обрабатывать ошибки Prisma', async () => {
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
-				code: 'P2025',
-				clientVersion: '1.0',
-			});
-			usersRepository.findById = jest.fn().mockResolvedValue(mockUser);
-			PrismaServiceMock.client.promotionModel.findMany = jest.fn().mockResolvedValue([]);
-			usersRepository.delete = jest.fn().mockRejectedValue(prismaError);
-
-			await expect(usersService.deleteWarehouseManager(1)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
+				new HTTPError(403, MESSAGES.INVALID_ROLE.replace('{{role}}', 'ADMIN')),
 			);
 		});
 	});
 
 	describe('Получение информации о пользователе', () => {
 		it('Должен вернуть информацию о пользователе', async () => {
-			usersRepository.find = jest.fn().mockResolvedValue(mockUser);
+			usersRepository.findByEmailOrThrow = jest.fn().mockResolvedValue(mockUser);
 
-			const result = await usersService.getUserInfo('test@example.com');
+			const result = await usersService.getUserInfoByEmail('test@example.com');
 
 			expect(result).toEqual(mockUser);
+			expect(usersRepository.findByEmailOrThrow).toHaveBeenCalledWith('test@example.com');
 		});
 
-		it('Должен вернуть null, если пользователь не найден', async () => {
-			usersRepository.find = jest.fn().mockResolvedValue(null);
+		it('Должен выбросить ошибку 404, если пользователь не найден', async () => {
+			usersRepository.findByEmailOrThrow = jest
+				.fn()
+				.mockRejectedValue(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
 
-			const result = await usersService.getUserInfo('nonexistent@example.com');
-
-			expect(result).toBeNull();
+			await expect(usersService.getUserInfoByEmail('nonexistent@example.com')).rejects.toThrowError(
+				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
+			);
 		});
 	});
 
 	describe('Получение информации о пользователе по ID', () => {
 		it('Должен вернуть информацию о пользователе по ID', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(mockUser);
+			usersRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockUser);
 
 			const result = await usersService.getUserInfoById(1);
 
 			expect(result).toEqual(mockUser);
-			expect(usersRepository.findById).toHaveBeenCalledWith(1);
+			expect(usersRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
 		});
 
-		it('Должен вернуть null, если пользователь не найден', async () => {
-			usersRepository.findById = jest.fn().mockResolvedValue(null);
+		it('Должен выбросить ошибку 404, если пользователь не найден', async () => {
+			usersRepository.findByIdOrThrow = jest
+				.fn()
+				.mockRejectedValue(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
 
-			const result = await usersService.getUserInfoById(999);
-
-			expect(result).toBeNull();
-			expect(usersRepository.findById).toHaveBeenCalledWith(999);
-		});
-
-		it('Должен обрабатывать ошибки базы данных', async () => {
-			usersRepository.findById = jest.fn().mockRejectedValue(new Error('DB Error'));
-
-			await expect(usersService.getUserInfoById(1)).rejects.toThrowError(
-				new HTTPError(500, MESSAGES.SERVER_ERROR),
+			await expect(usersService.getUserInfoById(999)).rejects.toThrowError(
+				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
 			);
-			expect(usersRepository.findById).toHaveBeenCalledWith(1);
+		});
+
+		it('Должен выбросить ошибку 422, если ID невалиден', async () => {
+			await expect(usersService.getUserInfoById(0)).rejects.toThrowError(
+				new HTTPError(422, MESSAGES.INVALID_ID),
+			);
+			await expect(usersService.getUserInfoById(NaN)).rejects.toThrowError(
+				new HTTPError(422, MESSAGES.INVALID_ID),
+			);
+		});
+	});
+
+	describe('Получение всех начальников склада', () => {
+		it('Должен вернуть список начальников склада с пагинацией', async () => {
+			const pagination: PaginationDto = { page: 1, limit: 10 };
+			const paginatedResponse: PaginatedResponse<WarehouseManagerResponse> = {
+				items: mockWarehouseManagers,
+				total: mockWarehouseManagers.length,
+			};
+			usersRepository.findAllWarehouseManagers = jest.fn().mockResolvedValue(paginatedResponse);
+
+			const result = await usersService.getAllWarehouseManagers(pagination);
+
+			expect(result).toEqual(paginatedResponse);
+			expect(usersRepository.findAllWarehouseManagers).toHaveBeenCalledWith(pagination);
+		});
+
+		it('Должен использовать пагинацию по умолчанию, если параметры не указаны', async () => {
+			const paginatedResponse: PaginatedResponse<WarehouseManagerResponse> = {
+				items: mockWarehouseManagers,
+				total: mockWarehouseManagers.length,
+			};
+			usersRepository.findAllWarehouseManagers = jest.fn().mockResolvedValue(paginatedResponse);
+
+			const result = await usersService.getAllWarehouseManagers();
+
+			expect(result).toEqual(paginatedResponse);
+			expect(usersRepository.findAllWarehouseManagers).toHaveBeenCalledWith(DEFAULT_PAGINATION);
 		});
 	});
 });

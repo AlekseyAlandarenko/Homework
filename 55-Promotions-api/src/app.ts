@@ -10,6 +10,8 @@ import { json } from 'body-parser';
 import 'reflect-metadata';
 import { PrismaService } from './database/prisma.service';
 import { AuthMiddleware } from './common/auth.middleware';
+import swaggerJSDoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
 @injectable()
 export class App {
@@ -29,9 +31,44 @@ export class App {
 		this.port = 8000;
 	}
 
+	private setupSwagger(): void {
+		const options = {
+			definition: {
+				openapi: '3.0.0',
+				info: {
+					title: 'Promotions API',
+					version: '1.0.0',
+					description: 'API для управления пользователями и акциями',
+				},
+				servers: [{ url: `http://localhost:${this.port}` }],
+				components: {
+					securitySchemes: {
+						bearerAuth: {
+							type: 'http',
+							scheme: 'bearer',
+							bearerFormat: 'JWT',
+						},
+					},
+					schemas: {},
+				},
+				security: [{ bearerAuth: [] }],
+			},
+			apis: [
+				'./src/**/*.controller.ts',
+				'./src/**/*.dto.ts',
+				'./src/**/*.entity.ts',
+				'./src/**/*.interface.ts',
+			],
+		};
+
+		const specs = swaggerJSDoc(options);
+		this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+	}
+
 	useMiddleware(): void {
 		this.app.use(json());
 		this.app.use(this.authMiddleware.execute.bind(this.authMiddleware));
+		this.setupSwagger();
 	}
 
 	useRoutes(): void {
@@ -50,6 +87,7 @@ export class App {
 		await this.prismaService.connect();
 		this.server = this.app.listen(this.port);
 		this.logger.log(`Сервер запущен на http://localhost:${this.port}`);
+		this.logger.log(`Документация доступна на http://localhost:${this.port}/api-docs`);
 	}
 
 	public async close(): Promise<void> {

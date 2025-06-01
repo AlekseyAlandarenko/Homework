@@ -76,7 +76,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.message).toBe(MESSAGES.PRODUCT_CREATED);
     });
 
-    it('Должен завершиться ошибкой для несуществующего пользователя', async () => {
+    it('Должен выбросить ошибку 403, если роль пользователя — начальник склада', async () => {
       const res = await request(application.app)
         .post('/products')
         .set('Authorization', `Bearer ${managerToken}`)
@@ -85,7 +85,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.FORBIDDEN);
     });
 
-    it('Должен завершиться ошибкой без токена', async () => {
+    it('Должен выбросить ошибку 401, если токен отсутствует', async () => {
       const res = await request(application.app)
         .post('/products')
         .send(validProductData);
@@ -93,7 +93,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.UNAUTHORIZED);
     });
 
-    it('Должен завершиться ошибкой с некорректным токеном', async () => {
+    it('Должен выбросить ошибку 401, если токен некорректен', async () => {
       const res = await request(application.app)
         .post('/products')
         .set('Authorization', 'Bearer malformed.token.here')
@@ -102,23 +102,33 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.INVALID_TOKEN);
     });
 
-    it('Должен завершиться ошибкой без названия', async () => {
+    it('Должен выбросить ошибку 422, если название отсутствует', async () => {
       const { name, ...invalidData } = validProductData;
       const res = await request(application.app)
         .post('/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send(invalidData);
       expect(res.statusCode).toBe(422);
-      expect(res.body.error).toBe(MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Название'));
+      expect(res.body.error).toBe(MESSAGES.INVALID_NAME);
     });
 
-    it('Должен завершиться ошибкой с отрицательной ценой', async () => {
+    it('Должен выбросить ошибку 422, если цена отрицательная', async () => {
       const res = await request(application.app)
         .post('/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ ...validProductData, price: -10 });
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.PRICE_NEGATIVE);
+    });
+
+    it('Должен выбросить ошибку 422, если артикул уже существует', async () => {
+      await createTestProduct(application.app, adminToken, managerId, validProductData);
+      const res = await request(application.app)
+        .post('/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ ...validProductData, sku: validProductData.sku });
+      expect(res.statusCode).toBe(422);
+      expect(res.body.error).toBe(MESSAGES.SKU_ALREADY_EXISTS);
     });
   });
 
@@ -130,7 +140,7 @@ describe('Тестирование продуктов (E2E)', () => {
       productId = data.id;
     });
 
-    it('Должен успешно добавить количество продукта', async () => {
+    it('Должен успешно добавить количество товара', async () => {
       const res = await request(application.app)
         .patch(`/products/${productId}/quantity`)
         .set('Authorization', `Bearer ${managerToken}`)
@@ -140,22 +150,31 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.message).toBe(MESSAGES.PRODUCT_QUANTITY_UPDATED);
     });
 
-    it('Должен завершиться ошибкой с нулевым количеством', async () => {
+    it('Должен выбросить ошибку 422, если количество равно нулю', async () => {
       const res = await request(application.app)
         .patch(`/products/${productId}/quantity`)
         .set('Authorization', `Bearer ${managerToken}`)
         .send({ quantity: 0 });
       expect(res.statusCode).toBe(422);
-      expect(res.body.error).toBe(MESSAGES.QUANTITY_ZERO_OR_NEGATIVE);
+      expect(res.body.error).toBe(MESSAGES.QUANTITY_NEGATIVE);
     });
 
-    it('Должен завершиться ошибкой для несуществующего продукта', async () => {
+    it('Должен выбросить ошибку 404, если продукт не существует', async () => {
       const res = await request(application.app)
         .patch('/products/9999/quantity')
         .set('Authorization', `Bearer ${managerToken}`)
         .send({ quantity: 5 });
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe(MESSAGES.PRODUCT_NOT_FOUND);
+    });
+
+    it('Должен выбросить ошибку 422, если ID некорректен', async () => {
+      const res = await request(application.app)
+        .patch('/products/0/quantity')
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({ quantity: 5 });
+      expect(res.statusCode).toBe(422);
+      expect(res.body.error).toBe(MESSAGES.INVALID_ID);
     });
   });
 
@@ -171,7 +190,19 @@ describe('Тестирование продуктов (E2E)', () => {
         name: 'Product A',
         price: 100,
         category: 'General',
+        quantity: 0,
       });
+    });
+
+    it('Должен успешно получить все продукты для роли начальника склада', async () => {
+      const res = await request(application.app)
+        .get('/products')
+        .set('Authorization', `Bearer ${managerToken}`)
+        .query({ sortBy: 'name', sortOrder: 'desc' });
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data[0]).toMatchObject({ name: 'Product B' });
+      expect(res.body.data[1]).toMatchObject({ name: 'Product A' });
     });
 
     it('Должен получить все продукты с фильтром по категории', async () => {
@@ -221,7 +252,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.data[1].name).toBe('Product A');
     });
 
-    it('Должен завершиться ошибкой с некорректным параметром сортировки', async () => {
+    it('Должен выбросить ошибку 422, если параметр сортировки некорректен', async () => {
       const res = await request(application.app)
         .get('/products')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -230,55 +261,37 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.INVALID_SORT_PARAM);
     });
 
-    it('Должен завершиться ошибкой с некорректным токеном', async () => {
+    it('Должен выбросить ошибку 401, если токен некорректен', async () => {
       const res = await request(application.app)
         .get('/products')
         .set('Authorization', 'Bearer invalid-token');
       expect(res.statusCode).toBe(401);
       expect(res.body.error).toBe(MESSAGES.INVALID_TOKEN);
     });
-
-    it('Должен завершиться ошибкой для роли менеджера склада', async () => {
-      const res = await request(application.app)
-        .get('/products')
-        .set('Authorization', `Bearer ${managerToken}`);
-      expect(res.statusCode).toBe(403);
-      expect(res.body.error).toBe(MESSAGES.FORBIDDEN);
-    });
   });
 
-  describe('Получение продуктов менеджера', () => {
-    it('Должен успешно получить все продукты для менеджера через /products/all', async () => {
-      const productData: ProductPayload = {
-        name: 'Manager Product',
-        description: 'Manager Description',
-        price: 100,
-        quantity: 10,
-        category: 'Test Category',
-        sku: `SKU-${Date.now()}`,
-        isActive: true,
-      };
-      const resCreate = await request(application.app)
-        .post('/products')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(productData);
-      expect(resCreate.statusCode).toBe(201);
-  
+  describe('Получение остатков товаров', () => {
+    let productId: number;
+
+    beforeEach(async () => {
+      const { data } = await createTestProduct(application.app, adminToken, managerId);
+      productId = data.id;
+    });
+
+    it('Должен успешно получить остатки товаров', async () => {
       const res = await request(application.app)
-        .get('/products/all')
+        .get('/products/stock')
         .set('Authorization', `Bearer ${managerToken}`);
       expect(res.statusCode).toBe(200);
-      expect(res.body.data).toEqual(
-        expect.arrayContaining([expect.objectContaining({ name: 'Manager Product' })])
-      );
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0]).toMatchObject({ id: productId, quantity: 10 });
     });
-  
-    it('Должен завершиться ошибкой для не-менеджера', async () => {
+
+    it('Должен выбросить ошибку 401, если токен отсутствует', async () => {
       const res = await request(application.app)
-        .get('/products/all')
-        .set('Authorization', `Bearer ${adminToken}`);
-      expect(res.statusCode).toBe(403);
-      expect(res.body.error).toBe(MESSAGES.FORBIDDEN);
+        .get('/products/stock');
+      expect(res.statusCode).toBe(401);
+      expect(res.body.error).toBe(MESSAGES.UNAUTHORIZED);
     });
   });
 
@@ -310,9 +323,10 @@ describe('Тестирование продуктов (E2E)', () => {
         .send({ name: 'Minimally Updated' });
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toMatchObject({ name: 'Minimally Updated' });
+      expect(res.body.message).toBe(MESSAGES.PRODUCT_UPDATED);
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID продукта неверный', async () => {
       const res = await request(application.app)
         .patch('/products/9999')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -321,7 +335,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.PRODUCT_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой с отрицательной ценой', async () => {
+    it('Должен выбросить ошибку 422, если цена отрицательная', async () => {
       const res = await request(application.app)
         .patch(`/products/${productId}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -330,7 +344,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.PRICE_NEGATIVE);
     });
 
-    it('Должен завершиться ошибкой с пустым обновлением', async () => {
+    it('Должен выбросить ошибку 422, если обновление пустое', async () => {
       const res = await request(application.app)
         .patch(`/products/${productId}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -358,16 +372,16 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.message).toBe(MESSAGES.PRODUCT_PURCHASE_COMPLETED);
     });
 
-    it('Должен завершиться ошибкой с нулевым количеством', async () => {
+    it('Должен выбросить ошибку 422, если количество равно нулю', async () => {
       const res = await request(application.app)
         .post(`/products/${productId}/purchase`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ quantity: 0 });
       expect(res.statusCode).toBe(422);
-      expect(res.body.error).toBe(MESSAGES.QUANTITY_ZERO_OR_NEGATIVE);
+      expect(res.body.error).toBe(MESSAGES.QUANTITY_NEGATIVE);
     });
 
-    it('Должен завершиться ошибкой для несуществующего продукта', async () => {
+    it('Должен выбросить ошибку 404, если продукт не существует', async () => {
       const res = await request(application.app)
         .post('/products/9999/purchase')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -376,51 +390,13 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.PRODUCT_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой при недостаточном количестве', async () => {
+    it('Должен выбросить ошибку 422, если количества недостаточно', async () => {
       const res = await request(application.app)
         .post(`/products/${productId}/purchase`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ quantity: 15 });
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.PRODUCT_INSUFFICIENT_STOCK);
-    });
-  });
-
-  describe('Получение статуса продукта', () => {
-    let productId: number;
-
-    beforeEach(async () => {
-      const { data } = await createTestProduct(application.app, adminToken, managerId);
-      productId = data.id;
-    });
-
-    it('Должен успешно получить статус продукта', async () => {
-      const res = await request(application.app).get(`/products/${productId}/status`);
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data).toMatchObject({
-        id: productId,
-        name: 'Test Product',
-        quantity: 10,
-        isActive: true,
-      });
-    });
-
-    it('Должен вернуть сообщение о нулевом количестве', async () => {
-      const { data } = await createTestProduct(application.app, adminToken, managerId, {
-        quantity: 0,
-      });
-      const res = await request(application.app).get(`/products/${data.id}/status`);
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data).toMatchObject({
-        quantity: 0,
-        message: MESSAGES.PRODUCT_OUT_OF_STOCK,
-      });
-    });
-
-    it('Должен завершиться ошибкой для несуществующего продукта', async () => {
-      const res = await request(application.app).get('/products/9999/status');
-      expect(res.statusCode).toBe(404);
-      expect(res.body.error).toBe(MESSAGES.PRODUCT_NOT_FOUND);
     });
   });
 
@@ -440,7 +416,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.message).toBe(MESSAGES.PRODUCT_DELETED);
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID продукта неверный', async () => {
       const res = await request(application.app)
         .delete('/products/9999')
         .set('Authorization', `Bearer ${adminToken}`);
@@ -448,7 +424,7 @@ describe('Тестирование продуктов (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.PRODUCT_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой для роли менеджера склада', async () => {
+    it('Должен выбросить ошибку 403, если роль пользователя — начальник склада', async () => {
       const res = await request(application.app)
         .delete(`/products/${productId}`)
         .set('Authorization', `Bearer ${managerToken}`);

@@ -65,6 +65,7 @@ describe('Тестирование промоакций (E2E)', () => {
         .post('/promotions')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ ...validPromotionData, supplierId });
+
       expect(res.statusCode).toBe(201);
       expect(res.body.data).toMatchObject({
         title: 'Admin Promotion',
@@ -72,43 +73,47 @@ describe('Тестирование промоакций (E2E)', () => {
       });
     });
 
-    it('Должен завершиться ошибкой при неверном поставщике', async () => {
+    it('Должен выбросить ошибку 404, если поставщик не существует', async () => {
       const res = await request(application.app)
         .post('/promotions')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ ...validPromotionData, supplierId: 9999 });
+
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой без токена', async () => {
+    it('Должен выбросить ошибку 401, если токен отсутствует', async () => {
       const res = await request(application.app)
         .post('/promotions')
         .send({ ...validPromotionData, supplierId });
+
       expect(res.statusCode).toBe(401);
       expect(res.body.error).toBe(MESSAGES.UNAUTHORIZED);
     });
 
-    it('Должен завершиться ошибкой с некорректным токеном', async () => {
+    it('Должен выбросить ошибку 401, если токен некорректен', async () => {
       const res = await request(application.app)
         .post('/promotions')
         .set('Authorization', 'Bearer malformed.token.here')
         .send({ ...validPromotionData, supplierId });
+
       expect(res.statusCode).toBe(401);
       expect(res.body.error).toBe(MESSAGES.INVALID_TOKEN);
     });
 
-    it('Должен завершиться ошибкой без названия', async () => {
+    it('Должен выбросить ошибку 422, если название отсутствует', async () => {
       const { title, ...invalidData } = validPromotionData;
       const res = await request(application.app)
         .post('/promotions')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ ...invalidData, supplierId });
+
       expect(res.statusCode).toBe(422);
-      expect(res.body.error).toBe(MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Название'));
+      expect(res.body.error).toBe(MESSAGES.INVALID_TITLE);
     });
 
-    it('Должен завершиться ошибкой, если дата окончания раньше даты начала', async () => {
+    it('Должен выбросить ошибку 422, если дата окончания раньше даты начала', async () => {
       const res = await request(application.app)
         .post('/promotions')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -118,6 +123,7 @@ describe('Тестирование промоакций (E2E)', () => {
           startDate: new Date(Date.now() + 2 * 86400000).toISOString(),
           endDate: new Date(Date.now() + 86400000).toISOString(),
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.INVALID_DATES);
     });
@@ -136,6 +142,7 @@ describe('Тестирование промоакций (E2E)', () => {
         .post('/promotions/propose')
         .set('Authorization', `Bearer ${supplierToken}`)
         .send(validProposeData);
+
       expect(res.statusCode).toBe(201);
       expect(res.body.data).toMatchObject({
         title: 'Supplier Promotion',
@@ -143,7 +150,7 @@ describe('Тестирование промоакций (E2E)', () => {
       });
     });
 
-    it('Должен завершиться ошибкой при дате начала в прошлом', async () => {
+    it('Должен выбросить ошибку 422, если дата начала в прошлом', async () => {
       const res = await request(application.app)
         .post('/promotions/propose')
         .set('Authorization', `Bearer ${supplierToken}`)
@@ -151,11 +158,12 @@ describe('Тестирование промоакций (E2E)', () => {
           ...validProposeData,
           startDate: new Date(Date.now() - 86400000).toISOString(),
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.PAST_START_DATE);
     });
 
-    it('Должен завершиться ошибкой, если дата окончания раньше даты начала', async () => {
+    it('Должен выбросить ошибку 422, если дата окончания раньше даты начала', async () => {
       const res = await request(application.app)
         .post('/promotions/propose')
         .set('Authorization', `Bearer ${supplierToken}`)
@@ -164,6 +172,7 @@ describe('Тестирование промоакций (E2E)', () => {
           startDate: new Date(Date.now() + 2 * 86400000).toISOString(),
           endDate: new Date(Date.now() + 86400000).toISOString(),
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.INVALID_DATES);
     });
@@ -205,6 +214,7 @@ describe('Тестирование промоакций (E2E)', () => {
       const res = await request(application.app)
         .get('/promotions?status=APPROVED')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toHaveLength(7);
       expect(res.body.data.every((p: any) => p.status === 'APPROVED')).toBe(true);
@@ -214,6 +224,7 @@ describe('Тестирование промоакций (E2E)', () => {
       const res = await request(application.app)
         .get('/promotions')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data.length).toBeGreaterThanOrEqual(2);
     });
@@ -223,6 +234,7 @@ describe('Тестирование промоакций (E2E)', () => {
         .get('/promotions')
         .set('Authorization', `Bearer ${adminToken}`)
         .query({ sortBy: 'title', sortOrder: 'asc' });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toHaveLength(2);
       expect(res.body.data[0].title).toBe('Promo A');
@@ -234,33 +246,37 @@ describe('Тестирование промоакций (E2E)', () => {
         .get('/promotions')
         .set('Authorization', `Bearer ${adminToken}`)
         .query({ sortBy: 'startDate', sortOrder: 'desc' });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toHaveLength(2);
       expect(res.body.data[0].title).toBe('Promo A');
       expect(res.body.data[1].title).toBe('Promo B');
     });
 
-    it('Должен завершиться ошибкой с некорректным параметром сортировки', async () => {
+    it('Должен выбросить ошибку 422, если параметр сортировки некорректен', async () => {
       const res = await request(application.app)
         .get('/promotions')
         .set('Authorization', `Bearer ${adminToken}`)
         .query({ sortBy: 'invalidField', sortOrder: 'asc' });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.INVALID_SORT_PARAM);
     });
 
-    it('Должен завершиться ошибкой с некорректным токеном', async () => {
+    it('Должен выбросить ошибку 401, если токен некорректен', async () => {
       const res = await request(application.app)
         .get('/promotions')
         .set('Authorization', 'Bearer invalid-token');
+
       expect(res.statusCode).toBe(401);
       expect(res.body.error).toBe(MESSAGES.INVALID_TOKEN);
     });
 
-    it('Должен завершиться ошибкой для роли поставщика', async () => {
+    it('Должен выбросить ошибку 403, если роль пользователя — поставщик', async () => {
       const res = await request(application.app)
         .get('/promotions')
         .set('Authorization', `Bearer ${supplierToken}`);
+
       expect(res.statusCode).toBe(403);
       expect(res.body.error).toBe(MESSAGES.FORBIDDEN);
     });
@@ -281,16 +297,18 @@ describe('Тестирование промоакций (E2E)', () => {
       const res = await request(application.app)
         .get('/promotions/my')
         .set('Authorization', `Bearer ${supplierToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toEqual(
-        expect.arrayContaining([expect.objectContaining({ title: 'My Promotion' })])
+        expect.arrayContaining([expect.objectContaining({ title: 'My Promotion' })]),
       );
     });
 
-    it('Должен завершиться ошибкой для не-поставщика', async () => {
+    it('Должен выбросить ошибку 403, если пользователь не поставщик', async () => {
       const res = await request(application.app)
         .get('/promotions/my')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(403);
       expect(res.body.error).toBe(MESSAGES.FORBIDDEN);
     });
@@ -298,11 +316,7 @@ describe('Тестирование промоакций (E2E)', () => {
 
   describe('Обновление промоакции', () => {
     it('Должен успешно обновить промоакцию', async () => {
-      const { data: promotion } = await createTestPromotion(
-        application.app,
-        adminToken,
-        supplierId
-      );
+      const { data: promotion } = await createTestPromotion(application.app, adminToken, supplierId);
       const res = await request(application.app)
         .patch(`/promotions/${promotion.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -310,39 +324,34 @@ describe('Тестирование промоакций (E2E)', () => {
           title: 'Updated Promotion',
           description: 'Updated Description',
         });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toMatchObject({ title: 'Updated Promotion' });
     });
 
     it('Должен минимально обновить промоакцию', async () => {
-      const { data: promotion } = await createTestPromotion(
-        application.app,
-        adminToken,
-        supplierId
-      );
+      const { data: promotion } = await createTestPromotion(application.app, adminToken, supplierId);
       const res = await request(application.app)
         .patch(`/promotions/${promotion.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ title: 'Minimally Updated' });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toMatchObject({ title: 'Minimally Updated' });
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID промоакции неверный', async () => {
       const res = await request(application.app)
         .patch('/promotions/9999')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ title: 'Invalid Update' });
+
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe(MESSAGES.PROMOTION_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой с некорректными датами', async () => {
-      const { data: promotion } = await createTestPromotion(
-        application.app,
-        adminToken,
-        supplierId
-      );
+    it('Должен выбросить ошибку 422, если даты некорректны', async () => {
+      const { data: promotion } = await createTestPromotion(application.app, adminToken, supplierId);
       const res = await request(application.app)
         .patch(`/promotions/${promotion.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -350,20 +359,18 @@ describe('Тестирование промоакций (E2E)', () => {
           startDate: new Date(Date.now() + 2 * 86400000).toISOString(),
           endDate: new Date(Date.now() + 86400000).toISOString(),
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.INVALID_DATES);
     });
 
-    it('Должен завершиться ошибкой с пустым обновлением', async () => {
-      const { data: promotion } = await createTestPromotion(
-        application.app,
-        adminToken,
-        supplierId
-      );
+    it('Должен выбросить ошибку 422, если обновление пустое', async () => {
+      const { data: promotion } = await createTestPromotion(application.app, adminToken, supplierId);
       const res = await request(application.app)
         .patch(`/promotions/${promotion.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({});
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.VALIDATION_FAILED);
     });
@@ -380,6 +387,7 @@ describe('Тестирование промоакций (E2E)', () => {
           startDate: new Date(Date.now() + 86400000).toISOString(),
           endDate: new Date(Date.now() + 2 * 86400000).toISOString(),
         });
+
       expect(proposeRes.statusCode).toBe(201);
       const promotionId = proposeRes.body.data.id;
 
@@ -387,11 +395,12 @@ describe('Тестирование промоакций (E2E)', () => {
         .patch(`/promotions/${promotionId}/status`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ status: 'APPROVED' });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toMatchObject({ status: 'APPROVED' });
     });
 
-    it('Должен завершиться ошибкой с некорректным статусом', async () => {
+    it('Должен выбросить ошибку 422, если статус некорректен', async () => {
       const proposeRes = await request(application.app)
         .post('/promotions/propose')
         .set('Authorization', `Bearer ${supplierToken}`)
@@ -401,6 +410,7 @@ describe('Тестирование промоакций (E2E)', () => {
           startDate: new Date(Date.now() + 86400000).toISOString(),
           endDate: new Date(Date.now() + 2 * 86400000).toISOString(),
         });
+
       expect(proposeRes.statusCode).toBe(201);
       const promotionId = proposeRes.body.data.id;
 
@@ -408,22 +418,24 @@ describe('Тестирование промоакций (E2E)', () => {
         .patch(`/promotions/${promotionId}/status`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ status: 'INVALID' });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.INVALID_STATUS);
     });
 
-    it('Должен завершиться ошибкой для несуществующей промоакции', async () => {
+    it('Должен выбросить ошибку 404, если промоакция не существует', async () => {
       const res = await request(application.app)
         .patch('/promotions/9999/status')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ status: 'APPROVED' });
+
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe(MESSAGES.PROMOTION_NOT_FOUND);
     });
   });
 
   describe('Публикация утвержденных промоакций', () => {
-    it('Должен отобразить утвержденную акцию поставщика в общем списке', async () => {
+    it('Должен успешно отобразить утвержденную акцию поставщика в общем списке', async () => {
       const proposeRes = await request(application.app)
         .post('/promotions/propose')
         .set('Authorization', `Bearer ${supplierToken}`)
@@ -433,6 +445,7 @@ describe('Тестирование промоакций (E2E)', () => {
           startDate: new Date(Date.now() + 86400000).toISOString(),
           endDate: new Date(Date.now() + 2 * 86400000).toISOString(),
         });
+
       expect(proposeRes.statusCode).toBe(201);
       const promotionId = proposeRes.body.data.id;
 
@@ -445,6 +458,7 @@ describe('Тестирование промоакций (E2E)', () => {
       const res = await request(application.app)
         .get('/promotions')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toEqual(
         expect.arrayContaining([
@@ -453,20 +467,22 @@ describe('Тестирование промоакций (E2E)', () => {
             title: 'Supplier Approved Promo',
             status: 'APPROVED',
           }),
-        ])
+        ]),
       );
     });
 
-    it('Должен отобразить акцию, созданную администратором, в общем списке', async () => {
+    it('Должен успешно отобразить акцию, созданную администратором, в общем списке', async () => {
       const createRes = await createTestPromotion(application.app, adminToken, supplierId, {
         title: 'Admin Approved Promo',
       });
+
       expect(createRes.status).toBe(201);
       const promotionId = createRes.data.id;
 
       const res = await request(application.app)
         .get('/promotions')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toEqual(
         expect.arrayContaining([
@@ -475,42 +491,37 @@ describe('Тестирование промоакций (E2E)', () => {
             title: 'Admin Approved Promo',
             status: 'APPROVED',
           }),
-        ])
+        ]),
       );
     });
   });
 
   describe('Удаление промоакции', () => {
     it('Должен успешно удалить промоакцию', async () => {
-      const { data: promotion } = await createTestPromotion(
-        application.app,
-        adminToken,
-        supplierId
-      );
+      const { data: promotion } = await createTestPromotion(application.app, adminToken, supplierId);
       const res = await request(application.app)
         .delete(`/promotions/${promotion.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.message).toBe(MESSAGES.PROMOTION_DELETED);
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID промоакции неверный', async () => {
       const res = await request(application.app)
         .delete('/promotions/9999')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe(MESSAGES.PROMOTION_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой для роли поставщика', async () => {
-      const { data: promotion } = await createTestPromotion(
-        application.app,
-        adminToken,
-        supplierId
-      );
+    it('Должен выбросить ошибку 403, если роль пользователя — поставщик', async () => {
+      const { data: promotion } = await createTestPromotion(application.app, adminToken, supplierId);
       const res = await request(application.app)
         .delete(`/promotions/${promotion.id}`)
         .set('Authorization', `Bearer ${supplierToken}`);
+
       expect(res.statusCode).toBe(403);
       expect(res.body.error).toBe(MESSAGES.FORBIDDEN);
     });

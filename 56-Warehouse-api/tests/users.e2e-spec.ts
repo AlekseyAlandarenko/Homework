@@ -59,7 +59,7 @@ describe('Тестирование пользователей (E2E)', () => {
       });
     });
 
-    it('Должен завершиться ошибкой с некорректным email', async () => {
+    it('Должен выбросить ошибку 422, если email некорректен', async () => {
       const res = await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -72,7 +72,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.INVALID_EMAIL);
     });
 
-    it('Должен завершиться ошибкой, если пользователь уже существует', async () => {
+    it('Должен выбросить ошибку 422, если пользователь уже существует', async () => {
       await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -94,7 +94,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.USER_ALREADY_EXISTS);
     });
 
-    it('Должен завершиться ошибкой со слабым паролем', async () => {
+    it('Должен выбросить ошибку 422, если пароль слабый', async () => {
       const res = await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -107,7 +107,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.PASSWORD_COMPLEXITY);
     });
 
-    it('Должен завершиться ошибкой для не-суперадминистратора', async () => {
+    it('Должен выбросить ошибку 403, если пользователь не суперадминистратор', async () => {
       await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -135,8 +135,8 @@ describe('Тестирование пользователей (E2E)', () => {
     });
   });
 
-  describe('Регистрация менеджера склада', () => {
-    it('Должен успешно зарегистрировать менеджера склада', async () => {
+  describe('Регистрация начальника склада', () => {
+    it('Должен успешно зарегистрировать начальника склада', async () => {
       const { managerId } = await createTestWarehouseManager(application.app, adminToken);
       const res = await request(application.app)
         .get('/users/warehouseManagers')
@@ -153,7 +153,7 @@ describe('Тестирование пользователей (E2E)', () => {
       );
     });
 
-    it('Должен завершиться ошибкой, если менеджер склада уже существует', async () => {
+    it('Должен выбросить ошибку 422, если начальник склада уже существует', async () => {
       await createTestWarehouseManager(application.app, adminToken);
       const res = await request(application.app)
         .post('/users/warehouseManager')
@@ -167,7 +167,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.USER_ALREADY_EXISTS);
     });
 
-    it('Должен завершиться ошибкой без имени', async () => {
+    it('Должен выбросить ошибку 422, если имя отсутствует', async () => {
       const res = await request(application.app)
         .post('/users/warehouseManager')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -191,7 +191,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(token).toBeDefined();
     });
 
-    it('Должен завершиться ошибкой с неверными учетными данными', async () => {
+    it('Должен выбросить ошибку 401, если учетные данные неверны', async () => {
       const { status, error } = await loginUser(application.app, {
         email: 'manager@test.com',
         password: 'wrongpassword',
@@ -200,7 +200,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(error).toBe(MESSAGES.INVALID_CREDENTIALS);
     });
 
-    it('Должен завершиться ошибкой для несуществующего пользователя', async () => {
+    it('Должен выбросить ошибку 401, если пользователь не существует', async () => {
       const { status, error } = await loginUser(application.app, {
         email: 'nonexistent@test.com',
         password: 'password123',
@@ -210,7 +210,7 @@ describe('Тестирование пользователей (E2E)', () => {
     });
   });
 
-  describe('Обновление пароля менеджера склада', () => {
+  describe('Обновление пароля начальника склада', () => {
     it('Должен успешно обновить пароль', async () => {
       const { managerId } = await createTestWarehouseManager(application.app, adminToken);
       const res = await request(application.app)
@@ -227,7 +227,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(status).toBe(200);
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID неверный', async () => {
       const res = await request(application.app)
         .patch('/users/warehouseManager/9999/password')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -236,17 +236,17 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой со слабым паролем', async () => {
+    it('Должен выбросить ошибку 422, если пароль слабый', async () => {
       const { managerId } = await createTestWarehouseManager(application.app, adminToken);
       const res = await request(application.app)
         .patch(`/users/warehouseManager/${managerId}/password`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ newPassword: 'weak' });
       expect(res.statusCode).toBe(422);
-      expect(res.body.error).toBe(MESSAGES.NEW_PASSWORD_COMPLEXITY);
+      expect(res.body.error).toBe(MESSAGES.PASSWORD_COMPLEXITY);
     });
 
-    it('Должен завершиться ошибкой с пустым паролем', async () => {
+    it('Должен выбросить ошибку 422, если пароль пустой', async () => {
       const { managerId } = await createTestWarehouseManager(application.app, adminToken);
       const res = await request(application.app)
         .patch(`/users/warehouseManager/${managerId}/password`)
@@ -257,8 +257,8 @@ describe('Тестирование пользователей (E2E)', () => {
     });
   });
 
-  describe('Удаление менеджера склада', () => {
-    it('Должен успешно удалить менеджера склада', async () => {
+  describe('Удаление начальника склада', () => {
+    it('Должен успешно удалить начальника склада', async () => {
       const { managerId } = await createTestWarehouseManager(application.app, adminToken);
       const res = await request(application.app)
         .delete(`/users/warehouseManager/${managerId}`)
@@ -267,7 +267,7 @@ describe('Тестирование пользователей (E2E)', () => {
       expect(res.body.message).toBe(MESSAGES.USER_DELETED);
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID неверный', async () => {
       const res = await request(application.app)
         .delete('/users/warehouseManager/9999')
         .set('Authorization', `Bearer ${adminToken}`);
@@ -276,8 +276,8 @@ describe('Тестирование пользователей (E2E)', () => {
     });
   });
 
-  describe('Получение списка менеджеров склада', () => {
-    it('Должен успешно получить список менеджеров склада', async () => {
+  describe('Получение списка начальников склада', () => {
+    it('Должен успешно получить список начальников склада', async () => {
       await createTestWarehouseManager(application.app, adminToken);
       const res = await request(application.app)
         .get('/users/warehouseManagers')

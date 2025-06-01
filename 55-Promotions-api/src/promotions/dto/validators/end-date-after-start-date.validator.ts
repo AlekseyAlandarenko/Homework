@@ -5,17 +5,26 @@ import {
 	registerDecorator,
 	ValidationOptions,
 } from 'class-validator';
+import { MESSAGES } from '../../../common/messages';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     IsEndDateAfterStartDate:
+ *       type: string
+ *       description: Валидатор, проверяющий, что дата окончания акции позже даты начала.
+ *       format: date-time
+ *       example: "2023-06-30T23:59:59Z"
+ */
 @ValidatorConstraint({ name: 'isEndDateAfterStartDate', async: false })
 export class IsEndDateAfterStartDateConstraint implements ValidatorConstraintInterface {
 	validate(endDate: string, args: ValidationArguments) {
 		const { startDate } = args.object as any;
-		if (!startDate || !endDate) return true;
 		return new Date(endDate) > new Date(startDate);
 	}
-
 	defaultMessage() {
-		return 'Дата окончания должна быть позже даты начала';
+		return MESSAGES.INVALID_DATES;
 	}
 }
 

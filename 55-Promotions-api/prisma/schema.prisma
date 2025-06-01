@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+   provider = "postgresql"
+   url      = env("DATABASE_URL")
 }
 
 model UserModel {
@@ -12,7 +12,7 @@ model UserModel {
   name       String
   email      String           @unique
   password   String
-  role       Role             @default(SUPPLIER)
+  role       String           @default("SUPPLIER")
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
   promotions PromotionModel[]
@@ -24,21 +24,10 @@ model PromotionModel {
   description String
   startDate   DateTime
   endDate     DateTime
-  status      PromotionStatus @default(PENDING)
+  status      String          @default("PENDING")
   supplier    UserModel       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  supplierId  Int             
+  supplierId  Int
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-}
-
-enum Role {
-  SUPERADMIN
-  ADMIN
-  SUPPLIER
-}
-
-enum PromotionStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  isDeleted   Boolean         @default(false)
 }

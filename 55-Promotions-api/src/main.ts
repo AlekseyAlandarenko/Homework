@@ -37,7 +37,9 @@ export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 	bind<PrismaService>(TYPES.PrismaService).to(PrismaService).inSingletonScope();
 	bind<IConfigService>(TYPES.ConfigService).to(ConfigService).inSingletonScope();
 	bind<IUsersRepository>(TYPES.UsersRepository).to(UsersRepository).inSingletonScope();
-	bind<IPromotionsRepository>(TYPES.PromotionsRepository).to(PromotionsRepository).inSingletonScope();
+	bind<IPromotionsRepository>(TYPES.PromotionsRepository)
+		.to(PromotionsRepository)
+		.inSingletonScope();
 	bind<AuthMiddleware>(TYPES.AuthMiddleware).to(AuthMiddleware).inSingletonScope();
 	bind<App>(TYPES.Application).to(App);
 });

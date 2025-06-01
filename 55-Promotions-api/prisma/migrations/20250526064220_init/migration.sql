@@ -1,16 +1,10 @@
--- CreateEnum
-CREATE TYPE "Role" AS ENUM ('SUPERADMIN', 'ADMIN', 'SUPPLIER');
-
--- CreateEnum
-CREATE TYPE "PromotionStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
-
 -- CreateTable
 CREATE TABLE "UserModel" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "role" "Role" NOT NULL DEFAULT 'SUPPLIER',
+    "role" TEXT NOT NULL DEFAULT 'SUPPLIER',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -24,10 +18,11 @@ CREATE TABLE "PromotionModel" (
     "description" TEXT NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3) NOT NULL,
-    "status" "PromotionStatus" NOT NULL DEFAULT 'PENDING',
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
     "supplierId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "PromotionModel_pkey" PRIMARY KEY ("id")
 );

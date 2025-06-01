@@ -1,8 +1,24 @@
-import { IsEnum } from 'class-validator';
-import { PromotionStatus } from '@prisma/client';
+import { IsIn } from 'class-validator';
 import { MESSAGES } from '../../common/messages';
+import { PROMOTION_STATUSES, PromotionStatus } from '../../common/constants';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     PromotionStatusDto:
+ *       type: object
+ *       description: Данные для обновления статуса акции.
+ *       required:
+ *         - status
+ *       properties:
+ *         status:
+ *           type: string
+ *           enum: [PENDING, APPROVED, REJECTED]
+ *           description: Статус акции (PENDING — ожидает, APPROVED — утверждена, REJECTED — отклонена).
+ *           example: "APPROVED"
+ */
 export class PromotionStatusDto {
-	@IsEnum(PromotionStatus, { message: MESSAGES.INVALID_STATUS })
+	@IsIn(PROMOTION_STATUSES, { message: MESSAGES.INVALID_STATUS })
 	status!: PromotionStatus;
 }

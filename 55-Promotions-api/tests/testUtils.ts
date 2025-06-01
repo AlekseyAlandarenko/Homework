@@ -1,7 +1,6 @@
 import { App } from '../src/app';
 import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
-import { MESSAGES } from '../src/common/messages';
 
 export interface UserCredentials {
   email: string;
@@ -20,7 +19,13 @@ export interface PromotionPayload {
 export const cleanUp = async (prisma: PrismaClient) => {
   await prisma.promotionModel.deleteMany({});
   await prisma.userModel.deleteMany({
-    where: { email: { contains: '@test.com' } },
+    where: {
+      OR: [
+        { email: { contains: '@test.com' } },
+        { role: 'SUPPLIER' },
+        { role: 'ADMIN', email: { not: 'superadmin@example.com' } },
+      ],
+    },
   });
 };
 
@@ -42,7 +47,9 @@ export const createTestSupplier = async (app: App['app'], adminToken: string) =>
     .post('/users/supplier')
     .set('Authorization', `Bearer ${adminToken}`)
     .send(supplierData);
-  if (res.statusCode !== 201) throw new Error(MESSAGES.FAILED_TO_CREATE_SUPPLIER);
+ if (res.statusCode !== 201) {
+  throw new Error(res.body.error || 'Не удалось создать поставщика');
+}
 
   const { token } = await loginUser(app, supplierData);
   return { supplierId: res.body.data.id, supplierToken: token };

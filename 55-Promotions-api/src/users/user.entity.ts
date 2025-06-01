@@ -1,17 +1,70 @@
 import { compare, hash } from 'bcryptjs';
+import { UserRole } from '../common/constants';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserResponse:
+ *       type: object
+ *       description: Данные пользователя, возвращаемые в ответах API (без пароля).
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: Уникальный идентификатор пользователя.
+ *           example: 1
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Электронная почта пользователя. Уникальна.
+ *           example: user@example.com
+ *         name:
+ *           type: string
+ *           description: Имя пользователя.
+ *           example: Иван Иванов
+ *         role:
+ *           type: string
+ *           enum: [SUPERADMIN, ADMIN, SUPPLIER]
+ *           description: Роль пользователя (SUPERADMIN/ADMIN — административные права, SUPPLIER — управление акциями и товарами).
+ *           example: SUPPLIER
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Дата создания пользователя (ISO 8601).
+ *           example: "2023-05-01T12:00:00Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Дата последнего обновления пользователя (ISO 8601).
+ *           example: "2023-05-02T12:00:00Z"
+ *       required:
+ *         - id
+ *         - email
+ *         - name
+ *         - role
+ *     UserModel:
+ *       allOf:
+ *         - $ref: '#/components/schemas/UserResponse'
+ *         - type: object
+ *           description: Полная модель пользователя, включая хешированный пароль (для внутреннего использования).
+ *           properties:
+ *             password:
+ *               type: string
+ *               description: Хешированный пароль пользователя.
+ *               example: $2a$10$hashedpassword
+ *           required:
+ *             - password
+ */
 export class User {
-	private _password!: string;
+	private _password: string;
 
 	constructor(
 		private readonly _email: string,
 		private readonly _name: string,
-		private readonly _role: string = 'SUPPLIER',
+		private readonly _role: UserRole = 'SUPPLIER',
 		passwordHash?: string,
 	) {
-		if (passwordHash) {
-			this._password = passwordHash;
-		}
+		this._password = passwordHash || '';
 	}
 
 	get email(): string {
@@ -26,7 +79,7 @@ export class User {
 		return this._password;
 	}
 
-	get role(): string {
+	get role(): UserRole {
 		return this._role;
 	}
 

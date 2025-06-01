@@ -52,6 +52,7 @@ describe('Тестирование пользователей (E2E)', () => {
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
         .send(adminData);
+
       expect(res.statusCode).toBe(201);
       expect(res.body.data).toMatchObject({
         email: 'admin@test.com',
@@ -59,7 +60,7 @@ describe('Тестирование пользователей (E2E)', () => {
       });
     });
 
-    it('Должен завершиться ошибкой с некорректным email', async () => {
+    it('Должен выбросить ошибку 422, если email некорректен', async () => {
       const res = await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -68,11 +69,12 @@ describe('Тестирование пользователей (E2E)', () => {
           password: 'password123',
           name: 'Invalid Admin',
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.INVALID_EMAIL);
     });
 
-    it('Должен завершиться ошибкой, если пользователь уже существует', async () => {
+    it('Должен выбросить ошибку 422, если пользователь уже существует', async () => {
       await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -90,11 +92,12 @@ describe('Тестирование пользователей (E2E)', () => {
           password: 'password123',
           name: 'Test Admin',
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.USER_ALREADY_EXISTS);
     });
 
-    it('Должен завершиться ошибкой со слабым паролем', async () => {
+    it('Должен выбросить ошибку 422, если пароль слабый', async () => {
       const res = await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -103,11 +106,12 @@ describe('Тестирование пользователей (E2E)', () => {
           password: 'weak',
           name: 'Weak Admin',
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.PASSWORD_COMPLEXITY);
     });
 
-    it('Должен завершиться ошибкой для не-суперадминистратора', async () => {
+    it('Должен выбросить ошибку 403, если пользователь не суперадминистратор', async () => {
       await request(application.app)
         .post('/users/admin')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -130,6 +134,7 @@ describe('Тестирование пользователей (E2E)', () => {
           password: 'password123',
           name: 'New Admin',
         });
+
       expect(res.statusCode).toBe(403);
       expect(res.body.error).toBe(MESSAGES.FORBIDDEN);
     });
@@ -141,6 +146,7 @@ describe('Тестирование пользователей (E2E)', () => {
       const res = await request(application.app)
         .get('/users/suppliers')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toEqual(
         expect.arrayContaining([
@@ -149,11 +155,11 @@ describe('Тестирование пользователей (E2E)', () => {
             email: 'supplier@test.com',
             role: 'SUPPLIER',
           }),
-        ])
+        ]),
       );
     });
 
-    it('Должен завершиться ошибкой, если поставщик уже существует', async () => {
+    it('Должен выбросить ошибку 422, если поставщик уже существует', async () => {
       await createTestSupplier(application.app, adminToken);
       const res = await request(application.app)
         .post('/users/supplier')
@@ -163,11 +169,12 @@ describe('Тестирование пользователей (E2E)', () => {
           password: 'password123',
           name: 'Test Supplier',
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.USER_ALREADY_EXISTS);
     });
 
-    it('Должен завершиться ошибкой без имени', async () => {
+    it('Должен выбросить ошибку 422, если имя отсутствует', async () => {
       const res = await request(application.app)
         .post('/users/supplier')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -175,6 +182,7 @@ describe('Тестирование пользователей (E2E)', () => {
           email: 'noname@test.com',
           password: 'password123',
         });
+
       expect(res.statusCode).toBe(422);
       expect(res.body.error).toBe(MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Имя'));
     });
@@ -187,24 +195,27 @@ describe('Тестирование пользователей (E2E)', () => {
         email: 'supplier@test.com',
         password: 'password123',
       });
+
       expect(status).toBe(200);
       expect(token).toBeDefined();
     });
 
-    it('Должен завершиться ошибкой с неверными учетными данными', async () => {
+    it('Должен выбросить ошибку 401, если учетные данные неверны', async () => {
       const { status, error } = await loginUser(application.app, {
         email: 'supplier@test.com',
         password: 'wrongpassword',
       });
+
       expect(status).toBe(401);
       expect(error).toBe(MESSAGES.INVALID_CREDENTIALS);
     });
 
-    it('Должен завершиться ошибкой для несуществующего пользователя', async () => {
+    it('Должен выбросить ошибку 401, если пользователь не существует', async () => {
       const { status, error } = await loginUser(application.app, {
         email: 'nonexistent@test.com',
         password: 'password123',
       });
+
       expect(status).toBe(401);
       expect(error).toBe(MESSAGES.INVALID_CREDENTIALS);
     });
@@ -217,6 +228,7 @@ describe('Тестирование пользователей (E2E)', () => {
         .patch(`/users/supplier/${supplierId}/password`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ newPassword: 'newpassword123' });
+
       expect(res.statusCode).toBe(200);
       expect(res.body.message).toBe(MESSAGES.PASSWORD_UPDATED);
 
@@ -224,36 +236,42 @@ describe('Тестирование пользователей (E2E)', () => {
         email: 'supplier@test.com',
         password: 'newpassword123',
       });
+
       expect(status).toBe(200);
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID поставщика неверный', async () => {
       const res = await request(application.app)
         .patch('/users/supplier/9999/password')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ newPassword: 'newpassword123' });
+
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
     });
 
-    it('Должен завершиться ошибкой со слабым паролем', async () => {
+    it('Должен выбросить ошибку 422, если пароль слабый', async () => {
       const { supplierId } = await createTestSupplier(application.app, adminToken);
       const res = await request(application.app)
         .patch(`/users/supplier/${supplierId}/password`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ newPassword: 'weak' });
+
       expect(res.statusCode).toBe(422);
-      expect(res.body.error).toBe(MESSAGES.NEW_PASSWORD_COMPLEXITY);
+      expect(res.body.error).toBe(MESSAGES.PASSWORD_COMPLEXITY);
     });
 
-    it('Должен завершиться ошибкой с пустым паролем', async () => {
+    it('Должен выбросить ошибку 422, если пароль пустой', async () => {
       const { supplierId } = await createTestSupplier(application.app, adminToken);
       const res = await request(application.app)
         .patch(`/users/supplier/${supplierId}/password`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ newPassword: '' });
+
       expect(res.statusCode).toBe(422);
-      expect(res.body.error).toBe(MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Новый пароль'));
+      expect(res.body.error).toBe(
+        MESSAGES.REQUIRED_FIELD.replace('{{field}}', 'Новый пароль'),
+      );
     });
   });
 
@@ -263,33 +281,43 @@ describe('Тестирование пользователей (E2E)', () => {
       const res = await request(application.app)
         .delete(`/users/supplier/${supplierId}`)
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.message).toBe(MESSAGES.USER_DELETED);
     });
 
-    it('Должен завершиться ошибкой, если у поставщика есть активные промоакции', async () => {
-      const { supplierId, supplierToken } = await createTestSupplier(application.app, adminToken);
-      await request(application.app)
-        .post('/promotions/propose')
-        .set('Authorization', `Bearer ${supplierToken}`)
+    it('Должен выбросить ошибку 400, если у поставщика есть активные промоакции', async () => {
+      const { supplierId } = await createTestSupplier(application.app, adminToken);
+      const now = new Date();
+      const startDate = new Date(now.getTime() + 2 * 3600000);
+      const endDate = new Date(now.getTime() + 86400000);
+
+      const promotionRes = await request(application.app)
+        .post('/promotions')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           title: 'Test Promotion',
           description: 'Test Description',
-          startDate: new Date(Date.now() + 86400000).toISOString(),
-          endDate: new Date(Date.now() + 2 * 86400000).toISOString(),
+          supplierId,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
         });
+
+      expect(promotionRes.statusCode).toBe(201);
 
       const res = await request(application.app)
         .delete(`/users/supplier/${supplierId}`)
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(400);
-      expect(res.body.error).toBe(MESSAGES.SUPPLIER_ACTIVE_PROMOTIONS);
+      expect(res.body.error).toBe(MESSAGES.SUPPLIER_HAS_ACTIVE_PROMOTIONS);
     });
 
-    it('Должен завершиться ошибкой с неверным ID', async () => {
+    it('Должен выбросить ошибку 404, если ID поставщика неверный', async () => {
       const res = await request(application.app)
         .delete('/users/supplier/9999')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
     });
@@ -301,6 +329,7 @@ describe('Тестирование пользователей (E2E)', () => {
       const res = await request(application.app)
         .get('/users/suppliers')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(res.statusCode).toBe(200);
       expect(res.body.data.length).toBeGreaterThanOrEqual(1);
     });
