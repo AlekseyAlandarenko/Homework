@@ -8,10 +8,13 @@ import { TYPES } from '../types';
 import { IUsersRepository, WarehouseManagerResponse } from './users.repository.interface';
 import { UserModel } from '@prisma/client';
 import { HTTPError } from '../errors/http-error.class';
-import { Prisma } from '@prisma/client';
-import { MESSAGES } from '../common/messages';
 import { PrismaService } from '../database/prisma.service';
 import { sign } from 'jsonwebtoken';
+import { UserRole } from '../common/constants';
+import { PaginatedResponse, DEFAULT_PAGINATION } from '../common/pagination.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { MESSAGES } from '../common/messages';
+import { validateId } from '../common/validators';
 
 @injectable()
 export class UsersService implements IUsersService {
@@ -21,159 +24,77 @@ export class UsersService implements IUsersService {
 		@inject(TYPES.PrismaService) private prismaService: PrismaService,
 	) {}
 
-	private handleError(err: unknown): never {
-		if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-			throw new HTTPError(404, MESSAGES.USER_NOT_FOUND);
-		}
-		throw err instanceof HTTPError ? err : new HTTPError(500, MESSAGES.SERVER_ERROR);
-	}
-
-	private async createUser(
-		dto: UserRegisterDto,
-		role: 'ADMIN' | 'WAREHOUSE_MANAGER',
-	): Promise<UserModel> {
-		const newUser = new User(dto.email, dto.name, role);
-		const salt = this.configService.get('SALT');
-		await newUser.setPassword(dto.password, Number(salt));
-		const existedUser = await this.usersRepository.find(dto.email);
+	async createUser(dto: UserRegisterDto, role: UserRole): Promise<UserModel> {
+		const existedUser = await this.usersRepository.findByEmail(dto.email);
 		if (existedUser) {
 			throw new HTTPError(422, MESSAGES.USER_ALREADY_EXISTS);
 		}
-		return this.usersRepository.create(newUser);
-	}
 
-	async createAdmin(dto: UserRegisterDto): Promise<UserModel> {
-		try {
-			return await this.createUser(dto, 'ADMIN');
-		} catch (err) {
-			return this.handleError(err);
-		}
-	}
-
-	async createWarehouseManager(dto: UserRegisterDto): Promise<UserModel> {
-		try {
-			return await this.createUser(dto, 'WAREHOUSE_MANAGER');
-		} catch (err) {
-			return this.handleError(err);
-		}
+		const newUser = new User(dto.email, dto.name, role);
+		const salt = this.configService.get('SALT');
+		await newUser.setPassword(dto.password, Number(salt));
+		return this.usersRepository.createUser(newUser);
 	}
 
 	async login(dto: UserLoginDto): Promise<string> {
-		try {
-			const result = await this.validateUser(dto);
-			if (!result) {
-				throw new HTTPError(401, MESSAGES.INVALID_CREDENTIALS, 'login');
-			}
-			const user = await this.getUserInfo(dto.email);
-			if (!user) {
-				throw new HTTPError(401, MESSAGES.USER_NOT_FOUND, 'login');
-			}
-			return this.signJWT(user.email, user.role);
-		} catch (err) {
-			throw this.handleError(err);
+		const user = await this.usersRepository.findByEmail(dto.email);
+		if (!user) {
+			throw new HTTPError(401, MESSAGES.INVALID_CREDENTIALS, 'login');
 		}
+		const newUser = new User(user.email, user.name, user.role as UserRole, user.password);
+		const isValid = await newUser.comparePassword(dto.password);
+		if (!isValid) {
+			throw new HTTPError(401, MESSAGES.INVALID_CREDENTIALS, 'login');
+		}
+		return this.signJWT(user.id, user.email, user.role);
 	}
 
-	async validateUser({ email, password }: UserLoginDto): Promise<boolean> {
-		try {
-			const existedUser = await this.usersRepository.find(email);
-			if (!existedUser) {
-				return false;
-			}
-			const newUser = new User(
-				existedUser.email,
-				existedUser.name,
-				existedUser.role,
-				existedUser.password,
-			);
-			return newUser.comparePassword(password);
-		} catch (err) {
-			return this.handleError(err);
-		}
+	async getUserInfoByEmail(email: string): Promise<UserModel> {
+		return this.usersRepository.findByEmailOrThrow(email);
 	}
 
-	async getUserInfo(email: string): Promise<UserModel | null> {
-		try {
-			return await this.usersRepository.find(email);
-		} catch (err) {
-			return this.handleError(err);
-		}
+	async getUserInfoById(id: number): Promise<UserModel> {
+		validateId(id);
+		return this.usersRepository.findByIdOrThrow(id);
 	}
 
-	async getUserInfoById(id: number): Promise<UserModel | null> {
-		try {
-			return await this.usersRepository.findById(id);
-		} catch (err) {
-			return this.handleError(err);
-		}
-	}
-
-	async getAllWarehouseManagers(): Promise<WarehouseManagerResponse[]> {
-		try {
-			return await this.usersRepository.findAllWarehouseManagers();
-		} catch (err) {
-			return this.handleError(err);
-		}
+	async getAllWarehouseManagers(
+		pagination: PaginationDto = DEFAULT_PAGINATION,
+	): Promise<PaginatedResponse<WarehouseManagerResponse>> {
+		return this.usersRepository.findAllWarehouseManagers(pagination);
 	}
 
 	async updateWarehouseManagerPassword(id: number, newPassword: string): Promise<UserModel> {
-		try {
-			if (isNaN(id)) {
-				throw new HTTPError(400, MESSAGES.INVALID_FORMAT);
-			}
-			const user = await this.usersRepository.findById(id);
-			if (!user || user.role !== 'WAREHOUSE_MANAGER') {
-				throw new HTTPError(404, MESSAGES.USER_NOT_FOUND);
-			}
-			const newUser = new User(user.email, user.name, user.role, user.password);
-			const salt = this.configService.get('SALT');
-			await newUser.setPassword(newPassword, Number(salt));
-			const updatedUser = await this.usersRepository.update(id, { password: newUser.password });
-			if (!updatedUser) {
-				throw new HTTPError(404, MESSAGES.USER_NOT_FOUND);
-			}
-			return updatedUser;
-		} catch (err) {
-			return this.handleError(err);
+		validateId(id);
+		const user = await this.usersRepository.findByIdOrThrow(id);
+		if (user.role !== 'WAREHOUSE_MANAGER') {
+			throw new HTTPError(403, MESSAGES.INVALID_ROLE.replace('{{role}}', user.role));
 		}
+
+		const newUser = new User(user.email, user.name, user.role as UserRole, user.password);
+		const salt = this.configService.get('SALT');
+		await newUser.setPassword(newPassword, Number(salt));
+		return this.usersRepository.updateUser(id, { password: newUser.password });
 	}
 
 	async deleteWarehouseManager(id: number): Promise<UserModel> {
-		try {
-			if (isNaN(id)) {
-				throw new HTTPError(400, MESSAGES.INVALID_FORMAT);
-			}
-			const user = await this.usersRepository.findById(id);
-			if (!user || user.role !== 'WAREHOUSE_MANAGER') {
-				throw new HTTPError(404, MESSAGES.USER_NOT_FOUND);
-			}
-
-			const deletedUser = await this.usersRepository.delete(id);
-			if (!deletedUser) {
-				throw new HTTPError(404, MESSAGES.USER_NOT_FOUND);
-			}
-			return deletedUser;
-		} catch (err) {
-			return this.handleError(err);
+		validateId(id);
+		const user = await this.usersRepository.findByIdOrThrow(id);
+		if (user.role !== 'WAREHOUSE_MANAGER') {
+			throw new HTTPError(403, MESSAGES.INVALID_ROLE.replace('{{role}}', user.role));
 		}
+
+		return this.usersRepository.deleteUser(id);
 	}
 
-	private signJWT(email: string, role: string): Promise<string> {
+	private signJWT(id: number, email: string, role: string): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
 			sign(
-				{
-					email,
-					role,
-					iat: Math.floor(Date.now() / 1000),
-				},
+				{ id, email, role, iat: Math.floor(Date.now() / 1000) },
 				this.configService.get('SECRET'),
-				{
-					algorithm: 'HS256',
-				},
+				{ algorithm: 'HS256' },
 				(err, token) => {
-					if (err) {
-						reject(err);
-					}
+					if (err) reject(err);
 					resolve(token as string);
 				},
 			);

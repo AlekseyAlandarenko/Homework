@@ -26,8 +26,17 @@ export class AuthMiddleware implements IMiddleware {
 				return res.status(401).send({ error: MESSAGES.INVALID_TOKEN });
 			}
 
-			if (typeof payload === 'object' && 'email' in payload && 'role' in payload) {
-				req.user = { email: payload.email as string, role: payload.role as string };
+			if (
+				typeof payload === 'object' &&
+				'id' in payload &&
+				'email' in payload &&
+				'role' in payload
+			) {
+				req.user = {
+					id: payload.id as number,
+					email: payload.email as string,
+					role: payload.role as string,
+				};
 				this.logger.log(`${MESSAGES.AUTHENTICATION_SUCCESS}: ${payload.email}`);
 			} else {
 				this.logger.warn(MESSAGES.INVALID_TOKEN_PAYLOAD);

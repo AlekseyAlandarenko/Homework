@@ -1,7 +1,6 @@
 import { App } from '../src/app';
-import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
-import { MESSAGES } from '../src/common/messages';
+import { PrismaClient } from '@prisma/client';
 
 export interface UserCredentials {
   email: string;
@@ -20,9 +19,16 @@ export interface ProductPayload {
 }
 
 export const cleanUp = async (prisma: PrismaClient) => {
+  await prisma.cartModel.deleteMany({});
   await prisma.productModel.deleteMany({});
   await prisma.userModel.deleteMany({
-    where: { email: { contains: '@test.com' } },
+    where: {
+      OR: [
+        { email: { contains: '@test.com' } },
+        { role: 'WAREHOUSE_MANAGER' },
+        { role: 'ADMIN', email: { not: 'superadmin@example.com' } },
+      ],
+    },
   });
 };
 
@@ -44,7 +50,7 @@ export const createTestWarehouseManager = async (app: App['app'], adminToken: st
     .post('/users/warehouseManager')
     .set('Authorization', `Bearer ${adminToken}`)
     .send(managerData);
-  if (res.statusCode !== 201) throw new Error(MESSAGES.FAILED_TO_CREATE_WAREHOUSE_MANAGER);
+  if (res.statusCode !== 201) throw new Error(res.body.error || 'Не удалось создать начальника склада');
 
   const { token } = await loginUser(app, managerData);
   return { managerId: res.body.data.id, managerToken: token };

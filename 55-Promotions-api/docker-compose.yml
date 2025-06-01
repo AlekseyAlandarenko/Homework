@@ -1,14 +1,14 @@
 services:
   pgdb:
     image: postgres:14
-    container_name: 55-promotions-api
+    container_name: 55-Promotions-api
     restart: always
     ports:
       - '5432:5432'
     environment:
       POSTGRES_USER: superadmin
       POSTGRES_PASSWORD: superadmin_password
-      POSTGRES_DB: warehouse_db
+      POSTGRES_DB: promotions_db
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data/pgdata

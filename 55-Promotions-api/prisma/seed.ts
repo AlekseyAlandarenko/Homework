@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { User } from '../src/users/user.entity';
 import { config } from 'dotenv';
 
@@ -26,7 +26,7 @@ async function seed() {
         email: user.email,
         name: user.name,
         password: user.password,
-        role: user.role as Role,
+        role: user.role,
       },
     });
     console.log('Сид данные загружены');

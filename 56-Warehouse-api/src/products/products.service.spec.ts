@@ -4,27 +4,29 @@ import { IUsersService } from '../users/users.service.interface';
 import { IProductsService } from './products.service.interface';
 import { TYPES } from '../types';
 import { ProductsService } from './products.service';
-import { ProductModel, Prisma, Role } from '@prisma/client';
 import 'reflect-metadata';
 import { HTTPError } from '../errors/http-error.class';
 import { MESSAGES } from '../common/messages';
 import { Product } from './product.entity';
+import { Prisma } from '@prisma/client';
+import { DEFAULT_PAGINATION } from '../common/pagination.interface';
 
 const ProductsRepositoryMock: IProductsRepository = {
 	create: jest.fn(),
-	findAll: jest.fn(),
-	findByManager: jest.fn(),
 	findById: jest.fn(),
+	findByIdOrThrow: jest.fn(),
+	findBySku: jest.fn(),
+	findAll: jest.fn(),
+	findByCreator: jest.fn(),
 	update: jest.fn(),
 	delete: jest.fn(),
+	findStock: jest.fn(),
 };
 
 const UsersServiceMock: IUsersService = {
-	createAdmin: jest.fn(),
-	createWarehouseManager: jest.fn(),
-	validateUser: jest.fn(),
+	createUser: jest.fn(),
 	login: jest.fn(),
-	getUserInfo: jest.fn(),
+	getUserInfoByEmail: jest.fn(),
 	getUserInfoById: jest.fn(),
 	updateWarehouseManagerPassword: jest.fn(),
 	deleteWarehouseManager: jest.fn(),
@@ -49,15 +51,54 @@ beforeAll(() => {
 });
 
 describe('Сервис продуктов', () => {
-	const mockProduct: ProductModel = {
+	const mockProduct = {
 		id: 1,
-		name: 'Test Product',
-		description: 'Test Description',
-		price: 100,
+		name: 'Ноутбук HP EliteBook',
+		description: '15.6", Core i7, 16GB RAM',
+		price: 1250.99,
 		quantity: 10,
-		category: 'Electronics',
-		sku: 'TEST123',
+		category: 'Электроника',
+		sku: 'NB-HP-ELITE-001',
 		isActive: true,
+		isDeleted: false,
+		createdById: 1,
+		updatedById: 1,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
+
+	const mockProductForWarehouseManager = {
+		...mockProduct,
+		createdById: 4,
+		updatedById: 4,
+	};
+
+	const mockInactiveProduct = {
+		id: 2,
+		name: 'Смартфон Samsung Galaxy',
+		description: '6.5", 8GB RAM',
+		price: 799.99,
+		quantity: 5,
+		category: 'Электроника',
+		sku: 'SM-SG-001',
+		isActive: false,
+		isDeleted: false,
+		createdById: 1,
+		updatedById: 1,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
+
+	const mockOutOfStockProduct = {
+		id: 3,
+		name: 'Планшет Apple iPad',
+		description: '10.2", 64GB',
+		price: 499.99,
+		quantity: 0,
+		category: 'Электроника',
+		sku: 'TB-AP-IPAD-001',
+		isActive: true,
+		isDeleted: false,
 		createdById: 1,
 		updatedById: 1,
 		createdAt: new Date(),
@@ -66,9 +107,9 @@ describe('Сервис продуктов', () => {
 
 	const mockUser = {
 		id: 1,
-		email: 'manager@example.com',
-		name: 'Test Manager',
-		role: 'WAREHOUSE_MANAGER' as Role,
+		email: 'test@example.com',
+		name: 'Test User',
+		role: 'WAREHOUSE_MANAGER',
 		password: 'hashed',
 		createdAt: new Date(),
 		updatedAt: new Date(),
@@ -78,7 +119,27 @@ describe('Сервис продуктов', () => {
 		id: 2,
 		email: 'admin@example.com',
 		name: 'Admin User',
-		role: 'ADMIN' as Role,
+		role: 'ADMIN',
+		password: 'hashed',
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
+
+	const mockSuperAdmin = {
+		id: 3,
+		email: 'superadmin@example.com',
+		name: 'Super Admin',
+		role: 'SUPERADMIN',
+		password: 'hashed',
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
+
+	const mockWarehouseManager = {
+		id: 4,
+		email: 'warehouseManager@example.com',
+		name: 'WarehouseManager User',
+		role: 'WAREHOUSE_MANAGER',
 		password: 'hashed',
 		createdAt: new Date(),
 		updatedAt: new Date(),
@@ -90,575 +151,448 @@ describe('Сервис продуктов', () => {
 
 	describe('Создание продукта', () => {
 		it('Должен успешно создать продукт', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
 			productsRepository.create = jest.fn().mockResolvedValue(mockProduct);
 
 			const result = await productsService.createProduct({
-				name: 'Test Product',
-				description: 'Test Description',
-				price: 100,
+				name: 'Ноутбук HP EliteBook',
+				description: '15.6", Core i7, 16GB RAM',
+				price: 1250.99,
 				quantity: 10,
-				category: 'Electronics',
-				sku: 'TEST123',
-				userEmail: 'manager@example.com',
+				category: 'Электроника',
+				sku: 'NB-HP-ELITE-001',
+				isActive: true,
+				userEmail: 'admin@example.com',
 			});
 
 			expect(result).toEqual(mockProduct);
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
+			expect(productsRepository.findBySku).toHaveBeenCalledWith('NB-HP-ELITE-001');
+			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
+			const productArg = (productsRepository.create as jest.Mock).mock.calls[0][0];
+			expect(productArg.name).toBe('Ноутбук HP EliteBook');
+			expect(productArg.sku).toBe('NB-HP-ELITE-001');
+			expect(productArg.createdById).toBe(2);
+			expect(productArg.updatedById).toBe(2);
+		});
+
+		it('Должен выбросить ошибку 404, если email пользователя отсутствует', async () => {
+			await expect(
+				productsService.createProduct({
+					name: 'Ноутбук HP EliteBook',
+					description: '15.6", Core i7, 16GB RAM',
+					price: 1250.99,
+					quantity: 10,
+					category: 'Электроника',
+					sku: 'NB-HP-ELITE-001',
+					isActive: true,
+				}),
+			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
+			expect(productsRepository.create).not.toHaveBeenCalled();
+		});
+
+		it('Должен выбросить ошибку 422, если SKU уже существует', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(mockProduct);
+
+			await expect(
+				productsService.createProduct({
+					name: 'Ноутбук HP EliteBook',
+					description: '15.6", Core i7, 16GB RAM',
+					price: 1250.99,
+					quantity: 10,
+					category: 'Электроника',
+					sku: 'NB-HP-ELITE-001',
+					isActive: true,
+					userEmail: 'admin@example.com',
+				}),
+			).rejects.toThrowError(new HTTPError(422, MESSAGES.SKU_ALREADY_EXISTS));
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
+			expect(productsRepository.findBySku).toHaveBeenCalledWith('NB-HP-ELITE-001');
+			expect(productsRepository.create).not.toHaveBeenCalled();
+		});
+
+		it('Должен успешно создать продукт с коротким названием', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
+			productsRepository.create = jest.fn().mockResolvedValue({
+				...mockProduct,
+				name: 'HP',
+			});
+
+			const result = await productsService.createProduct({
+				name: 'HP',
+				description: '15.6", Core i7, 16GB RAM',
+				price: 1250.99,
+				quantity: 10,
+				category: 'Электроника',
+				sku: 'NB-HP-ELITE-001',
+				isActive: true,
+				userEmail: 'admin@example.com',
+			});
+
+			expect(result).toEqual({ ...mockProduct, name: 'HP' });
 			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
 		});
 
-		it('Должен выбросить HTTPError, если userEmail отсутствует', async () => {
-			await expect(
-				productsService.createProduct({
-					name: 'Test Product',
-					description: 'Test Description',
-					price: 100,
-					quantity: 10,
-					category: 'Electronics',
-					sku: 'TEST123',
-				}),
-			).rejects.toThrowError(new HTTPError(401, MESSAGES.UNAUTHORIZED));
-			expect(usersService.getUserInfo).not.toHaveBeenCalled();
-			expect(productsRepository.create).not.toHaveBeenCalled();
+		it('Должен успешно создать продукт с корректной ценой', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
+			productsRepository.create = jest.fn().mockResolvedValue(mockProduct);
+
+			const result = await productsService.createProduct({
+				name: 'Ноутбук HP EliteBook',
+				description: '15.6", Core i7, 16GB RAM',
+				price: 1250.99,
+				quantity: 10,
+				category: 'Электроника',
+				sku: 'NB-HP-ELITE-001',
+				isActive: true,
+				userEmail: 'admin@example.com',
+			});
+
+			expect(result).toEqual(mockProduct);
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
+			expect(productsRepository.findBySku).toHaveBeenCalledWith('NB-HP-ELITE-001');
+			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не найден', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(null);
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
+			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
+				code: 'P2002',
+				clientVersion: '1.0',
+			});
+			productsRepository.create = jest.fn().mockRejectedValue(prismaError);
 
 			await expect(
 				productsService.createProduct({
-					name: 'Test Product',
-					description: 'Test Description',
-					price: 100,
+					name: 'Ноутбук HP EliteBook',
+					description: '15.6", Core i7, 16GB RAM',
+					price: 1250.99,
 					quantity: 10,
-					category: 'Electronics',
-					sku: 'TEST123',
-					userEmail: 'nonexistent@example.com',
+					category: 'Электроника',
+					sku: 'NB-HP-ELITE-001',
+					isActive: true,
+					userEmail: 'admin@example.com',
 				}),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('nonexistent@example.com');
-			expect(productsRepository.create).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если цена отрицательная', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-
-			await expect(
-				productsService.createProduct({
-					name: 'Test Product',
-					description: 'Test Description',
-					price: -100,
-					quantity: 10,
-					category: 'Electronics',
-					sku: 'TEST123',
-					userEmail: 'manager@example.com',
-				}),
-			).rejects.toThrowError(new HTTPError(422, MESSAGES.PRICE_NEGATIVE));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.create).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если количество отрицательное', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-
-			await expect(
-				productsService.createProduct({
-					name: 'Test Product',
-					description: 'Test Description',
-					price: 100,
-					quantity: -10,
-					category: 'Electronics',
-					sku: 'TEST123',
-					userEmail: 'manager@example.com',
-				}),
-			).rejects.toThrowError(new HTTPError(422, MESSAGES.QUANTITY_NEGATIVE));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.create).not.toHaveBeenCalled();
-		});
-
-		it('Должен обрабатывать ошибки базы данных', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.create = jest.fn().mockRejectedValue(new Error('DB Error'));
-
-			await expect(
-				productsService.createProduct({
-					name: 'Test Product',
-					description: 'Test Description',
-					price: 100,
-					quantity: 10,
-					category: 'Electronics',
-					sku: 'TEST123',
-					userEmail: 'manager@example.com',
-				}),
-			).rejects.toThrowError(new HTTPError(500, MESSAGES.SERVER_ERROR));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.create).toHaveBeenCalled();
+			).rejects.toThrowError(prismaError);
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
+			expect(productsRepository.findBySku).toHaveBeenCalledWith('NB-HP-ELITE-001');
+			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
 		});
 	});
 
 	describe('Получение всех продуктов', () => {
 		it('Должен вернуть продукты с фильтрами', async () => {
-			productsRepository.findAll = jest.fn().mockResolvedValue([mockProduct]);
-	
-			const result = await productsService.getAllProducts({
-				filters: { category: 'Electronics', isActive: true },
-				sort: { sortBy: 'name', sortOrder: 'asc' },
+			productsRepository.findAll = jest.fn().mockResolvedValue({
+				items: [mockProduct],
+				total: 1,
 			});
-	
-			expect(result).toEqual([mockProduct]);
+
+			const result = await productsService.getAllProducts({
+				filters: { category: 'Электроника', isActive: true },
+				orderBy: { sortBy: 'name', sortOrder: 'asc' },
+				pagination: DEFAULT_PAGINATION,
+			});
+
+			expect(result).toEqual({ items: [mockProduct], total: 1 });
 			expect(productsRepository.findAll).toHaveBeenCalledWith({
-				filters: {
-					category: 'Electronics',
-					isActive: true,
-				},
+				pagination: DEFAULT_PAGINATION,
+				filters: { category: 'Электроника', isActive: true, isDeleted: false },
 				orderBy: { name: 'asc' },
 			});
 		});
-	
-		it('Должен обрабатывать ошибки базы данных', async () => {
-			productsRepository.findAll = jest.fn().mockRejectedValue(new Error('DB Error'));
-	
-			await expect(productsService.getAllProducts()).rejects.toThrowError(
-				new HTTPError(500, MESSAGES.SERVER_ERROR),
-			);
-			expect(productsRepository.findAll).toHaveBeenCalled();
+
+		it('Должен использовать значения по умолчанию', async () => {
+			productsRepository.findAll = jest.fn().mockResolvedValue({
+				items: [mockProduct],
+				total: 1,
+			});
+
+			const result = await productsService.getAllProducts({ pagination: DEFAULT_PAGINATION });
+
+			expect(result).toEqual({ items: [mockProduct], total: 1 });
+			expect(productsRepository.findAll).toHaveBeenCalledWith({
+				pagination: DEFAULT_PAGINATION,
+				filters: { isDeleted: false },
+				orderBy: { createdAt: 'desc' },
+			});
+		});
+
+		it('Должен выбросить ошибку 422 для некорректной пагинации', async () => {
+			await expect(
+				productsService.getAllProducts({
+					pagination: { page: -1, limit: 10 },
+				}),
+			).rejects.toThrowError(new HTTPError(422, MESSAGES.VALIDATION_FAILED));
+			expect(productsRepository.findAll).not.toHaveBeenCalled();
 		});
 	});
 
-	describe('Получение продуктов по менеджеру', () => {
-		it('Должен вернуть продукты для менеджера', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByManager = jest.fn().mockResolvedValue([mockProduct]);
+	describe('Получение продуктов по создателю', () => {
+		it('Должен вернуть продукты для создателя', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockWarehouseManager);
+			productsRepository.findByCreator = jest.fn().mockResolvedValue({
+				items: [mockProductForWarehouseManager],
+				total: 1,
+			});
 
-			const result = await productsService.getProductsByManager('manager@example.com');
-
-			expect(result).toEqual([mockProduct]);
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.findByManager).toHaveBeenCalledWith(1);
-		});
-
-		it('Должен выбросить HTTPError, если email отсутствует', async () => {
-			await expect(productsService.getProductsByManager(undefined)).rejects.toThrowError(
-				new HTTPError(401, MESSAGES.UNAUTHORIZED),
+			const result = await productsService.getProductsByCreator(
+				'warehouseManager@example.com',
+				DEFAULT_PAGINATION,
 			);
-			expect(usersService.getUserInfo).not.toHaveBeenCalled();
-			expect(productsRepository.findByManager).not.toHaveBeenCalled();
+
+			expect(result).toEqual({ items: [mockProductForWarehouseManager], total: 1 });
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('warehouseManager@example.com');
+			expect(productsRepository.findByCreator).toHaveBeenCalledWith(4, DEFAULT_PAGINATION);
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не найден', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(null);
+		it('Должен выбросить ошибку 403 для пользователя без роли WAREHOUSE_MANAGER', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
 
 			await expect(
-				productsService.getProductsByManager('nonexistent@example.com'),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('nonexistent@example.com');
-			expect(productsRepository.findByManager).not.toHaveBeenCalled();
+				productsService.getProductsByCreator('admin@example.com', DEFAULT_PAGINATION),
+			).rejects.toThrowError(new HTTPError(403, MESSAGES.FORBIDDEN));
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
+			expect(productsRepository.findByCreator).not.toHaveBeenCalled();
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не является менеджером склада', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
-
-			await expect(productsService.getProductsByManager('admin@example.com')).rejects.toThrowError(
-				new HTTPError(403, MESSAGES.FORBIDDEN),
+		it('Должен выбросить ошибку 404, если email отсутствует', async () => {
+			await expect(productsService.getProductsByCreator('')).rejects.toThrowError(
+				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
 			);
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findByManager).not.toHaveBeenCalled();
-		});
-
-		it('Должен обрабатывать ошибки базы данных', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByManager = jest.fn().mockRejectedValue(new Error('DB Error'));
-
-			await expect(
-				productsService.getProductsByManager('manager@example.com'),
-			).rejects.toThrowError(new HTTPError(500, MESSAGES.SERVER_ERROR));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.findByManager).toHaveBeenCalledWith(1);
+			expect(productsRepository.findByCreator).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('Обновление продукта', () => {
 		it('Должен успешно обновить продукт', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockProduct);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
 			productsRepository.update = jest.fn().mockResolvedValue({
 				...mockProduct,
-				name: 'Updated Product',
+				name: 'Обновленный ноутбук',
 			});
 
-			const result = await productsService.updateProduct(1, {
-				name: 'Updated Product',
-			});
-
-			expect(result).toEqual({
-				...mockProduct,
-				name: 'Updated Product',
-			});
-			expect(productsRepository.update).toHaveBeenCalledWith(1, { name: 'Updated Product' });
-		});
-
-		it('Должен выбросить HTTPError для некорректного ID', async () => {
-			await expect(
-				productsService.updateProduct(NaN, { name: 'Updated Product' }),
-			).rejects.toThrowError(new HTTPError(400, MESSAGES.INVALID_FORMAT));
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError для пустых данных обновления', async () => {
-			await expect(productsService.updateProduct(1, {})).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.VALIDATION_FAILED),
+			const result = await productsService.updateProduct(
+				1,
+				{ name: 'Обновленный ноутбук' },
+				'admin@example.com',
 			);
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
 
-		it('Должен выбросить HTTPError для отрицательной цены', async () => {
-			await expect(productsService.updateProduct(1, { price: -100 })).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.PRICE_NEGATIVE),
+			expect(result).toEqual({ ...mockProduct, name: 'Обновленный ноутбук' });
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
+			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
+			expect(productsRepository.findBySku).not.toHaveBeenCalled();
+			expect(productsRepository.update).toHaveBeenCalledWith(
+				1,
+				expect.objectContaining({ name: 'Обновленный ноутбук', updatedById: mockAdmin.id }),
 			);
+		});
+
+		it('Должен выбросить ошибку 422 для некорректного ID', async () => {
+			await expect(
+				productsService.updateProduct(NaN, { name: 'Обновленный ноутбук' }, 'admin@example.com'),
+			).rejects.toThrowError(new HTTPError(422, MESSAGES.INVALID_ID));
+			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
 			expect(productsRepository.update).not.toHaveBeenCalled();
 		});
 
-		it('Должен выбросить HTTPError для отрицательного количества', async () => {
-			await expect(productsService.updateProduct(1, { quantity: -10 })).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.QUANTITY_NEGATIVE),
-			);
+		it('Должен выбросить ошибку 404, если email отсутствует', async () => {
+			await expect(
+				productsService.updateProduct(1, { name: 'Обновленный ноутбук' }, undefined),
+			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
+			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
 			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если продукт не найден', async () => {
-			productsRepository.update = jest.fn().mockResolvedValue(null);
-
-			await expect(
-				productsService.updateProduct(999, { name: 'Updated Product' }),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
-			expect(productsRepository.update).toHaveBeenCalledWith(999, { name: 'Updated Product' });
-		});
-
-		it('Должен обрабатывать ошибки Prisma', async () => {
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
-				code: 'P2025',
-				clientVersion: '1.0',
-			});
-			productsRepository.update = jest.fn().mockRejectedValue(prismaError);
-
-			await expect(
-				productsService.updateProduct(1, { name: 'Updated Product' }),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
-			expect(productsRepository.update).toHaveBeenCalledWith(1, { name: 'Updated Product' });
 		});
 	});
 
-	describe('Добавление количества продукта', () => {
-		it('Должен успешно добавить количество продукта', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findById = jest.fn().mockResolvedValue(mockProduct);
+	describe('Обновление количества продукта', () => {
+		it('Должен успешно обновить количество продукта', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
+			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockProduct);
 			productsRepository.update = jest.fn().mockResolvedValue({
 				...mockProduct,
-				quantity: 15,
-				isActive: true,
+				quantity: 30,
 			});
 
-			const result = await productsService.addProductQuantity(1, 5, 'manager@example.com');
-
-			expect(result).toEqual({
-				...mockProduct,
-				quantity: 15,
-				isActive: true,
-			});
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
-			expect(productsRepository.update).toHaveBeenCalledWith(1, {
-				quantity: 15,
-				isActive: true,
-				updatedById: 1,
-			});
-		});
-
-		it('Должен выбросить HTTPError для некорректного ID', async () => {
-			await expect(
-				productsService.addProductQuantity(NaN, 5, 'manager@example.com'),
-			).rejects.toThrowError(new HTTPError(400, MESSAGES.INVALID_FORMAT));
-			expect(usersService.getUserInfo).not.toHaveBeenCalled();
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError для отрицательного или нулевого количества', async () => {
-			productsRepository.findById = jest.fn();
-			productsRepository.update = jest.fn();
-			usersService.getUserInfo = jest.fn();
-
-			await expect(
-				productsService.addProductQuantity(1, 0, 'manager@example.com'),
-			).rejects.toThrowError(new HTTPError(422, MESSAGES.QUANTITY_ZERO_OR_NEGATIVE));
-			expect(usersService.getUserInfo).not.toHaveBeenCalled();
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если userEmail отсутствует', async () => {
-			await expect(productsService.addProductQuantity(1, 5, undefined)).rejects.toThrowError(
-				new HTTPError(401, MESSAGES.UNAUTHORIZED),
+			const result = await productsService.updateProductQuantity(
+				1,
+				{ quantity: 20 },
+				'test@example.com',
 			);
-			expect(usersService.getUserInfo).not.toHaveBeenCalled();
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-			expect(productsRepository.update).not.toHaveBeenCalled();
+
+			expect(result).toEqual({ ...mockProduct, quantity: 30 });
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
+			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
+			expect(productsRepository.update).toHaveBeenCalledWith(
+				1,
+				expect.objectContaining({ quantity: 30, updatedById: mockUser.id }),
+			);
 		});
 
-		it('Должен выбросить HTTPError, если пользователь не является менеджером склада', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
+		it('Должен выбросить ошибку 422 для отрицательного итогового количества', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
+			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockProduct);
 
 			await expect(
-				productsService.addProductQuantity(1, 5, 'admin@example.com'),
-			).rejects.toThrowError(new HTTPError(403, MESSAGES.FORBIDDEN));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findById).not.toHaveBeenCalled();
+				productsService.updateProductQuantity(1, { quantity: -20 }, 'test@example.com'),
+			).rejects.toThrowError(new HTTPError(422, MESSAGES.QUANTITY_NEGATIVE));
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
+			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
 			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если продукт не найден', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findById = jest.fn().mockResolvedValue(null);
-
-			await expect(
-				productsService.addProductQuantity(999, 5, 'manager@example.com'),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(999);
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен обрабатывать ошибки Prisma', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findById = jest.fn().mockResolvedValue(mockProduct);
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
-				code: 'P2025',
-				clientVersion: '1.0',
-			});
-			productsRepository.update = jest.fn().mockRejectedValue(prismaError);
-
-			await expect(
-				productsService.addProductQuantity(1, 5, 'manager@example.com'),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
-			expect(productsRepository.update).toHaveBeenCalled();
 		});
 	});
 
 	describe('Удаление продукта', () => {
 		it('Должен успешно удалить продукт', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
 			productsRepository.delete = jest.fn().mockResolvedValue(mockProduct);
 
-			const result = await productsService.deleteProduct(1);
+			const result = await productsService.deleteProduct(1, 'admin@example.com');
 
 			expect(result).toEqual(mockProduct);
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
 			expect(productsRepository.delete).toHaveBeenCalledWith(1);
 		});
 
-		it('Должен выбросить HTTPError для некорректного ID', async () => {
-			await expect(productsService.deleteProduct(NaN)).rejects.toThrowError(
-				new HTTPError(400, MESSAGES.INVALID_FORMAT),
-			);
-			expect(productsRepository.delete).not.toHaveBeenCalled();
-		});
+		it('Должен выбросить ошибку 404, если продукт не найден', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.delete = jest
+				.fn()
+				.mockRejectedValue(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
 
-		it('Должен выбросить HTTPError, если продукт не найден', async () => {
-			productsRepository.delete = jest.fn().mockResolvedValue(null);
-
-			await expect(productsService.deleteProduct(999)).rejects.toThrowError(
+			await expect(productsService.deleteProduct(999, 'admin@example.com')).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
 			);
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
 			expect(productsRepository.delete).toHaveBeenCalledWith(999);
 		});
+	});
 
-		it('Должен обрабатывать ошибки Prisma', async () => {
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
-				code: 'P2025',
-				clientVersion: '1.0',
+	describe('Получение информации о запасах', () => {
+		it('Должен успешно вернуть информацию о запасах', async () => {
+			productsRepository.findStock = jest.fn().mockResolvedValue({
+				items: [{ id: 1, sku: 'NB-HP-ELITE-001', quantity: 10 }],
+				total: 1,
 			});
-			productsRepository.delete = jest.fn().mockRejectedValue(prismaError);
 
-			await expect(productsService.deleteProduct(1)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
-			);
+			const result = await productsService.getStock(DEFAULT_PAGINATION);
+
+			expect(result).toEqual({
+				items: [{ id: 1, sku: 'NB-HP-ELITE-001', quantity: 10 }],
+				total: 1,
+			});
+			expect(productsRepository.findStock).toHaveBeenCalledWith(DEFAULT_PAGINATION);
+		});
+	});
+
+	describe('Проверка ролей', () => {
+		it('Должен разрешить создание продукта супер-администратору', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockSuperAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
+			productsRepository.create = jest.fn().mockResolvedValue(mockProduct);
+
+			const result = await productsService.createProduct({
+				name: 'Ноутбук HP EliteBook',
+				description: '15.6", Core i7, 16GB RAM',
+				price: 1250.99,
+				quantity: 10,
+				category: 'Электроника',
+				sku: 'NB-HP-ELITE-001',
+				isActive: true,
+				userEmail: 'superadmin@example.com',
+			});
+
+			expect(result).toEqual(mockProduct);
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('superadmin@example.com');
+			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
+		});
+
+		it('Должен разрешить удаление продукта администратору', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.delete = jest.fn().mockResolvedValue(mockProduct);
+
+			const result = await productsService.deleteProduct(1, 'admin@example.com');
+
+			expect(result).toEqual(mockProduct);
+			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
 			expect(productsRepository.delete).toHaveBeenCalledWith(1);
 		});
 	});
 
-	describe('Покупка продукта', () => {
-		it('Должен успешно купить продукт', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
-			productsRepository.findById = jest.fn().mockResolvedValue(mockProduct);
-			productsRepository.update = jest.fn().mockResolvedValue({
+	describe('Граничные случаи', () => {
+		it('Должен успешно создать продукт с минимальной ценой', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
+			productsRepository.create = jest.fn().mockResolvedValue({
 				...mockProduct,
-				quantity: 5,
-				isActive: true,
+				price: 0,
 			});
 
-			const result = await productsService.purchaseProduct(1, 5, 'admin@example.com');
-
-			expect(result).toEqual({
-				...mockProduct,
-				quantity: 5,
-				isActive: true,
-			});
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
-			expect(productsRepository.update).toHaveBeenCalledWith(1, {
-				quantity: 5,
-				isActive: true,
-				updatedById: 2,
-			});
-		});
-
-		it('Должен выбросить HTTPError для некорректного ID', async () => {
-			await expect(
-				productsService.purchaseProduct(NaN, 5, 'admin@example.com'),
-			).rejects.toThrowError(new HTTPError(400, MESSAGES.INVALID_FORMAT));
-			expect(usersService.getUserInfo).not.toHaveBeenCalled();
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError для отрицательного или нулевого количества', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
-
-			await expect(productsService.purchaseProduct(1, 0, 'admin@example.com')).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.QUANTITY_ZERO_OR_NEGATIVE),
-			);
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если userEmail отсутствует', async () => {
-			await expect(productsService.purchaseProduct(1, 5, undefined)).rejects.toThrowError(
-				new HTTPError(401, MESSAGES.UNAUTHORIZED),
-			);
-			expect(usersService.getUserInfo).not.toHaveBeenCalled();
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если пользователь не является админом или суперадмином', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockUser);
-
-			await expect(
-				productsService.purchaseProduct(1, 5, 'manager@example.com'),
-			).rejects.toThrowError(new HTTPError(403, MESSAGES.FORBIDDEN));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('manager@example.com');
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если продукт не найден', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
-			productsRepository.findById = jest.fn().mockResolvedValue(null);
-
-			await expect(
-				productsService.purchaseProduct(999, 5, 'admin@example.com'),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(999);
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если продукт отсутствует на складе', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
-			productsRepository.findById = jest.fn().mockResolvedValue({ ...mockProduct, quantity: 0 });
-
-			await expect(productsService.purchaseProduct(1, 5, 'admin@example.com')).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK),
-			);
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить HTTPError, если количество превышает запас', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
-			productsRepository.findById = jest.fn().mockResolvedValue(mockProduct);
-
-			await expect(
-				productsService.purchaseProduct(1, 15, 'admin@example.com'),
-			).rejects.toThrowError(new HTTPError(422, MESSAGES.PRODUCT_INSUFFICIENT_STOCK));
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
-			expect(productsRepository.update).not.toHaveBeenCalled();
-		});
-
-		it('Должен обрабатывать ошибки Prisma', async () => {
-			usersService.getUserInfo = jest.fn().mockResolvedValue(mockAdmin);
-			productsRepository.findById = jest.fn().mockResolvedValue(mockProduct);
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
-				code: 'P2025',
-				clientVersion: '1.0',
-			});
-			productsRepository.update = jest.fn().mockRejectedValue(prismaError);
-
-			await expect(productsService.purchaseProduct(1, 5, 'admin@example.com')).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
-			);
-			expect(usersService.getUserInfo).toHaveBeenCalledWith('admin@example.com');
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
-			expect(productsRepository.update).toHaveBeenCalled();
-		});
-	});
-
-	describe('Получение статуса продукта', () => {
-		it('Должен вернуть статус продукта', async () => {
-			productsRepository.findById = jest.fn().mockResolvedValue(mockProduct);
-
-			const result = await productsService.getProductStatus(1);
-
-			expect(result).toEqual({
-				id: 1,
-				name: 'Test Product',
+			const result = await productsService.createProduct({
+				name: 'Ноутбук HP EliteBook',
+				description: '15.6", Core i7, 16GB RAM',
+				price: 0,
 				quantity: 10,
+				category: 'Электроника',
+				sku: 'NB-HP-ELITE-001',
 				isActive: true,
-				message: '',
+				userEmail: 'admin@example.com',
 			});
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
+
+			expect(result).toEqual({ ...mockProduct, price: 0 });
+			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
 		});
 
-		it('Должен вернуть сообщение о нулевом запасе, если количество равно нулю', async () => {
-			productsRepository.findById = jest.fn().mockResolvedValue({ ...mockProduct, quantity: 0 });
+		it('Должен успешно создать продукт с короткой категорией', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
+			productsRepository.create = jest.fn().mockResolvedValue({
+				...mockProduct,
+				category: 'Эл',
+			});
 
-			const result = await productsService.getProductStatus(1);
-
-			expect(result).toEqual({
-				id: 1,
-				name: 'Test Product',
-				quantity: 0,
+			const result = await productsService.createProduct({
+				name: 'Ноутбук HP EliteBook',
+				description: '15.6", Core i7, 16GB RAM',
+				price: 1250.99,
+				quantity: 10,
+				category: 'Эл',
+				sku: 'NB-HP-ELITE-001',
 				isActive: true,
-				message: MESSAGES.PRODUCT_OUT_OF_STOCK,
+				userEmail: 'admin@example.com',
 			});
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
+
+			expect(result).toEqual({ ...mockProduct, category: 'Эл' });
+			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
 		});
 
-		it('Должен выбросить HTTPError для некорректного ID', async () => {
-			await expect(productsService.getProductStatus(NaN)).rejects.toThrowError(
-				new HTTPError(400, MESSAGES.INVALID_FORMAT),
-			);
-			expect(productsRepository.findById).not.toHaveBeenCalled();
-		});
+		it('Должен успешно создать продукт с коротким SKU', async () => {
+			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
+			productsRepository.findBySku = jest.fn().mockResolvedValue(null);
+			productsRepository.create = jest.fn().mockResolvedValue({
+				...mockProduct,
+				sku: 'NB',
+			});
 
-		it('Должен выбросить HTTPError, если продукт не найден', async () => {
-			productsRepository.findById = jest.fn().mockResolvedValue(null);
+			const result = await productsService.createProduct({
+				name: 'Ноутбук HP EliteBook',
+				description: '15.6", Core i7, 16GB RAM',
+				price: 1250.99,
+				quantity: 10,
+				category: 'Электроника',
+				sku: 'NB',
+				isActive: true,
+				userEmail: 'admin@example.com',
+			});
 
-			await expect(productsService.getProductStatus(999)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
-			);
-			expect(productsRepository.findById).toHaveBeenCalledWith(999);
-		});
-
-		it('Должен обрабатывать ошибки базы данных', async () => {
-			productsRepository.findById = jest.fn().mockRejectedValue(new Error('DB Error'));
-
-			await expect(productsService.getProductStatus(1)).rejects.toThrowError(
-				new HTTPError(500, MESSAGES.SERVER_ERROR),
-			);
-			expect(productsRepository.findById).toHaveBeenCalledWith(1);
+			expect(result).toEqual({ ...mockProduct, sku: 'NB' });
+			expect(productsRepository.create).toHaveBeenCalledWith(expect.any(Product));
 		});
 	});
 });

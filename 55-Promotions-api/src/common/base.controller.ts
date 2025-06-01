@@ -1,7 +1,9 @@
-import { Router, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import { ExpressReturnType, IControllerRoute } from './route.interface';
 import { ILogger } from '../logger/logger.interface';
 import { injectable } from 'inversify';
+import { PaginationDto } from './dto/pagination.dto';
+import { DEFAULT_PAGINATION } from './pagination.interface';
 export { Router } from 'express';
 import 'reflect-metadata';
 
@@ -31,6 +33,31 @@ export abstract class BaseController {
 			return this.send<T>(res, 201, message);
 		}
 		return res.sendStatus(201);
+	}
+
+	protected getPagination(req: Request): PaginationDto {
+		const { page, limit } = req.query as { page?: string; limit?: string };
+		return {
+			page: Number(page) || DEFAULT_PAGINATION.page,
+			limit: Number(limit) || DEFAULT_PAGINATION.limit,
+		};
+	}
+
+	protected sendPaginatedResponse<T>(
+		res: Response,
+		items: T[],
+		total: number,
+		pagination: PaginationDto,
+	): ExpressReturnType {
+		return this.ok(res, {
+			data: items,
+			meta: {
+				total,
+				page: pagination.page,
+				limit: pagination.limit,
+				totalPages: Math.ceil(total / pagination.limit),
+			},
+		});
 	}
 
 	protected bindRoutes(routes: IControllerRoute[]): void {
