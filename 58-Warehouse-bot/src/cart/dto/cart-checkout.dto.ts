@@ -1,4 +1,4 @@
-import { IsArray, ValidateNested, Min, IsNumber } from 'class-validator';
+import { IsArray, ValidateNested, IsInt, Min, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MESSAGES } from '../../common/messages';
 
@@ -8,44 +8,49 @@ import { MESSAGES } from '../../common/messages';
  *   schemas:
  *     CartCheckoutItemDto:
  *       type: object
- *       description: Данные элемента корзины для оформления заказа.
- *       required:
- *         - productId
- *         - quantity
+ *       description: DTO для элемента корзины при оформлении заказа.
  *       properties:
  *         productId:
  *           type: integer
- *           description: Идентификатор товара.
+ *           description: Идентификатор товара в корзине.
  *           example: 1
+ *           minimum: 1
  *         quantity:
  *           type: integer
- *           description: Количество товара.
+ *           description: Количество товара для покупки.
  *           example: 2
+ *           minimum: 1
+ *       required:
+ *         - productId
+ *         - quantity
  *     CartCheckoutDto:
  *       type: object
- *       description: Данные для оформления заказа из корзины.
- *       required:
- *         - items
+ *       description: DTO для оформления заказа из корзины.
  *       properties:
  *         items:
  *           type: array
- *           description: Список товаров для оформления.
+ *           description: Список товаров для оформления заказа.
  *           items:
  *             $ref: '#/components/schemas/CartCheckoutItemDto'
+ *       required:
+ *         - items
  */
 export class CartCheckoutItemDto {
-	@IsNumber({}, { message: MESSAGES.INVALID_FORMAT.replace('{{field}}', 'Идентификатор товара') })
-	@Min(1, { message: MESSAGES.INVALID_ID })
-	productId!: number;
+    @IsInt({ message: MESSAGES.PRODUCT_ID_INVALID_INTEGER })
+    @Min(1, { message: MESSAGES.PRODUCT_ID_INVALID_INTEGER })
+    @IsNotEmpty({ message: MESSAGES.PRODUCT_ID_REQUIRED_FIELD })
+    productId!: number;
 
-	@IsNumber({}, { message: MESSAGES.INVALID_FORMAT.replace('{{field}}', 'Количество') })
-	@Min(1, { message: MESSAGES.QUANTITY_NEGATIVE })
-	quantity!: number;
+    @IsInt({ message: MESSAGES.QUANTITY_INVALID_INTEGER })
+    @Min(1, { message: MESSAGES.QUANTITY_NOT_POSITIVE })
+    @IsNotEmpty({ message: MESSAGES.QUANTITY_REQUIRED_FIELD })
+    quantity!: number;
 }
 
 export class CartCheckoutDto {
-	@IsArray({ message: MESSAGES.INVALID_FORMAT.replace('{{field}}', 'Список товаров') })
-	@ValidateNested({ each: true })
-	@Type(() => CartCheckoutItemDto)
-	items!: CartCheckoutItemDto[];
+    @IsArray({ message: MESSAGES.ITEMS_INVALID_ARRAY })
+    @ValidateNested({ each: true })
+    @Type(() => CartCheckoutItemDto)
+    @IsNotEmpty({ message: MESSAGES.ITEMS_REQUIRED_FIELD })
+    items!: CartCheckoutItemDto[];
 }

@@ -1,20 +1,9 @@
 import { MESSAGES } from '../../../common/messages';
 import {
-	ValidatorConstraint,
-	ValidatorConstraintInterface,
-	ValidationArguments,
+    ValidatorConstraint,
+    ValidatorConstraintInterface,
+    ValidationArguments,
 } from 'class-validator';
-
-interface ProductUpdateFields {
-	name?: string;
-	description?: string | null;
-	price?: number;
-	quantity?: number;
-	category?: string | null;
-	sku?: string;
-	isActive?: boolean;
-	isDeleted?: boolean;
-}
 
 /**
  * @swagger
@@ -22,52 +11,43 @@ interface ProductUpdateFields {
  *   schemas:
  *     NonEmptyObject:
  *       type: object
- *       description: Валидатор, проверяющий, что хотя бы одно поле объекта заполнено корректно.
+ *       description: Валидатор, проверяющий, что объект содержит хотя бы одно заполненное поле (непустая строка, валидное число, булево значение или непустой массив).
  *       example:
  *         name: "Ноутбук HP EliteBook"
- *         description: "15.6\", Core i7, 16GB RAM"
- *         price: 1250.99
- *         quantity: 10
  */
 @ValidatorConstraint({ name: 'nonEmptyObject', async: false })
 export class NonEmptyObjectValidator implements ValidatorConstraintInterface {
-	validate(_value: any, args: ValidationArguments): boolean {
-		const obj = args.object as ProductUpdateFields;
+    validate(_value: unknown, args: ValidationArguments): boolean {
+        const obj = args.object as Record<string, unknown>;
 
-		const fields: (keyof ProductUpdateFields)[] = [
-			'name',
-			'description',
-			'price',
-			'quantity',
-			'category',
-			'sku',
-			'isActive',
-			'isDeleted',
-		];
+        return Object.keys(obj).some((key) => {
+            const value = obj[key];
 
-		return fields.some((key) => {
-			const value = obj[key];
-			if (value === undefined || value === null) {
-				return false;
-			}
+            if (value === undefined || value === null) {
+                return false;
+            }
 
-			if (typeof value === 'string') {
-				return value.trim().length > 0;
-			}
+            if (typeof value === 'string') {
+                return value.trim().length > 0;
+            }
 
-			if (typeof value === 'number') {
-				return !isNaN(value);
-			}
+            if (typeof value === 'number') {
+                return !isNaN(value);
+            }
 
-			if (typeof value === 'boolean') {
-				return true;
-			}
+            if (typeof value === 'boolean') {
+                return true;
+            }
 
-			return false;
-		});
-	}
+            if (Array.isArray(value)) {
+                return value.length > 0;
+            }
 
-	defaultMessage(): string {
-		return MESSAGES.VALIDATION_FAILED;
-	}
+            return false;
+        });
+    }
+
+    defaultMessage(): string {
+        return MESSAGES.VALIDATION_ERROR;
+    }
 }

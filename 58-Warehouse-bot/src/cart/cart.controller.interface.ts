@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 
 export interface ICartController {
-	addToCart(req: Request, res: Response, next: NextFunction): Promise<void>;
-	getCart(req: Request, res: Response, next: NextFunction): Promise<void>;
-	checkout(req: Request, res: Response, next: NextFunction): Promise<void>;
-	removeFromCart(req: Request, res: Response, next: NextFunction): Promise<void>;
+	addCartItem(req: Request, res: Response, next: NextFunction): Promise<void>;
+	getCartItems(req: Request, res: Response, next: NextFunction): Promise<void>;
+	checkoutCartItems(req: Request, res: Response, next: NextFunction): Promise<void>;
+	removeCartItem(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

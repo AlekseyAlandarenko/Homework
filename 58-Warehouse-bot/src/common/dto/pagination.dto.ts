@@ -1,30 +1,12 @@
 import { IsInt, Min } from 'class-validator';
 import { MESSAGES } from '../messages';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     PaginationDto:
- *       type: object
- *       properties:
- *         page:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *           example: 1
- *         limit:
- *           type: integer
- *           minimum: 1
- *           default: 10
- *           example: 10
- */
 export class PaginationDto {
-	@IsInt({ message: MESSAGES.INVALID_FORMAT })
-	@Min(1, { message: MESSAGES.VALIDATION_FAILED })
+	@IsInt({ message: MESSAGES.PAGE_INVALID_INTEGER })
+	@Min(1, { message: MESSAGES.PAGE_INVALID_INTEGER })
 	page: number = 1;
 
-	@IsInt({ message: MESSAGES.INVALID_FORMAT })
-	@Min(1, { message: MESSAGES.VALIDATION_FAILED })
+	@IsInt({ message: MESSAGES.LIMIT_INVALID_INTEGER })
+	@Min(1, { message: MESSAGES.LIMIT_INVALID_INTEGER })
 	limit: number = 10;
 }

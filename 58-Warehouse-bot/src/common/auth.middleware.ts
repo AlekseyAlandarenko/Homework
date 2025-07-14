@@ -6,6 +6,7 @@ import { TYPES } from '../types';
 import { ILogger } from '../logger/logger.interface';
 import { IConfigService } from '../config/config.service.interface';
 import { MESSAGES } from '../common/messages';
+import { Role } from './enums/role.enum';
 
 @injectable()
 export class AuthMiddleware implements IMiddleware {
@@ -22,7 +23,7 @@ export class AuthMiddleware implements IMiddleware {
 		const token = req.headers.authorization.split(' ')[1];
 		verify(token, this.configService.get('SECRET'), (err, payload) => {
 			if (err) {
-				this.logger.error(`${MESSAGES.TOKEN_VERIFICATION_FAILED}: ${err.message}`);
+				this.logger.error(MESSAGES.TOKEN_VERIFICATION_FAILED);
 				return res.status(401).send({ error: MESSAGES.INVALID_TOKEN });
 			}
 
@@ -35,9 +36,9 @@ export class AuthMiddleware implements IMiddleware {
 				req.user = {
 					id: payload.id as number,
 					email: payload.email as string,
-					role: payload.role as string,
+					role: payload.role as Role,
 				};
-				this.logger.log(`${MESSAGES.AUTHENTICATION_SUCCESS}: ${payload.email}`);
+				this.logger.log(MESSAGES.AUTHENTICATION_SUCCESS);
 			} else {
 				this.logger.warn(MESSAGES.INVALID_TOKEN_PAYLOAD);
 				return res.status(401).send({ error: MESSAGES.INVALID_TOKEN });

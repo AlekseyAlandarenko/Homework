@@ -8,15 +8,27 @@ import 'reflect-metadata';
 import { HTTPError } from '../errors/http-error.class';
 import { MESSAGES } from '../common/messages';
 import { Promotion } from './promotion.entity';
-import { PromotionStatus } from '../common/constants';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGINATION } from '../common/pagination.interface';
+import { DEFAULT_PAGINATION } from '../common/constants';
+import { PromotionStatus } from '../common/enums/promotion-status.enum';
+import { Role } from '../common/enums/role.enum';
+
+const PrismaServiceMock = {
+	count: jest.fn(),
+	findUnique: jest.fn(),
+	validateCity: jest.fn(),
+	validateCategories: jest.fn(),
+};
 
 const PromotionsRepositoryMock: IPromotionsRepository = {
+	promotionInclude: {
+		categories: { select: { id: true, name: true } },
+		city: { select: { id: true, name: true } },
+	},
 	createPromotion: jest.fn(),
-	findById: jest.fn(),
-	findByIdOrThrow: jest.fn(),
-	findBySupplier: jest.fn(),
+	findPromotionByKey: jest.fn(),
+	findPromotionByKeyOrThrow: jest.fn(),
+	findPromotionsBySupplier: jest.fn(),
 	findAllPromotions: jest.fn(),
 	updatePromotion: jest.fn(),
 	deletePromotion: jest.fn(),
@@ -24,14 +36,18 @@ const PromotionsRepositoryMock: IPromotionsRepository = {
 
 const UsersServiceMock: IUsersService = {
 	createUser: jest.fn(),
-	login: jest.fn(),
+	createTelegramUser: jest.fn(),
 	getUserInfoByEmail: jest.fn(),
 	getUserInfoById: jest.fn(),
-	updateSupplierPassword: jest.fn(),
-	deleteSupplier: jest.fn(),
+	getUserInfoByTelegramId: jest.fn(),
 	getAllSuppliers: jest.fn(),
-	findByTelegramId: jest.fn(),
-	updateTelegramId: jest.fn(),
+	getPromotionsForUser: jest.fn(),
+	updateSupplierPassword: jest.fn(),
+	updateUserTelegramId: jest.fn(),
+	updateUserProfile: jest.fn(),
+	updateUserCategories: jest.fn(),
+	deleteSupplier: jest.fn(),
+	login: jest.fn(),
 };
 
 const container = new Container();
@@ -45,6 +61,7 @@ beforeAll(() => {
 		.bind<IPromotionsRepository>(TYPES.PromotionsRepository)
 		.toConstantValue(PromotionsRepositoryMock);
 	container.bind<IUsersService>(TYPES.UsersService).toConstantValue(UsersServiceMock);
+	container.bind(TYPES.PrismaService).toConstantValue(PrismaServiceMock);
 
 	promotionsRepository = container.get<IPromotionsRepository>(TYPES.PromotionsRepository);
 	usersService = container.get<IUsersService>(TYPES.UsersService);
@@ -66,11 +83,11 @@ describe('Сервис акций', () => {
 
 	const mockPromotion = {
 		id: 1,
-		title: 'Test Promotion',
-		description: 'Test Description Long Enough',
+		title: 'Тестовая Акция',
+		description: 'Тестовое Описание Достаточной Длины',
 		startDate: getFutureDate(1),
 		endDate: getFutureDate(7),
-		status: 'PENDING' as PromotionStatus,
+		status: PromotionStatus.PENDING,
 		supplierId: 1,
 		isDeleted: false,
 		createdAt: new Date(),
@@ -79,11 +96,11 @@ describe('Сервис акций', () => {
 
 	const mockActivePromotion = {
 		id: 2,
-		title: 'Active Promotion',
-		description: 'Active Description Long Enough',
+		title: 'Активная Акция',
+		description: 'Активное Описание Достаточной Длины',
 		startDate: getPastDate(1),
 		endDate: getFutureDate(1),
-		status: 'APPROVED' as PromotionStatus,
+		status: PromotionStatus.APPROVED,
 		supplierId: 1,
 		isDeleted: false,
 		createdAt: new Date(),
@@ -93,8 +110,8 @@ describe('Сервис акций', () => {
 	const mockUser = {
 		id: 1,
 		email: 'test@example.com',
-		name: 'Test User',
-		role: 'SUPPLIER',
+		name: 'Тестовый Поставщик',
+		role: Role.SUPPLIER,
 		password: 'hashed',
 		createdAt: new Date(),
 		updatedAt: new Date(),
@@ -103,40 +120,61 @@ describe('Сервис акций', () => {
 	const mockAdmin = {
 		id: 2,
 		email: 'admin@example.com',
-		name: 'Admin User',
-		role: 'ADMIN',
+		name: 'Админ Пользователь',
+		role: Role.ADMIN,
 		password: '',
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	};
 
+	const mockUserWithCategories = {
+		...mockUser,
+		cityId: 1,
+		preferredCategories: [{ id: 1, name: 'Еда' }],
+	};
+
+	const mockPromotionWithRelations = {
+		...mockPromotion,
+		categories: [{ id: 1, name: 'Еда' }],
+		city: { id: 1, name: 'Москва' },
+	};
+
 	beforeEach(() => {
 		jest.clearAllMocks();
+		PrismaServiceMock.validateCity.mockResolvedValue(undefined);
+		PrismaServiceMock.validateCategories.mockResolvedValue(undefined);
+		PrismaServiceMock.findUnique.mockResolvedValue(null);
+		PrismaServiceMock.count.mockResolvedValue(0);
 	});
 
 	describe('Создание акции', () => {
 		it('Должен успешно создать акцию', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
+			usersService.getUserInfoById = jest.fn().mockResolvedValue(mockUser);
+			promotionsRepository.findPromotionByKey = jest.fn().mockResolvedValue(null);
 			promotionsRepository.createPromotion = jest.fn().mockResolvedValue(mockPromotion);
 
 			const result = await promotionsService.createPromotion({
-				title: 'Test Promotion',
-				description: 'Test Description Long Enough',
+				title: 'Тестовая Акция',
+				description: 'Тестовое Описание Достаточной Длины',
 				startDate: mockPromotion.startDate.toISOString(),
 				endDate: mockPromotion.endDate.toISOString(),
-				userEmail: 'test@example.com',
-				status: 'PENDING',
+				supplierId: 1,
+				status: PromotionStatus.PENDING,
 			});
 
 			expect(result).toEqual(mockPromotion);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
+			expect(usersService.getUserInfoById).toHaveBeenCalledWith(1);
+			expect(promotionsRepository.findPromotionByKey).toHaveBeenCalledWith(
+				'title',
+				'Тестовая Акция',
+			);
 			expect(promotionsRepository.createPromotion).toHaveBeenCalledWith(
 				expect.objectContaining({
-					title: 'Test Promotion',
-					description: 'Test Description Long Enough',
+					title: 'Тестовая Акция',
+					description: 'Тестовое Описание Достаточной Длины',
 					startDate: mockPromotion.startDate,
 					endDate: mockPromotion.endDate,
-					status: 'PENDING',
+					status: PromotionStatus.PENDING,
 					supplierId: 1,
 					isDeleted: false,
 				}),
@@ -144,98 +182,129 @@ describe('Сервис акций', () => {
 		});
 
 		it('Должен успешно создать акцию с минимальным заголовком', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
+			usersService.getUserInfoById = jest.fn().mockResolvedValue(mockUser);
+			promotionsRepository.findPromotionByKey = jest.fn().mockResolvedValue(null);
 			const shortTitlePromotion = {
 				...mockPromotion,
-				title: 'T',
+				title: 'Т',
 			};
 			promotionsRepository.createPromotion = jest.fn().mockResolvedValue(shortTitlePromotion);
 
 			const result = await promotionsService.createPromotion({
-				title: 'T',
-				description: 'Test Description Long Enough',
+				title: 'Т',
+				description: 'Тестовое Описание Достаточной Длины',
 				startDate: mockPromotion.startDate.toISOString(),
 				endDate: mockPromotion.endDate.toISOString(),
-				userEmail: 'test@example.com',
-				status: 'PENDING',
+				supplierId: 1,
+				status: PromotionStatus.PENDING,
 			});
 
 			expect(result).toEqual(shortTitlePromotion);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
+			expect(usersService.getUserInfoById).toHaveBeenCalledWith(1);
+			expect(promotionsRepository.findPromotionByKey).toHaveBeenCalledWith('title', 'Т');
 			expect(promotionsRepository.createPromotion).toHaveBeenCalledWith(
 				expect.objectContaining({
-					title: 'T',
+					title: 'Т',
 					isDeleted: false,
 				}),
 			);
 		});
 
 		it('Должен успешно создать акцию с минимальным описанием', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
+			usersService.getUserInfoById = jest.fn().mockResolvedValue(mockUser);
+			promotionsRepository.findPromotionByKey = jest.fn().mockResolvedValue(null);
 			const shortDescPromotion = {
 				...mockPromotion,
-				description: 'Short',
+				description: 'Короткое',
 			};
 			promotionsRepository.createPromotion = jest.fn().mockResolvedValue(shortDescPromotion);
 
 			const result = await promotionsService.createPromotion({
-				title: 'Test Promotion',
-				description: 'Short',
+				title: 'Тестовая Акция',
+				description: 'Короткое',
 				startDate: mockPromotion.startDate.toISOString(),
 				endDate: mockPromotion.endDate.toISOString(),
-				userEmail: 'test@example.com',
-				status: 'PENDING',
+				supplierId: 1,
+				status: PromotionStatus.PENDING,
 			});
 
 			expect(result).toEqual(shortDescPromotion);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
+			expect(usersService.getUserInfoById).toHaveBeenCalledWith(1);
+			expect(promotionsRepository.findPromotionByKey).toHaveBeenCalledWith(
+				'title',
+				'Тестовая Акция',
+			);
 			expect(promotionsRepository.createPromotion).toHaveBeenCalledWith(
 				expect.objectContaining({
-					description: 'Short',
+					description: 'Короткое',
 					isDeleted: false,
 				}),
 			);
 		});
 
-		it('Должен выбросить ошибку 404, если email пользователя отсутствует', async () => {
+		it('Должен выбросить ошибку 404, если поставщик не найден', async () => {
+			usersService.getUserInfoById = jest.fn().mockResolvedValue(null);
+			promotionsRepository.findPromotionByKey = jest.fn().mockResolvedValue(null);
+
 			await expect(
 				promotionsService.createPromotion({
-					title: 'Test Promotion',
-					description: 'Test Description Long Enough',
+					title: 'Тестовая Акция',
+					description: 'Тестовое Описание Достаточной Длины',
 					startDate: mockPromotion.startDate.toISOString(),
 					endDate: mockPromotion.endDate.toISOString(),
-					status: 'PENDING',
+					supplierId: 999,
+					status: PromotionStatus.PENDING,
 				}),
-			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
+			).rejects.toThrowError(new HTTPError(404, MESSAGES.SUPPLIER_NOT_FOUND));
+			expect(usersService.getUserInfoById).toHaveBeenCalledWith(999);
+			expect(promotionsRepository.findPromotionByKey).not.toHaveBeenCalled();
 			expect(promotionsRepository.createPromotion).not.toHaveBeenCalled();
 		});
 
-		it('Должен успешно создать акцию с указанным supplierId', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			promotionsRepository.createPromotion = jest.fn().mockResolvedValue(mockPromotion);
+		it('Должен выбросить ошибку 403, если пользователь не является поставщиком', async () => {
+			usersService.getUserInfoById = jest.fn().mockResolvedValue(mockAdmin);
+			promotionsRepository.findPromotionByKey = jest.fn().mockResolvedValue(null);
 
-			const result = await promotionsService.createPromotion({
-				title: 'Test Promotion',
-				description: 'Test Description Long Enough',
-				startDate: mockPromotion.startDate.toISOString(),
-				endDate: mockPromotion.endDate.toISOString(),
-				userEmail: 'test@example.com',
-				supplierId: 1,
-				status: 'PENDING',
-			});
-
-			expect(result).toEqual(mockPromotion);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(promotionsRepository.createPromotion).toHaveBeenCalledWith(
-				expect.objectContaining({
-					supplierId: 1,
-					isDeleted: false,
+			await expect(
+				promotionsService.createPromotion({
+					title: 'Тестовая Акция',
+					description: 'Тестовое Описание Достаточной Длины',
+					startDate: mockPromotion.startDate.toISOString(),
+					endDate: mockPromotion.endDate.toISOString(),
+					supplierId: 2,
+					status: PromotionStatus.PENDING,
 				}),
+			).rejects.toThrowError(new HTTPError(403, MESSAGES.INVALID_SUPPLIER_ROLE));
+			expect(usersService.getUserInfoById).toHaveBeenCalledWith(2);
+			expect(promotionsRepository.findPromotionByKey).not.toHaveBeenCalled();
+			expect(promotionsRepository.createPromotion).not.toHaveBeenCalled();
+		});
+
+		it('Должен выбросить ошибку 409, если акция с таким заголовком уже существует', async () => {
+			usersService.getUserInfoById = jest.fn().mockResolvedValue(mockUser);
+			promotionsRepository.findPromotionByKey = jest.fn().mockResolvedValue(mockPromotion);
+
+			await expect(
+				promotionsService.createPromotion({
+					title: 'Тестовая Акция',
+					description: 'Тестовое Описание Достаточной Длины',
+					startDate: mockPromotion.startDate.toISOString(),
+					endDate: mockPromotion.endDate.toISOString(),
+					supplierId: 1,
+					status: PromotionStatus.PENDING,
+				}),
+			).rejects.toThrowError(new HTTPError(409, MESSAGES.PROMOTION_TITLE_ALREADY_EXISTS));
+			expect(usersService.getUserInfoById).toHaveBeenCalledWith(1);
+			expect(promotionsRepository.findPromotionByKey).toHaveBeenCalledWith(
+				'title',
+				'Тестовая Акция',
 			);
+			expect(promotionsRepository.createPromotion).not.toHaveBeenCalled();
 		});
 
 		it('Должен выбросить ошибку при сбое базы данных', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
+			usersService.getUserInfoById = jest.fn().mockResolvedValue(mockUser);
+			promotionsRepository.findPromotionByKey = jest.fn().mockResolvedValue(null);
 			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
 				code: 'P2002',
 				clientVersion: '',
@@ -244,15 +313,19 @@ describe('Сервис акций', () => {
 
 			await expect(
 				promotionsService.createPromotion({
-					title: 'Test Promotion',
-					description: 'Test Description Long Enough',
+					title: 'Тестовая Акция',
+					description: 'Тестовое Описание Достаточной Длины',
 					startDate: mockPromotion.startDate.toISOString(),
 					endDate: mockPromotion.endDate.toISOString(),
-					userEmail: 'test@example.com',
-					status: 'PENDING',
+					supplierId: 1,
+					status: PromotionStatus.PENDING,
 				}),
 			).rejects.toThrowError(prismaError);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
+			expect(usersService.getUserInfoById).toHaveBeenCalledWith(1);
+			expect(promotionsRepository.findPromotionByKey).toHaveBeenCalledWith(
+				'title',
+				'Тестовая Акция',
+			);
 			expect(promotionsRepository.createPromotion).toHaveBeenCalledWith(expect.any(Promotion));
 		});
 	});
@@ -261,58 +334,70 @@ describe('Сервис акций', () => {
 		it('Должен успешно обновить акцию', async () => {
 			const updatedPromotion = {
 				...mockPromotion,
-				title: 'Updated Promotion',
+				title: 'Обновленная Акция',
 			};
+			promotionsRepository.findPromotionByKeyOrThrow = jest.fn().mockResolvedValue(undefined);
 			promotionsRepository.updatePromotion = jest.fn().mockResolvedValue(updatedPromotion);
 
 			const result = await promotionsService.updatePromotion(1, {
-				title: 'Updated Promotion',
+				title: 'Обновленная Акция',
 			});
 
 			expect(result).toEqual(updatedPromotion);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(1, {
-				title: 'Updated Promotion',
+				title: 'Обновленная Акция',
 			});
 		});
 
 		it('Должен успешно обновить описание акции', async () => {
 			const updatedPromotion = {
 				...mockPromotion,
-				description: 'Updated Description Long Enough',
+				description: 'Обновленное Описание Достаточной Длины',
 			};
+			promotionsRepository.findPromotionByKeyOrThrow = jest.fn().mockResolvedValue(undefined);
 			promotionsRepository.updatePromotion = jest.fn().mockResolvedValue(updatedPromotion);
 
 			const result = await promotionsService.updatePromotion(1, {
-				description: 'Updated Description Long Enough',
+				description: 'Обновленное Описание Достаточной Длины',
 			});
 
 			expect(result).toEqual(updatedPromotion);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(1, {
-				description: 'Updated Description Long Enough',
+				description: 'Обновленное Описание Достаточной Длины',
 			});
 		});
 
-		it('Должен выбросить ошибку 422, если ID некорректен', async () => {
-			await expect(
-				promotionsService.updatePromotion(NaN, { title: 'Updated Promotion' }),
-			).rejects.toThrowError(new HTTPError(422, MESSAGES.INVALID_ID));
-			expect(promotionsRepository.updatePromotion).not.toHaveBeenCalled();
-		});
-
 		it('Должен выбросить ошибку 404, если акция не найдена', async () => {
-			promotionsRepository.updatePromotion = jest
+			promotionsRepository.findPromotionByKeyOrThrow = jest
 				.fn()
 				.mockRejectedValue(new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND));
 
 			await expect(
-				promotionsService.updatePromotion(999, { title: 'Updated Promotion' }),
+				promotionsService.updatePromotion(999, { title: 'Обновленная Акция' }),
 			).rejects.toThrowError(new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND));
-			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(999, {
-				title: 'Updated Promotion',
-			});
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				999,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
+			expect(promotionsRepository.updatePromotion).not.toHaveBeenCalled();
 		});
 
 		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			promotionsRepository.findPromotionByKeyOrThrow = jest.fn().mockResolvedValue(undefined);
 			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
 				code: 'P2002',
 				clientVersion: '',
@@ -320,10 +405,16 @@ describe('Сервис акций', () => {
 			promotionsRepository.updatePromotion = jest.fn().mockRejectedValue(prismaError);
 
 			await expect(
-				promotionsService.updatePromotion(1, { title: 'Updated Promotion' }),
+				promotionsService.updatePromotion(1, { title: 'Обновленная Акция' }),
 			).rejects.toThrowError(prismaError);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(1, {
-				title: 'Updated Promotion',
+				title: 'Обновленная Акция',
 			});
 		});
 	});
@@ -332,99 +423,100 @@ describe('Сервис акций', () => {
 		it('Должен успешно обновить статус акции', async () => {
 			const updatedPromotion = {
 				...mockPromotion,
-				status: 'APPROVED',
+				status: PromotionStatus.APPROVED,
 			};
+			promotionsRepository.findPromotionByKeyOrThrow = jest.fn().mockResolvedValue(undefined);
 			promotionsRepository.updatePromotion = jest.fn().mockResolvedValue(updatedPromotion);
 
-			const result = await promotionsService.updatePromotionStatus(1, 'APPROVED');
+			const result = await promotionsService.updatePromotionStatus(1, PromotionStatus.APPROVED);
 
 			expect(result).toEqual(updatedPromotion);
-			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(1, { status: 'APPROVED' });
-		});
-
-		it('Должен выбросить ошибку 422, если ID некорректен', async () => {
-			await expect(promotionsService.updatePromotionStatus(NaN, 'APPROVED')).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.INVALID_ID),
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
 			);
-			expect(promotionsRepository.updatePromotion).not.toHaveBeenCalled();
+			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(1, {
+				status: PromotionStatus.APPROVED,
+			});
 		});
 
 		it('Должен выбросить ошибку 404, если акция не найдена', async () => {
-			promotionsRepository.updatePromotion = jest
+			promotionsRepository.findPromotionByKeyOrThrow = jest
 				.fn()
 				.mockRejectedValue(new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND));
 
-			await expect(promotionsService.updatePromotionStatus(999, 'APPROVED')).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND),
+			await expect(
+				promotionsService.updatePromotionStatus(999, PromotionStatus.APPROVED),
+			).rejects.toThrowError(new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND));
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				999,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
 			);
-			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(999, {
-				status: 'APPROVED',
-			});
-		});
-
-		it('Должен выбросить ошибку при сбое базы данных', async () => {
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Error', {
-				code: 'P2002',
-				clientVersion: '',
-			});
-			promotionsRepository.updatePromotion = jest.fn().mockRejectedValue(prismaError);
-
-			await expect(promotionsService.updatePromotionStatus(1, 'APPROVED')).rejects.toThrowError(
-				prismaError,
-			);
-			expect(promotionsRepository.updatePromotion).toHaveBeenCalledWith(1, { status: 'APPROVED' });
 		});
 	});
 
 	describe('Удаление акции', () => {
-		it('Должен успешно выполнить мягкое удаление неактивной акции', async () => {
+		it('Должно успешно выполнить мягкое удаление неактивной акции', async () => {
 			const deletedPromotion = {
 				...mockPromotion,
 				isDeleted: true,
 			};
-			promotionsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockPromotion);
+			promotionsRepository.findPromotionByKeyOrThrow = jest.fn().mockResolvedValue(mockPromotion);
 			promotionsRepository.deletePromotion = jest.fn().mockResolvedValue(deletedPromotion);
 
 			const result = await promotionsService.deletePromotion(1);
 
 			expect(result).toEqual(deletedPromotion);
-			expect(promotionsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 			expect(promotionsRepository.deletePromotion).toHaveBeenCalledWith(1);
 			expect(result.isDeleted).toBe(true);
 		});
 
-		it('Должен выбросить ошибку 422, если ID некорректен', async () => {
-			await expect(promotionsService.deletePromotion(NaN)).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.INVALID_ID),
-			);
-			expect(promotionsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(promotionsRepository.deletePromotion).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 400, если акция активна', async () => {
-			promotionsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockActivePromotion);
+		it('Должен выбросить ошибку 422, если акция активна', async () => {
+			promotionsRepository.findPromotionByKeyOrThrow = jest
+				.fn()
+				.mockResolvedValue(mockActivePromotion);
 
 			await expect(promotionsService.deletePromotion(2)).rejects.toThrowError(
-				new HTTPError(400, MESSAGES.CANNOT_DELETE_ACTIVE_PROMOTION),
+				new HTTPError(422, MESSAGES.CANNOT_DELETE_ACTIVE_PROMOTION),
 			);
-			expect(promotionsRepository.findByIdOrThrow).toHaveBeenCalledWith(2);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				2,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 			expect(promotionsRepository.deletePromotion).not.toHaveBeenCalled();
 		});
 
 		it('Должен выбросить ошибку 404, если акция не найдена', async () => {
-			promotionsRepository.findByIdOrThrow = jest
+			promotionsRepository.findPromotionByKeyOrThrow = jest
 				.fn()
 				.mockRejectedValue(new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND));
 
 			await expect(promotionsService.deletePromotion(999)).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND),
 			);
-			expect(promotionsRepository.findByIdOrThrow).toHaveBeenCalledWith(999);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				999,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 			expect(promotionsRepository.deletePromotion).not.toHaveBeenCalled();
 		});
 
 		it('Должен выбросить ошибку при сбое базы данных', async () => {
-			promotionsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockPromotion);
+			promotionsRepository.findPromotionByKeyOrThrow = jest.fn().mockResolvedValue(mockPromotion);
 			promotionsRepository.deletePromotion = jest
 				.fn()
 				.mockRejectedValue(new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND));
@@ -432,30 +524,41 @@ describe('Сервис акций', () => {
 			await expect(promotionsService.deletePromotion(1)).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND),
 			);
-			expect(promotionsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 			expect(promotionsRepository.deletePromotion).toHaveBeenCalledWith(1);
 		});
 	});
 
 	describe('Получение всех акций', () => {
-		it('Должен вернуть акции с фильтрами, исключая удалённые', async () => {
+		it('Должен получить акции с фильтрами, исключая удалённые', async () => {
 			promotionsRepository.findAllPromotions = jest.fn().mockResolvedValue({
 				items: [mockPromotion],
 				total: 1,
 			});
 
 			const result = await promotionsService.getAllPromotions({
-				filters: { status: 'PENDING', active: 'true' },
-				orderBy: { sortBy: 'title', sortOrder: 'asc' },
+				filters: {
+					active: true,
+					sortBy: 'title',
+					sortOrder: 'asc',
+				},
 				pagination: DEFAULT_PAGINATION,
 			});
 
 			expect(result).toEqual({ items: [mockPromotion], total: 1 });
 			expect(promotionsRepository.findAllPromotions).toHaveBeenCalledWith({
 				filters: {
-					status: 'PENDING',
-					endDate: { gte: expect.any(Date) },
 					isDeleted: false,
+					AND: [
+						{ startDate: { lte: expect.any(Date) } },
+						{ endDate: { gte: expect.any(Date) } },
+						{ status: PromotionStatus.APPROVED },
+					],
 				},
 				orderBy: { title: 'asc' },
 				pagination: DEFAULT_PAGINATION,
@@ -463,7 +566,7 @@ describe('Сервис акций', () => {
 			expect(result.items.every((item) => item.isDeleted === false)).toBe(true);
 		});
 
-		it('Должен вернуть акции с значениями по умолчанию, исключая удалённые', async () => {
+		it('Должен получить акции с значениями по умолчанию, исключая удалённые', async () => {
 			promotionsRepository.findAllPromotions = jest.fn().mockResolvedValue({
 				items: [mockPromotion],
 				total: 1,
@@ -480,13 +583,24 @@ describe('Сервис акций', () => {
 			expect(result.items.every((item) => item.isDeleted === false)).toBe(true);
 		});
 
-		it('Должен выбросить ошибку 422, если параметр сортировки некорректен', async () => {
-			await expect(
-				promotionsService.getAllPromotions({
-					orderBy: { sortBy: 'invalid', sortOrder: 'asc' },
-				}),
-			).rejects.toThrowError(new HTTPError(422, MESSAGES.INVALID_SORT_PARAM));
-			expect(promotionsRepository.findAllPromotions).not.toHaveBeenCalled();
+		it('Должен корректно обрабатывать параметры сортировки через filters', async () => {
+			promotionsRepository.findAllPromotions = jest.fn().mockResolvedValue({
+				items: [mockPromotion],
+				total: 1,
+			});
+
+			const result = await promotionsService.getAllPromotions({
+				filters: { sortBy: 'title', sortOrder: 'asc' },
+				pagination: DEFAULT_PAGINATION,
+			});
+
+			expect(result).toEqual({ items: [mockPromotion], total: 1 });
+			expect(promotionsRepository.findAllPromotions).toHaveBeenCalledWith({
+				filters: { isDeleted: false },
+				orderBy: { title: 'asc' },
+				pagination: DEFAULT_PAGINATION,
+			});
+			expect(result.items.every((item) => item.isDeleted === false)).toBe(true);
 		});
 
 		it('Должен выбросить ошибку при сбое базы данных', async () => {
@@ -502,57 +616,253 @@ describe('Сервис акций', () => {
 	});
 
 	describe('Получение акций по поставщику', () => {
-		it('Должен вернуть акции для поставщика, исключая удалённые', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			promotionsRepository.findBySupplier = jest.fn().mockResolvedValue({
+		it('Должен получить акции для поставщика, исключая удаленные', async () => {
+			promotionsRepository.findPromotionsBySupplier = jest.fn().mockResolvedValue({
 				items: [mockPromotion],
 				total: 1,
 			});
 
-			const result = await promotionsService.getPromotionsBySupplier('test@example.com', {
-				page: 1,
-				limit: 10,
-			});
+			const result = await promotionsService.getPromotionsBySupplier(1, DEFAULT_PAGINATION);
 
 			expect(result).toEqual({ items: [mockPromotion], total: 1 });
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(promotionsRepository.findBySupplier).toHaveBeenCalledWith(1, {
-				page: 1,
-				limit: 10,
-			});
+			expect(promotionsRepository.findPromotionsBySupplier).toHaveBeenCalledWith(
+				1,
+				DEFAULT_PAGINATION,
+			);
 			expect(result.items.every((item) => item.isDeleted === false)).toBe(true);
 		});
 
-		it('Должен выбросить ошибку 404, если email отсутствует', async () => {
-			await expect(promotionsService.getPromotionsBySupplier('')).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			promotionsRepository.findPromotionsBySupplier = jest
+				.fn()
+				.mockRejectedValue(new Error('DB Error'));
+
+			await expect(
+				promotionsService.getPromotionsBySupplier(1, DEFAULT_PAGINATION),
+			).rejects.toThrowError('DB Error');
+			expect(promotionsRepository.findPromotionsBySupplier).toHaveBeenCalledWith(
+				1,
+				DEFAULT_PAGINATION,
 			);
-			expect(promotionsRepository.findBySupplier).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('Получение акции по ID', () => {
+		it('Должен успешно получить акцию для администратора', async () => {
+			const mockPromotionWithRelations = {
+				...mockPromotion,
+				categories: [{ id: 1, name: 'Еда' }],
+				city: { id: 1, name: 'Москва' },
+			};
+			promotionsRepository.findPromotionByKeyOrThrow = jest
+				.fn()
+				.mockResolvedValue(mockPromotionWithRelations);
+
+			const result = await promotionsService.getPromotionById(1, 2, Role.ADMIN);
+
+			expect(result).toEqual(mockPromotionWithRelations);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 		});
 
-		it('Должен выбросить ошибку 403, если пользователь не является поставщиком', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockAdmin);
-			await expect(
-				promotionsService.getPromotionsBySupplier('admin@example.com'),
-			).rejects.toThrowError(new HTTPError(403, MESSAGES.FORBIDDEN));
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('admin@example.com');
-			expect(promotionsRepository.findBySupplier).not.toHaveBeenCalled();
+		it('Должен успешно получить акцию для поставщика, если акция принадлежит ему', async () => {
+			const mockPromotionWithRelations = {
+				...mockPromotion,
+				categories: [{ id: 1, name: 'Еда' }],
+				city: { id: 1, name: 'Москва' },
+			};
+			promotionsRepository.findPromotionByKeyOrThrow = jest
+				.fn()
+				.mockResolvedValue(mockPromotionWithRelations);
+
+			const result = await promotionsService.getPromotionById(1, 1, Role.SUPPLIER);
+
+			expect(result).toEqual(mockPromotionWithRelations);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				1,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
+		});
+
+		it('Должен выбросить ошибку 403, если поставщик пытается получить чужую акцию', async () => {
+			const mockPromotionWithRelations = {
+				...mockPromotion,
+				supplierId: 2,
+				categories: [{ id: 1, name: 'Еда' }],
+				city: { id: 1, name: 'Москва' },
+			};
+			promotionsRepository.findPromotionByKeyOrThrow = jest
+				.fn()
+				.mockResolvedValue(mockPromotionWithRelations);
+
+			await expect(promotionsService.getPromotionById(1, 1, Role.SUPPLIER)).rejects.toThrowError(
+				new HTTPError(403, MESSAGES.FORBIDDEN_ACCESS_TO_PROMOTION),
+			);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				1,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
+		});
+
+		it('Должен выбросить ошибку 404, если акция не найдена', async () => {
+			promotionsRepository.findPromotionByKeyOrThrow = jest
+				.fn()
+				.mockRejectedValue(new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND));
+
+			await expect(promotionsService.getPromotionById(999, 2, Role.ADMIN)).rejects.toThrowError(
+				new HTTPError(404, MESSAGES.PROMOTION_NOT_FOUND),
+			);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				999,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
 		});
 
 		it('Должен выбросить ошибку при сбое базы данных', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			promotionsRepository.findBySupplier = jest.fn().mockRejectedValue(new Error('DB Error'));
+			const prismaError = new Prisma.PrismaClientKnownRequestError('DB Error', {
+				code: 'P2002',
+				clientVersion: '',
+			});
+			promotionsRepository.findPromotionByKeyOrThrow = jest.fn().mockRejectedValue(prismaError);
+
+			await expect(promotionsService.getPromotionById(1, 2, Role.ADMIN)).rejects.toThrowError(
+				prismaError,
+			);
+			expect(promotionsRepository.findPromotionByKeyOrThrow).toHaveBeenCalledWith(
+				'id',
+				1,
+				undefined,
+				MESSAGES.PROMOTION_NOT_FOUND,
+			);
+		});
+	});
+
+	describe('Получение акций для пользователя по Telegram ID', () => {
+		it('Должен успешно получить акции для пользователя', async () => {
+			usersService.getUserInfoByTelegramId = jest.fn().mockResolvedValue(mockUserWithCategories);
+			promotionsRepository.findAllPromotions = jest.fn().mockResolvedValue({
+				items: [mockPromotionWithRelations],
+				total: 1,
+				meta: {
+					total: 1,
+					page: 1,
+					limit: DEFAULT_PAGINATION.limit,
+					totalPages: 1,
+				},
+			});
+
+			const result = await promotionsService.getPromotionsForUser('12345', DEFAULT_PAGINATION);
+
+			expect(result).toEqual({
+				items: [mockPromotionWithRelations],
+				total: 1,
+				meta: {
+					total: 1,
+					page: 1,
+					limit: DEFAULT_PAGINATION.limit,
+					totalPages: 1,
+				},
+			});
+			expect(usersService.getUserInfoByTelegramId).toHaveBeenCalledWith('12345');
+			expect(promotionsRepository.findAllPromotions).toHaveBeenCalledWith({
+				filters: {
+					cityId: 1,
+					isDeleted: false,
+					status: PromotionStatus.APPROVED,
+					startDate: { lte: expect.any(Date) },
+					endDate: { gte: expect.any(Date) },
+					categories: { some: { id: { in: [1] } } },
+				},
+				pagination: DEFAULT_PAGINATION,
+				orderBy: { startDate: 'asc' },
+			});
+		});
+
+		it('Должен вернуть пустой список, если подходящих акций нет', async () => {
+			usersService.getUserInfoByTelegramId = jest.fn().mockResolvedValue(mockUserWithCategories);
+			promotionsRepository.findAllPromotions = jest.fn().mockResolvedValue({
+				items: [],
+				total: 0,
+				meta: {
+					total: 0,
+					page: 1,
+					limit: DEFAULT_PAGINATION.limit,
+					totalPages: 0,
+				},
+			});
+
+			const result = await promotionsService.getPromotionsForUser('12345', DEFAULT_PAGINATION);
+
+			expect(result).toEqual({
+				items: [],
+				total: 0,
+				meta: {
+					total: 0,
+					page: 1,
+					limit: DEFAULT_PAGINATION.limit,
+					totalPages: 0,
+				},
+			});
+			expect(usersService.getUserInfoByTelegramId).toHaveBeenCalledWith('12345');
+			expect(promotionsRepository.findAllPromotions).toHaveBeenCalledWith({
+				filters: {
+					cityId: 1,
+					isDeleted: false,
+					status: PromotionStatus.APPROVED,
+					startDate: { lte: expect.any(Date) },
+					endDate: { gte: expect.any(Date) },
+					categories: { some: { id: { in: [1] } } },
+				},
+				pagination: DEFAULT_PAGINATION,
+				orderBy: { startDate: 'asc' },
+			});
+		});
+
+		it('Должен выбросить ошибку 404, если пользователь не найден', async () => {
+			usersService.getUserInfoByTelegramId = jest
+				.fn()
+				.mockRejectedValue(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
 
 			await expect(
-				promotionsService.getPromotionsBySupplier('test@example.com', {
-					page: 1,
-					limit: 10,
-				}),
-			).rejects.toThrowError('DB Error');
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(promotionsRepository.findBySupplier).toHaveBeenCalledWith(1, {
-				page: 1,
-				limit: 10,
+				promotionsService.getPromotionsForUser('12345', DEFAULT_PAGINATION),
+			).rejects.toThrowError(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
+			expect(usersService.getUserInfoByTelegramId).toHaveBeenCalledWith('12345');
+			expect(promotionsRepository.findAllPromotions).not.toHaveBeenCalled();
+		});
+
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			usersService.getUserInfoByTelegramId = jest.fn().mockResolvedValue(mockUserWithCategories);
+			const prismaError = new Prisma.PrismaClientKnownRequestError('DB Error', {
+				code: 'P2002',
+				clientVersion: '',
+			});
+			promotionsRepository.findAllPromotions = jest.fn().mockRejectedValue(prismaError);
+
+			await expect(
+				promotionsService.getPromotionsForUser('12345', DEFAULT_PAGINATION),
+			).rejects.toThrowError(prismaError);
+			expect(usersService.getUserInfoByTelegramId).toHaveBeenCalledWith('12345');
+			expect(promotionsRepository.findAllPromotions).toHaveBeenCalledWith({
+				filters: {
+					cityId: 1,
+					isDeleted: false,
+					status: PromotionStatus.APPROVED,
+					startDate: { lte: expect.any(Date) },
+					endDate: { gte: expect.any(Date) },
+					categories: { some: { id: { in: [1] } } },
+				},
+				pagination: DEFAULT_PAGINATION,
+				orderBy: { startDate: 'asc' },
 			});
 		});
 	});

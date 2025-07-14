@@ -1,8 +1,8 @@
 import { MESSAGES } from '../../../common/messages';
 import {
-	ValidatorConstraint,
-	ValidatorConstraintInterface,
-	ValidationArguments,
+    ValidatorConstraint,
+    ValidatorConstraintInterface,
+    ValidationArguments,
 } from 'class-validator';
 
 /**
@@ -11,43 +11,43 @@ import {
  *   schemas:
  *     NonEmptyObject:
  *       type: object
- *       description: Валидатор, проверяющий, что хотя бы одно поле объекта заполнено корректно.
+ *       description: Валидатор, проверяющий, что объект содержит хотя бы одно заполненное поле (непустая строка, валидное число, булево значение или непустой массив).
+ *       example:
+ *         name: "Летняя акция"
  */
 @ValidatorConstraint({ name: 'nonEmptyObject', async: false })
 export class NonEmptyObjectValidator implements ValidatorConstraintInterface {
-	validate(_value: unknown, args: ValidationArguments): boolean {
-		const obj = args.object as Record<string, unknown>;
-		const options = args.constraints[0] || { validateDates: false };
+    validate(_value: unknown, args: ValidationArguments): boolean {
+        const obj = args.object as Record<string, unknown>;
 
-		return Object.keys(obj).some((key) => {
-			const value = obj[key];
+        return Object.keys(obj).some((key) => {
+            const value = obj[key];
 
-			if (value === undefined || value === null) {
-				return false;
-			}
+            if (value === undefined || value === null) {
+                return false;
+            }
 
-			if (typeof value === 'string') {
-				return value.trim().length > 0;
-			}
+            if (typeof value === 'string') {
+                return value.trim().length > 0;
+            }
 
-			if (typeof value === 'number') {
-				return !isNaN(value);
-			}
+            if (typeof value === 'number') {
+                return !isNaN(value);
+            }
 
-			if (typeof value === 'boolean') {
-				return true;
-			}
+            if (typeof value === 'boolean') {
+                return true;
+            }
 
-			if (options.validateDates && (key === 'startDate' || key === 'endDate')) {
-				const date = new Date(value as string);
-				return !isNaN(date.getTime());
-			}
+            if (Array.isArray(value)) {
+                return value.length > 0;
+            }
 
-			return false;
-		});
-	}
+            return false;
+        });
+    }
 
-	defaultMessage(): string {
-		return MESSAGES.VALIDATION_FAILED;
-	}
+    defaultMessage(): string {
+        return MESSAGES.VALIDATION_ERROR;
+    }
 }

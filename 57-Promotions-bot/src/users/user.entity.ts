@@ -1,5 +1,4 @@
-import { compare, hash } from 'bcryptjs';
-import { UserRole } from '../common/constants';
+import { Role } from '../common/enums/role.enum';
 
 /**
  * @swagger
@@ -7,7 +6,7 @@ import { UserRole } from '../common/constants';
  *   schemas:
  *     UserResponse:
  *       type: object
- *       description: Данные пользователя, возвращаемые в ответах API (без пароля).
+ *       description: Данные пользователя, возвращаемые в ответах API, включая связанные категории и город (без пароля).
  *       properties:
  *         id:
  *           type: integer
@@ -25,8 +24,33 @@ import { UserRole } from '../common/constants';
  *         role:
  *           type: string
  *           enum: [SUPERADMIN, ADMIN, SUPPLIER]
- *           description: Роль пользователя (SUPERADMIN/ADMIN — административные права, SUPPLIER — управление акциями и товарами).
+ *           description: Роль пользователя (SUPERADMIN/ADMIN — административные права, SUPPLIER — управление акциями).
  *           example: SUPPLIER
+ *         telegramId:
+ *           type: string
+ *           nullable: true
+ *           description: Идентификатор Telegram пользователя.
+ *           example: "123456789"
+ *         cityId:
+ *           type: integer
+ *           nullable: true
+ *           description: Идентификатор города пользователя.
+ *           example: 1
+ *         preferredCategories:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: Идентификатор категории.
+ *                 example: 1
+ *               name:
+ *                 type: string
+ *                 description: Название категории.
+ *                 example: Еда
+ *           description: Список предпочитаемых категорий пользователя.
+ *           example: [{ id: 1, name: "Еда" }, { id: 2, name: "Напитки" }]
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -37,6 +61,10 @@ import { UserRole } from '../common/constants';
  *           format: date-time
  *           description: Дата последнего обновления пользователя (ISO 8601).
  *           example: "2023-05-02T12:00:00Z"
+ *         isDeleted:
+ *           type: boolean
+ *           description: Флаг мягкого удаления пользователя.
+ *           example: false
  *       required:
  *         - id
  *         - email
@@ -61,10 +89,19 @@ export class User {
 	constructor(
 		private readonly _email: string,
 		private readonly _name: string,
-		private readonly _role: UserRole = 'SUPPLIER',
-		passwordHash?: string,
+		private readonly _role: Role = Role.SUPPLIER,
+		passwordHash: string,
+		private readonly _telegramId: string | null = null,
+		private readonly _cityId: number | null = null,
+		private readonly _categoryIds: number[] = [],
+		private readonly _id?: number,
+		private readonly _isDeleted: boolean = false,
 	) {
-		this._password = passwordHash || '';
+		this._password = passwordHash;
+	}
+
+	get id(): number | undefined {
+		return this._id;
 	}
 
 	get email(): string {
@@ -79,15 +116,23 @@ export class User {
 		return this._password;
 	}
 
-	get role(): UserRole {
+	get role(): Role {
 		return this._role;
 	}
 
-	public async setPassword(pass: string, salt: number): Promise<void> {
-		this._password = await hash(pass, salt);
+	get telegramId(): string | null {
+		return this._telegramId;
 	}
 
-	public async comparePassword(pass: string): Promise<boolean> {
-		return compare(pass, this._password);
+	get cityId(): number | null {
+		return this._cityId;
+	}
+
+	get preferredCategories(): number[] {
+		return [...this._categoryIds];
+	}
+
+	get isDeleted(): boolean {
+		return this._isDeleted;
 	}
 }
