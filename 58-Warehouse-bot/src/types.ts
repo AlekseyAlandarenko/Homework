@@ -1,0 +1,18 @@
+export const TYPES = {
+	Application: Symbol.for('Application'),
+	ILogger: Symbol.for('ILogger'),
+	UsersController: Symbol.for('UsersController'),
+	UsersService: Symbol.for('UsersService'),
+	ProductsController: Symbol.for('ProductsController'),
+	ProductsService: Symbol.for('ProductsService'),
+	ExceptionFilter: Symbol.for('ExceptionFilter'),
+	ConfigService: Symbol.for('ConfigService'),
+	PrismaService: Symbol.for('PrismaService'),
+	UsersRepository: Symbol.for('UsersRepository'),
+	ProductsRepository: Symbol.for('ProductsRepository'),
+	AuthMiddleware: Symbol.for('AuthMiddleware'),
+	CartController: Symbol.for('CartController'),
+	CartService: Symbol.for('CartService'),
+	CartRepository: Symbol.for('CartRepository'),
+	TelegramBotService: Symbol.for('TelegramBotService'),
+};
