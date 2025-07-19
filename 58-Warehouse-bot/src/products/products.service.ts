@@ -1,244 +1,320 @@
 import { inject, injectable } from 'inversify';
-import { ProductModel, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { Product } from './product.entity';
 import { IProductsService } from './products.service.interface';
 import { TYPES } from '../types';
-import { IProductsRepository } from './products.repository.interface';
+import { IProductsRepository, ProductWithRelations } from './products.repository.interface';
 import { IUsersService } from '../users/users.service.interface';
 import { ProductCreateDto } from './dto/product-create.dto';
 import { ProductUpdateDto } from './dto/product-update.dto';
 import { ProductPurchaseOrAddQuantityDto } from './dto/product-purchase-or-add-quantity.dto';
 import { HTTPError } from '../errors/http-error.class';
 import { MESSAGES } from '../common/messages';
-import { PaginatedResponse, DEFAULT_PAGINATION } from '../common/pagination.interface';
+import { PaginatedResponse } from '../common/pagination.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
-import { validateUserExists, validateId } from '../common/validators';
+import { ProductFilterDto } from './dto/product-filter.dto';
+import { DEFAULT_PAGINATION } from '../common/constants';
+import { ProductStatus } from '../common/enums/product-status.enum';
+import { PrismaService } from '../database/prisma.service';
 
 @injectable()
 export class ProductsService implements IProductsService {
 	constructor(
 		@inject(TYPES.ProductsRepository) private productsRepository: IProductsRepository,
 		@inject(TYPES.UsersService) private usersService: IUsersService,
+		@inject(TYPES.PrismaService) private prismaService: PrismaService,
 	) {}
 
-	async createProduct(dto: ProductCreateDto & { userEmail?: string }): Promise<ProductModel> {
-		const user = await validateUserExists(dto.userEmail, this.usersService);
-		const existedProduct = await this.productsRepository.findBySku(dto.sku);
-		if (existedProduct) {
-			throw new HTTPError(422, MESSAGES.SKU_ALREADY_EXISTS);
-		}
-
-		const product = new Product(
+	private async createProductEntity(
+		dto: ProductCreateDto,
+		creatorId: number,
+		status: ProductStatus,
+	): Promise<Product> {
+		return new Product(
 			dto.name,
 			dto.description ?? null,
 			dto.price,
 			dto.quantity,
-			dto.category ?? null,
 			dto.sku,
-			dto.isActive ?? true,
-			dto.isDeleted ?? false,
-			user.id,
-			user.id,
+			status,
+			creatorId,
+			creatorId,
+			dto.cityId,
+			dto.categoryIds || [],
+			dto.options || [],
 		);
-		return this.productsRepository.create(product);
+	}
+
+	private async ensureProductExists(id: number, userId?: number): Promise<ProductWithRelations> {
+		return this.productsRepository.findProductByKeyOrThrow(
+			'id',
+			id,
+			userId,
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
+	}
+
+	private async ensureUniqueSku(sku: string, currentProductId?: number): Promise<void> {
+		const existingProduct = await this.productsRepository.findProductByKey(
+			'sku',
+			sku,
+			undefined,
+			false,
+		);
+		if (existingProduct && (!currentProductId || existingProduct.id !== currentProductId)) {
+			throw new HTTPError(409, MESSAGES.PRODUCT_SKU_ALREADY_EXISTS);
+		}
+	}
+
+	private async validateProductRelations(cityId?: number, categoryIds?: number[]): Promise<void> {
+		if (cityId) {
+			await this.prismaService.validateCity(cityId);
+		}
+		if (categoryIds?.length) {
+			await this.prismaService.validateCategories(categoryIds);
+		}
+	}
+
+	private validateQuantity(
+		quantity: number,
+		currentQuantity?: number,
+		isPurchase: boolean = false,
+	): void {
+		if (isPurchase) {
+			if (currentQuantity === undefined) {
+				throw new HTTPError(422, MESSAGES.PRODUCT_NOT_FOUND);
+			}
+			if (currentQuantity < quantity) {
+				throw new HTTPError(422, MESSAGES.PRODUCT_INSUFFICIENT_STOCK);
+			}
+		} else if (currentQuantity !== undefined && currentQuantity + quantity < 0) {
+			throw new HTTPError(422, MESSAGES.QUANTITY_NEGATIVE);
+		}
+	}
+
+	private async validateProductAvailability(
+		product: ProductWithRelations,
+		quantity: number,
+		isPurchase: boolean = false,
+	): Promise<void> {
+		if (product.isDeleted) {
+			throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
+		}
+		if (isPurchase) {
+			if (product.quantity === 0) {
+				throw new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK);
+			}
+			if (product.status !== ProductStatus.AVAILABLE) {
+				throw new HTTPError(422, MESSAGES.PRODUCT_NOT_ACTIVE);
+			}
+		}
+		this.validateQuantity(quantity, product.quantity, isPurchase);
+	}
+
+	async createProduct(
+		dto: ProductCreateDto & { userId: number; status: ProductStatus },
+	): Promise<ProductWithRelations> {
+		await this.ensureUniqueSku(dto.sku);
+		await this.validateProductRelations(dto.cityId, dto.categoryIds);
+		const product = await this.createProductEntity(dto, dto.userId, dto.status);
+		return this.productsRepository.createProduct(product);
+	}
+
+	async getProductsByCreator(
+		creatorId: number,
+		pagination: PaginationDto = DEFAULT_PAGINATION,
+	): Promise<PaginatedResponse<ProductWithRelations>> {
+		return this.productsRepository.findProductsByCreator(creatorId, pagination);
 	}
 
 	async getAllProducts({
 		filters = {},
-		orderBy,
 		pagination = DEFAULT_PAGINATION,
 	}: {
-		filters?: {
-			name?: string;
-			minPrice?: number;
-			maxPrice?: number;
-			category?: string;
-			isActive?: boolean;
-			available?: boolean;
-		};
-		orderBy?: { sortBy?: string; sortOrder?: string };
+		filters?: ProductFilterDto;
 		pagination?: PaginationDto;
-	} = {}): Promise<PaginatedResponse<ProductModel>> {
-		const { page, limit } = pagination;
-		if (page <= 0 || limit <= 0) {
-			throw new HTTPError(422, MESSAGES.VALIDATION_FAILED);
-		}
+	} = {}): Promise<PaginatedResponse<ProductWithRelations>> {
+		const prismaFilters: Prisma.ProductModelWhereInput = {
+			isDeleted: false,
+		};
 
-		const validSortFields = ['name', 'price', 'quantity', 'createdAt', 'updatedAt'];
-		if (orderBy?.sortBy && !validSortFields.includes(orderBy.sortBy)) {
-			throw new HTTPError(422, MESSAGES.INVALID_SORT_PARAM);
+		if (filters.status) {
+			prismaFilters.status = filters.status;
 		}
-
-		const prismaFilters: Prisma.ProductModelWhereInput = { isDeleted: false };
+		if (filters.cityId) {
+			prismaFilters.cityId = filters.cityId;
+		}
+		if (filters.categoryIds?.length) {
+			prismaFilters.categories = { some: { id: { in: filters.categoryIds } } };
+		}
 		if (filters.name) {
 			prismaFilters.name = { contains: filters.name, mode: 'insensitive' };
 		}
-		if (filters.minPrice || filters.maxPrice) {
-			prismaFilters.price = {
-				...(filters.minPrice && { gte: filters.minPrice }),
-				...(filters.maxPrice && { lte: filters.maxPrice }),
-			};
-		}
-		if (filters.category) {
-			prismaFilters.category = filters.category;
-		}
-		if (filters.isActive !== undefined) {
-			prismaFilters.isActive = filters.isActive;
-		}
-		if (filters.available) {
-			prismaFilters.quantity = { gt: 0 };
+		if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+			prismaFilters.price = {};
+			if (filters.minPrice !== undefined) {
+				prismaFilters.price.gte = filters.minPrice;
+			}
+			if (filters.maxPrice !== undefined) {
+				prismaFilters.price.lte = filters.maxPrice;
+			}
 		}
 
-		const prismaOrderBy: Prisma.ProductModelOrderByWithRelationInput = orderBy?.sortBy
-			? { [orderBy.sortBy]: orderBy.sortOrder || 'asc' }
+		const prismaOrderBy: Prisma.ProductModelOrderByWithRelationInput = filters.sortBy
+			? { [filters.sortBy]: filters.sortOrder || 'asc' }
 			: { createdAt: 'desc' };
 
-		return this.productsRepository.findAll({
+		return this.productsRepository.findAllProducts({
 			filters: prismaFilters,
 			orderBy: prismaOrderBy,
 			pagination,
 		});
 	}
 
-	async getProductsByCreator(
-		userEmail?: string,
-		pagination: PaginationDto = DEFAULT_PAGINATION,
-	): Promise<PaginatedResponse<ProductModel>> {
-		const user = await validateUserExists(userEmail, this.usersService);
-		if (user.role !== 'WAREHOUSE_MANAGER') {
-			throw new HTTPError(403, MESSAGES.FORBIDDEN);
-		}
-		return this.productsRepository.findByCreator(user.id, pagination);
-	}
-
-	async getStock(
+	async getStockProducts(
 		pagination: PaginationDto = DEFAULT_PAGINATION,
 	): Promise<PaginatedResponse<{ id: number; sku: string; quantity: number }>> {
-		return this.productsRepository.findStock(pagination);
+		return this.productsRepository.findStockProducts(pagination);
 	}
 
-	async getProductById(id: number, userId: number, role: string): Promise<ProductModel | null> {
-    validateId(id);
-    const product = await this.productsRepository.findById(
-        id,
-        role === 'WAREHOUSE_MANAGER' ? userId : undefined,
-    );
-    if (!product) {
-        throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-    }
-    return product;
-}
+	async getProductById(id: number): Promise<ProductWithRelations> {
+		return this.ensureProductExists(id);
+	}
+
+	async getProductsForUser(
+		telegramId: string,
+		pagination: PaginationDto,
+	): Promise<PaginatedResponse<ProductWithRelations>> {
+		const { page = DEFAULT_PAGINATION.page, limit = DEFAULT_PAGINATION.limit } = pagination;
+		const skip = (page - 1) * limit;
+
+		const user = await this.usersService.getUserInfoByTelegramId(telegramId);
+		const categoryIds = user!.preferredCategories?.map((c) => c.id) || [];
+
+		const filters: Prisma.ProductModelWhereInput = {
+			cityId: user!.cityId,
+			isDeleted: false,
+			status: ProductStatus.AVAILABLE,
+			quantity: { gt: 0 },
+			...(categoryIds.length && { categories: { some: { id: { in: categoryIds } } } }),
+		};
+
+		const result = await this.productsRepository.findAllProducts({
+			filters,
+			pagination: { page, limit },
+			orderBy: { createdAt: 'asc' },
+		});
+
+		return {
+			items: result.items,
+			total: result.total,
+			meta: {
+				total: result.total,
+				page,
+				limit,
+				totalPages: Math.ceil(result.total / limit),
+			},
+		};
+	}
 
 	async updateProduct(
 		id: number,
 		dto: ProductUpdateDto,
-		userEmail?: string,
-	): Promise<ProductModel> {
-		validateId(id);
-		const user = await validateUserExists(userEmail, this.usersService);
-		await this.productsRepository.findByIdOrThrow(id);
+		userId: number,
+	): Promise<ProductWithRelations> {
+		await this.ensureProductExists(id);
 
 		if (dto.sku) {
-			const productBySku = await this.productsRepository.findBySku(dto.sku);
-			if (productBySku && productBySku.id !== id) {
-				throw new HTTPError(422, MESSAGES.SKU_ALREADY_EXISTS);
+			await this.ensureUniqueSku(dto.sku, id);
+		}
+
+		if (dto.options?.length) {
+			for (const option of dto.options) {
+				const exists = await this.prismaService.client.productOption.findUnique({
+					where: {
+						productId_name_value: {
+							productId: id,
+							name: option.name,
+							value: option.value,
+						},
+					},
+				});
+				if (exists) {
+					throw new HTTPError(409, MESSAGES.OPTION_ALREADY_EXISTS);
+				}
 			}
 		}
 
-		const data: Partial<ProductModel> = {};
+		const data: Prisma.ProductModelUpdateInput = {};
 		if (dto.name) data.name = dto.name;
 		if (dto.description !== undefined) data.description = dto.description;
 		if (dto.price !== undefined) data.price = dto.price;
 		if (dto.quantity !== undefined) {
-			if (dto.quantity < 0) {
-				throw new HTTPError(422, MESSAGES.QUANTITY_NEGATIVE);
-			}
 			data.quantity = dto.quantity;
+			data.status =
+				dto.quantity === 0 ? ProductStatus.OUT_OF_STOCK : dto.status || ProductStatus.AVAILABLE;
 		}
-		if (dto.category !== undefined) data.category = dto.category;
 		if (dto.sku) data.sku = dto.sku;
-		if (dto.isActive !== undefined) data.isActive = dto.isActive;
-		data.updatedById = user.id;
-
-		try {
-			return await this.productsRepository.update(id, data);
-		} catch (err) {
-			if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-				throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-			}
-			throw err;
+		if (dto.status) data.status = dto.status;
+		if (dto.cityId !== undefined) {
+			data.city = dto.cityId ? { connect: { id: dto.cityId } } : { disconnect: true };
 		}
+		if (dto.categoryIds) {
+			data.categories = { set: dto.categoryIds.map((id) => ({ id })) };
+		}
+		if (dto.options) {
+			data.options = {
+				deleteMany: {},
+				create: dto.options.map((opt) => ({
+					name: opt.name,
+					value: opt.value,
+					priceModifier: opt.priceModifier,
+				})),
+			};
+		}
+
+		data.updatedBy = { connect: { id: userId } };
+
+		return this.productsRepository.updateProduct(id, data);
 	}
 
 	async updateProductQuantity(
 		id: number,
 		dto: ProductPurchaseOrAddQuantityDto,
-		userEmail?: string,
-	): Promise<ProductModel> {
-		validateId(id);
-		const user = await validateUserExists(userEmail, this.usersService);
-		const product = await this.productsRepository.findByIdOrThrow(id);
-
+		userId: number,
+	): Promise<ProductWithRelations> {
+		const product = await this.ensureProductExists(id);
+		this.validateQuantity(dto.quantity, product.quantity);
 		const newQuantity = product.quantity + dto.quantity;
-		if (newQuantity < 0) {
-			throw new HTTPError(422, MESSAGES.QUANTITY_NEGATIVE);
-		}
-
-		try {
-			return await this.productsRepository.update(id, {
-				quantity: newQuantity,
-				updatedById: user.id,
-			});
-		} catch (err) {
-			if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-				throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-			}
-			throw err;
-		}
+		const newStatus = newQuantity === 0 ? ProductStatus.OUT_OF_STOCK : ProductStatus.AVAILABLE;
+		return this.productsRepository.updateProduct(id, {
+			quantity: newQuantity,
+			status: newStatus,
+			updatedBy: { connect: { id: userId } },
+		});
 	}
 
 	async purchaseProduct(
 		id: number,
 		dto: ProductPurchaseOrAddQuantityDto,
-		userEmail?: string,
-	): Promise<ProductModel> {
-		validateId(id);
-		const user = await validateUserExists(userEmail, this.usersService);
-		const product = await this.productsRepository.findByIdOrThrow(id);
-
-		if (!product.isActive) {
-			throw new HTTPError(400, MESSAGES.PRODUCT_NOT_ACTIVE);
-		}
-		if (product.quantity === 0) {
-			throw new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK);
-		}
-		if (product.quantity < dto.quantity) {
-			throw new HTTPError(422, MESSAGES.PRODUCT_INSUFFICIENT_STOCK);
-		}
-
+		userId: number,
+	): Promise<ProductWithRelations> {
+		const product = await this.ensureProductExists(id);
+		await this.validateProductAvailability(product, dto.quantity, true);
 		const newQuantity = product.quantity - dto.quantity;
-		try {
-			return await this.productsRepository.update(id, {
-				quantity: newQuantity,
-				updatedById: user.id,
-			});
-		} catch (err) {
-			if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-				throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-			}
-			throw err;
-		}
+		const newStatus = newQuantity === 0 ? ProductStatus.OUT_OF_STOCK : product.status;
+		return this.productsRepository.updateProduct(id, {
+			quantity: newQuantity,
+			status: newStatus,
+			updatedBy: { connect: { id: userId } },
+		});
 	}
 
-	async deleteProduct(id: number, userEmail?: string): Promise<ProductModel> {
-		validateId(id);
-		const user = await validateUserExists(userEmail, this.usersService);
-		const product = await this.productsRepository.findByIdOrThrow(id);
-
-		if (!product.isActive) {
-			throw new HTTPError(400, MESSAGES.PRODUCT_NOT_ACTIVE);
+	async deleteProduct(id: number): Promise<ProductWithRelations> {
+		const product = await this.ensureProductExists(id);
+		if (product.status === ProductStatus.AVAILABLE) {
+			throw new HTTPError(422, MESSAGES.CANNOT_DELETE_ACTIVE_PRODUCT);
 		}
-
-		return this.productsRepository.delete(id);
+		return this.productsRepository.deleteProduct(id);
 	}
 }

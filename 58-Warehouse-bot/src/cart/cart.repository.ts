@@ -1,83 +1,135 @@
-import { inject, injectable } from 'inversify';
-import { TYPES } from '../types';
-import { ICartRepository } from './cart.repository.interface';
+import { injectable, inject } from 'inversify';
 import { PrismaService } from '../database/prisma.service';
-import { HTTPError } from '../errors/http-error.class';
-import { MESSAGES } from '../common/messages';
+import { ICartRepository, CartWithProduct } from './cart.repository.interface';
+import { TYPES } from '../types';
 import { Cart } from './cart.entity';
 import { CartModel } from '@prisma/client';
-import { CartCheckoutDto } from './dto/cart-checkout.dto';
+import { ProductStatus } from '../common/enums/product-status.enum';
 
 @injectable()
 export class CartRepository implements ICartRepository {
 	constructor(@inject(TYPES.PrismaService) private prismaService: PrismaService) {}
 
-	async addToCart(cart: Cart): Promise<CartModel> {
-		return this.prismaService.client.cartModel.upsert({
+	async addCartItem(cart: Cart): Promise<CartModel> {
+		const existingItem = await this.prismaService.client.cartModel.findFirst({
 			where: {
-				userId_productId: { userId: cart.userId, productId: cart.productId },
-			},
-			update: { quantity: { increment: cart.quantity }, updatedAt: new Date() },
-			create: {
 				userId: cart.userId,
 				productId: cart.productId,
+				optionId: cart.optionId ?? null,
+			},
+		});
+
+		if (existingItem) {
+			return this.prismaService.client.cartModel.update({
+				where: { id: existingItem.id },
+				data: {
+					quantity: { increment: cart.quantity },
+					price: cart.price,
+					updatedAt: new Date(),
+				},
+			});
+		}
+
+		return this.prismaService.client.cartModel.create({
+			data: {
+				userId: cart.userId,
+				productId: cart.productId,
+				optionId: cart.optionId ?? null,
 				quantity: cart.quantity,
+				price: cart.price,
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			},
 		});
 	}
 
-	async getCart(userId: number): Promise<CartModel[]> {
+	async getCartItems(userId: number): Promise<CartWithProduct[]> {
 		return this.prismaService.client.cartModel.findMany({
 			where: { userId },
-			include: { product: { select: { name: true, price: true } } },
-		});
+			include: {
+				product: { select: { name: true, price: true } },
+				option: { select: { id: true, name: true, value: true, priceModifier: true } },
+			},
+		}) as Promise<CartWithProduct[]>;
 	}
 
-	async checkout(userId: number, dto: CartCheckoutDto): Promise<CartModel[]> {
+	async checkoutCartItems(
+		userId: number,
+		items: { productId: number; quantity: number; optionId: number | null }[],
+	): Promise<CartWithProduct[]> {
 		const cartItems = await this.prismaService.client.cartModel.findMany({
 			where: { userId },
+			include: {
+				product: {
+					include: {
+						categories: true,
+						city: true,
+						options: true,
+					},
+				},
+				option: true,
+			},
 		});
+
 		await this.prismaService.client.$transaction(async (prisma) => {
-			for (const item of dto.items) {
-				const product = await prisma.productModel.findFirst({
-					where: { id: item.productId, isDeleted: false },
+			for (const item of items) {
+				const product = await prisma.productModel.findUnique({
+					where: { id: item.productId },
+					select: { quantity: true, status: true },
 				});
-				if (!product) {
-					throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-				}
-				if (product.quantity === 0) {
-					throw new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK);
-				}
-				if (product.quantity < item.quantity) {
-					throw new HTTPError(422, MESSAGES.PRODUCT_INSUFFICIENT_STOCK);
-				}
+
+				const newQuantity = product ? product.quantity - item.quantity : 0;
+
 				await prisma.productModel.update({
 					where: { id: item.productId },
-					data: { quantity: { decrement: item.quantity } },
+					data: {
+						quantity: { decrement: item.quantity },
+						status: {
+							set: newQuantity === 0 ? ProductStatus.OUT_OF_STOCK : product?.status,
+						},
+					},
 				});
 			}
 			await prisma.cartModel.deleteMany({ where: { userId } });
 		});
-		return cartItems;
+
+		return cartItems.map((item) => ({
+			...item,
+			option: item.option ?? undefined,
+		})) as CartWithProduct[];
 	}
 
-	async removeFromCart(userId: number, productId: number): Promise<void> {
-		const cartItem = await this.prismaService.client.cartModel.findUnique({
+	async findCartItem(
+		userId: number,
+		productId: number,
+		optionId: number | null,
+	): Promise<CartModel | null> {
+		return this.prismaService.client.cartModel.findFirst({
 			where: {
-				userId_productId: { userId, productId },
+				userId,
+				productId,
+				optionId: optionId ?? null,
 			},
 		});
+	}
 
-		if (!cartItem) {
-			throw new HTTPError(404, MESSAGES.CART_ITEM_NOT_FOUND);
-		}
-
-		await this.prismaService.client.cartModel.delete({
+	async removeCartItem(
+		userId: number,
+		productId: number,
+		optionId: number | null,
+	): Promise<{ count: number }> {
+		return this.prismaService.client.cartModel.deleteMany({
 			where: {
-				userId_productId: { userId, productId },
+				userId,
+				productId,
+				optionId: optionId ?? null,
 			},
+		});
+	}
+
+	async removeAllCartItems(userId: number): Promise<void> {
+		await this.prismaService.client.cartModel.deleteMany({
+			where: { userId },
 		});
 	}
 }

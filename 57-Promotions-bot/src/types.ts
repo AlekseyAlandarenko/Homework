@@ -12,4 +12,9 @@ export const TYPES = {
 	PromotionsRepository: Symbol.for('PromotionsRepository'),
 	AuthMiddleware: Symbol.for('AuthMiddleware'),
 	TelegramBotService: Symbol.for('TelegramBotService'),
+	TelegramBotController: Symbol.for('TelegramBotController'),
+	CallbackHandler: Symbol.for('CallbackHandler'),
+	TelegramUtils: Symbol.for('TelegramUtils'),
+	NotificationService: Symbol.for('NotificationService'),
+	CronService: Symbol.for('CronService'),
 };

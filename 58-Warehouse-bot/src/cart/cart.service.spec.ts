@@ -1,125 +1,101 @@
 import { Container } from 'inversify';
-import { IUsersService } from '../users/users.service.interface';
-import { ICartService, CartWithProduct } from './cart.service.interface';
-import { ICartRepository } from './cart.repository.interface';
-import { IProductsRepository } from '../products/products.repository.interface';
-import { TYPES } from '../types';
 import { CartService } from './cart.service';
+import { ICartRepository } from './cart.repository.interface';
+import {
+	IProductsRepository,
+	ProductWithRelations,
+} from '../products/products.repository.interface';
+import { TYPES } from '../types';
 import { CartAddDto } from './dto/cart-add.dto';
 import { CartCheckoutDto } from './dto/cart-checkout.dto';
-import 'reflect-metadata';
+import { Cart } from './cart.entity';
+import { CartModel } from '@prisma/client';
 import { HTTPError } from '../errors/http-error.class';
 import { MESSAGES } from '../common/messages';
-import { CartModel } from '@prisma/client';
+import { ProductStatus } from '../common/enums/product-status.enum';
+import { Prisma } from '@prisma/client';
+import { CartWithProduct } from './cart.repository.interface';
 
-const CartRepositoryMock: ICartRepository = {
-	addToCart: jest.fn(),
-	getCart: jest.fn(),
-	checkout: jest.fn(),
-	removeFromCart: jest.fn(),
+const PrismaServiceMock = {
+	client: {
+		$transaction: jest.fn((callback) => callback({})),
+	},
+	findUnique: jest.fn(),
+	validateAddresses: jest.fn().mockResolvedValue(undefined),
 };
 
-const ProductsRepositoryMock: IProductsRepository = {
-	create: jest.fn(),
-	findById: jest.fn(),
-	findByIdOrThrow: jest.fn(),
-	findBySku: jest.fn(),
-	findAll: jest.fn(),
-	findByCreator: jest.fn(),
-	findStock: jest.fn(),
-	update: jest.fn(),
-	delete: jest.fn(),
+const CartRepositoryMock: jest.Mocked<ICartRepository> = {
+	addCartItem: jest.fn(),
+	getCartItems: jest.fn(),
+	checkoutCartItems: jest.fn(),
+	findCartItem: jest.fn(),
+	removeCartItem: jest.fn(),
+	removeAllCartItems: jest.fn(),
 };
 
-const UsersServiceMock: IUsersService = {
-	createUser: jest.fn(),
-	login: jest.fn(),
-	getUserInfoByEmail: jest.fn(),
-	getUserInfoById: jest.fn(),
-	getAllWarehouseManagers: jest.fn(),
-	updateWarehouseManagerPassword: jest.fn(),
-	deleteWarehouseManager: jest.fn(),
-	findByTelegramId: jest.fn(),
-	updateTelegramId: jest.fn(),
+const ProductsRepositoryMock: jest.Mocked<IProductsRepository> = {
+	productInclude: {
+		categories: { select: { id: true, name: true } },
+		city: { select: { id: true, name: true } },
+	},
+	createProduct: jest.fn(),
+	findProductByKey: jest.fn(),
+	findProductByKeyOrThrow: jest.fn(),
+	findProductsByCreator: jest.fn(),
+	findAllProducts: jest.fn(),
+	findStockProducts: jest.fn(),
+	updateProduct: jest.fn(),
+	updateProductCreator: jest.fn(),
+	deleteProduct: jest.fn(),
 };
 
 const container = new Container();
-let cartRepository: ICartRepository;
-let productsRepository: IProductsRepository;
-let usersService: IUsersService;
-let cartService: ICartService;
+let cartService: CartService;
+let cartRepository: jest.Mocked<ICartRepository>;
+let productsRepository: jest.Mocked<IProductsRepository>;
 
 beforeAll(() => {
-	container.bind<ICartService>(TYPES.CartService).to(CartService);
+	container.bind<CartService>(TYPES.CartService).to(CartService);
 	container.bind<ICartRepository>(TYPES.CartRepository).toConstantValue(CartRepositoryMock);
 	container
 		.bind<IProductsRepository>(TYPES.ProductsRepository)
 		.toConstantValue(ProductsRepositoryMock);
-	container.bind<IUsersService>(TYPES.UsersService).toConstantValue(UsersServiceMock);
+	container.bind(TYPES.PrismaService).toConstantValue(PrismaServiceMock);
 
-	cartRepository = container.get<ICartRepository>(TYPES.CartRepository);
-	productsRepository = container.get<IProductsRepository>(TYPES.ProductsRepository);
-	usersService = container.get<IUsersService>(TYPES.UsersService);
-	cartService = container.get<ICartService>(TYPES.CartService);
+	cartService = container.get<CartService>(TYPES.CartService);
+	cartRepository = container.get<jest.Mocked<ICartRepository>>(TYPES.CartRepository);
+	productsRepository = container.get<jest.Mocked<IProductsRepository>>(TYPES.ProductsRepository);
 });
 
 describe('Сервис корзины', () => {
-	const mockProduct = {
+	const mockProduct: ProductWithRelations = {
 		id: 1,
-		name: 'Ноутбук HP EliteBook',
-		description: '15.6", Core i7, 16GB RAM',
-		price: 1250.99,
+		name: 'Тестовый Товар',
+		description: null,
+		price: 100,
 		quantity: 10,
-		category: 'Электроника',
-		sku: 'NB-HP-ELITE-001',
+		sku: 'TEST123',
+		status: ProductStatus.AVAILABLE,
 		isActive: true,
 		isDeleted: false,
 		createdById: 1,
-		updatedById: 1,
+		updatedById: null,
+		cityId: null,
 		createdAt: new Date(),
 		updatedAt: new Date(),
+		categories: [{ id: 1, name: 'Категория 1' }],
+		city: null,
+		options: [],
 	};
 
-	const mockOutOfStockProduct = {
-		id: 3,
-		name: 'Планшет Apple iPad',
-		description: '10.2", 64GB',
-		price: 499.99,
+	const mockOutOfStockProduct: ProductWithRelations = {
+		...mockProduct,
+		id: 2,
 		quantity: 0,
-		category: 'Электроника',
-		sku: 'TB-AP-IPAD-001',
-		isActive: true,
-		isDeleted: false,
-		createdById: 1,
-		updatedById: 1,
-		createdAt: new Date(),
-		updatedAt: new Date(),
-	};
-
-	const mockInsufficientStockProduct = {
-		id: 4,
-		name: 'Смартфон Samsung Galaxy',
-		description: '6.5", 128GB',
-		price: 799.99,
-		quantity: 5,
-		category: 'Электроника',
-		sku: 'SM-SG-001',
-		isActive: true,
-		isDeleted: false,
-		createdById: 1,
-		updatedById: 1,
-		createdAt: new Date(),
-		updatedAt: new Date(),
-	};
-
-	const mockUser = {
-		id: 1,
-		email: 'test@example.com',
-		name: 'Test User',
-		role: 'WAREHOUSE_MANAGER',
-		password: 'hashed',
-		createdAt: new Date(),
-		updatedAt: new Date(),
+		sku: 'OUT123',
+		status: ProductStatus.OUT_OF_STOCK,
+		categories: [{ id: 2, name: 'Категория 2' }],
+		options: [],
 	};
 
 	const mockCartItem: CartModel = {
@@ -127,360 +103,387 @@ describe('Сервис корзины', () => {
 		userId: 1,
 		productId: 1,
 		quantity: 2,
-		createdAt: new Date('2025-05-27T19:38:01.075Z'),
-		updatedAt: new Date('2025-05-27T19:38:01.075Z'),
+		price: 100,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+		optionId: null,
 	};
+
+	const mockCartWithProduct: CartWithProduct[] = [
+		{
+			id: 1,
+			userId: 1,
+			productId: 1,
+			quantity: 2,
+			price: 100,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			optionId: null,
+			product: {
+				id: 1,
+				name: 'Тестовый Товар',
+				description: null,
+				price: 100,
+				quantity: 10,
+				sku: 'TEST123',
+				status: ProductStatus.AVAILABLE,
+				isActive: true,
+				isDeleted: false,
+				createdById: 1,
+				updatedById: null,
+				cityId: null,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				categories: [{ id: 1, name: 'Категория 1' }],
+				city: null,
+				options: [],
+			},
+			option: undefined,
+		},
+	];
 
 	beforeEach(() => {
 		jest.clearAllMocks();
+		PrismaServiceMock.findUnique.mockResolvedValue(null);
+		PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+		PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 	});
 
-	describe('Добавление товара в корзину', () => {
+	describe('Добавление в корзину', () => {
+		const cartAddDto: CartAddDto = { productId: 1, quantity: 2, optionId: null };
+		const userId = 1;
+
 		it('Должен успешно добавить товар в корзину', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockProduct);
-			cartRepository.addToCart = jest.fn().mockResolvedValue(mockCartItem);
+			productsRepository.findProductByKey.mockResolvedValue(mockProduct);
+			cartRepository.addCartItem.mockResolvedValue(mockCartItem);
 
-			const dto: CartAddDto = { productId: 1, quantity: 2 };
-			const result = await cartService.addToCart('test@example.com', dto);
+			const result = await cartService.addCartItem(userId, cartAddDto);
 
-			expect(result).toEqual(mockCartItem);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
-			expect(cartRepository.addToCart).toHaveBeenCalledWith(
-				expect.objectContaining({
-					userId: mockUser.id,
-					productId: dto.productId,
-					quantity: dto.quantity,
-				}),
-			);
-		});
-
-		it('Должен выбросить ошибку 422, если productId невалиден', async () => {
-			const dto: CartAddDto = { productId: 0, quantity: 2 };
-			await expect(cartService.addToCart('test@example.com', dto)).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.INVALID_ID),
-			);
-			expect(usersService.getUserInfoByEmail).not.toHaveBeenCalled();
-			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(cartRepository.addToCart).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 422, если товар отсутствует на складе', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockOutOfStockProduct);
-
-			const dto: CartAddDto = { productId: 3, quantity: 1 };
-			await expect(cartService.addToCart('test@example.com', dto)).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK),
-			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(3);
-			expect(cartRepository.addToCart).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 422, если недостаточно товара на складе', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest
-				.fn()
-				.mockResolvedValue(mockInsufficientStockProduct);
-
-			const dto: CartAddDto = { productId: 4, quantity: 10 };
-			await expect(cartService.addToCart('test@example.com', dto)).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.PRODUCT_INSUFFICIENT_STOCK),
-			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(4);
-			expect(cartRepository.addToCart).not.toHaveBeenCalled();
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
+			expect(cartRepository.addCartItem).toHaveBeenCalledWith(expect.any(Cart));
+			expect(result).toEqual({
+				id: mockCartItem.id,
+				productId: mockCartItem.productId,
+				quantity: mockCartItem.quantity,
+				price: mockCartItem.price,
+				createdAt: mockCartItem.createdAt.toISOString(),
+				updatedAt: mockCartItem.updatedAt.toISOString(),
+				product: { name: mockProduct.name },
+				option: undefined,
+			});
 		});
 
 		it('Должен выбросить ошибку 404, если товар не найден', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest
-				.fn()
-				.mockRejectedValue(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
+			productsRepository.findProductByKey.mockResolvedValue(null);
 
-			const dto: CartAddDto = { productId: 999, quantity: 1 };
-			await expect(cartService.addToCart('test@example.com', dto)).rejects.toThrowError(
+			await expect(cartService.addCartItem(userId, cartAddDto)).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
 			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(999);
-			expect(cartRepository.addToCart).not.toHaveBeenCalled();
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
+			expect(cartRepository.addCartItem).not.toHaveBeenCalled();
 		});
 
-		it('Должен выбросить ошибку 404, если email пустой', async () => {
-			const dto: CartAddDto = { productId: 1, quantity: 2 };
-			await expect(cartService.addToCart('', dto)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
+		it('Должен выбросить ошибку 422, если товар недоступен', async () => {
+			productsRepository.findProductByKey.mockResolvedValue(mockOutOfStockProduct);
+
+			await expect(cartService.addCartItem(userId, cartAddDto)).rejects.toThrowError(
+				new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK),
 			);
-			expect(usersService.getUserInfoByEmail).not.toHaveBeenCalled();
-			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(cartRepository.addToCart).not.toHaveBeenCalled();
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
+			expect(cartRepository.addCartItem).not.toHaveBeenCalled();
+		});
+
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			const prismaError = new Prisma.PrismaClientKnownRequestError('DB Error', {
+				code: 'P2002',
+				clientVersion: '',
+			});
+			productsRepository.findProductByKey.mockResolvedValue(mockProduct);
+			cartRepository.addCartItem.mockRejectedValue(prismaError);
+
+			await expect(cartService.addCartItem(userId, cartAddDto)).rejects.toThrowError(prismaError);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
+			expect(cartRepository.addCartItem).toHaveBeenCalledWith(expect.any(Cart));
 		});
 	});
 
 	describe('Получение корзины', () => {
-		it('Должен успешно вернуть корзину пользователя', async () => {
-			const mockCartWithProduct: CartWithProduct = {
-				...mockCartItem,
-				product: { name: mockProduct.name, price: mockProduct.price },
-			};
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			cartRepository.getCart = jest.fn().mockResolvedValue([mockCartWithProduct]);
+		const userId = 1;
 
-			const result = await cartService.getCart('test@example.com');
+		it('Должен успешно вернуть содержимое корзины с общей суммой', async () => {
+			cartRepository.getCartItems.mockResolvedValue(mockCartWithProduct);
 
+			const result = await cartService.getCartItems(userId);
+
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
 			expect(result).toEqual({
 				items: [
 					{
-						id: mockCartItem.id,
-						productId: mockCartItem.productId,
-						quantity: mockCartItem.quantity,
-						price: mockProduct.price,
-						createdAt: mockCartItem.createdAt.toISOString(),
-						updatedAt: mockCartItem.updatedAt.toISOString(),
+						id: 1,
+						productId: 1,
+						quantity: 2,
+						price: mockCartWithProduct[0].price,
+						createdAt: expect.any(String),
+						updatedAt: expect.any(String),
+						product: { name: 'Тестовый Товар' },
+						option: undefined,
 					},
 				],
-				total: mockProduct.price * mockCartItem.quantity,
+				total: mockCartWithProduct[0].price * mockCartWithProduct[0].quantity,
 			});
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(cartRepository.getCart).toHaveBeenCalledWith(mockUser.id);
 		});
 
-		it('Должен вернуть пустую корзину, если товаров нет', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			cartRepository.getCart = jest.fn().mockResolvedValue([]);
+		it('Должен вернуть пустую корзину с нулевой суммой', async () => {
+			cartRepository.getCartItems.mockResolvedValue([]);
 
-			const result = await cartService.getCart('test@example.com');
+			const result = await cartService.getCartItems(userId);
 
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
 			expect(result).toEqual({ items: [], total: 0 });
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(cartRepository.getCart).toHaveBeenCalledWith(mockUser.id);
 		});
 
-		it('Должен корректно вычислить итоговую сумму для нескольких товаров', async () => {
-			const mockCartItems: CartWithProduct[] = [
-				{
-					...mockCartItem,
-					product: { name: mockProduct.name, price: mockProduct.price },
-				},
-				{
-					id: 2,
-					userId: 1,
-					productId: 2,
-					quantity: 1,
-					createdAt: new Date('2025-05-27T19:38:01.099Z'),
-					updatedAt: new Date('2025-05-27T19:38:01.099Z'),
-					product: { name: 'Дополнительный товар', price: 500 },
-				},
-			];
-
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			cartRepository.getCart = jest.fn().mockResolvedValue(mockCartItems);
-
-			const result = await cartService.getCart('test@example.com');
-
-			expect(result).toEqual({
-				items: [
-					{
-						id: mockCartItems[0].id,
-						productId: mockCartItems[0].productId,
-						quantity: mockCartItems[0].quantity,
-						price: mockCartItems[0].product.price,
-						createdAt: mockCartItems[0].createdAt.toISOString(),
-						updatedAt: mockCartItems[0].updatedAt.toISOString(),
-					},
-					{
-						id: mockCartItems[1].id,
-						productId: mockCartItems[1].productId,
-						quantity: mockCartItems[1].quantity,
-						price: mockCartItems[1].product.price,
-						createdAt: mockCartItems[1].createdAt.toISOString(),
-						updatedAt: mockCartItems[1].updatedAt.toISOString(),
-					},
-				],
-				total:
-					mockCartItems[0].product.price * mockCartItems[0].quantity +
-					mockCartItems[1].product.price * mockCartItems[1].quantity,
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			const prismaError = new Prisma.PrismaClientKnownRequestError('DB Error', {
+				code: 'P2002',
+				clientVersion: '',
 			});
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(cartRepository.getCart).toHaveBeenCalledWith(mockUser.id);
-		});
+			cartRepository.getCartItems.mockRejectedValue(prismaError);
 
-		it('Должен выбросить ошибку 404, если email пустой', async () => {
-			await expect(cartService.getCart('')).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
-			);
-			expect(usersService.getUserInfoByEmail).not.toHaveBeenCalled();
-			expect(cartRepository.getCart).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 404, если пользователь не найден', async () => {
-			usersService.getUserInfoByEmail = jest
-				.fn()
-				.mockRejectedValue(new HTTPError(404, MESSAGES.USER_NOT_FOUND));
-
-			await expect(cartService.getCart('nonexistent@example.com')).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
-			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('nonexistent@example.com');
-			expect(cartRepository.getCart).not.toHaveBeenCalled();
+			await expect(cartService.getCartItems(userId)).rejects.toThrowError(prismaError);
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
 		});
 	});
 
 	describe('Оформление заказа', () => {
+		const userId = 1;
+		const cartCheckoutDto: CartCheckoutDto = {
+			items: [
+				{ productId: 1, quantity: 2, optionId: null },
+				{ productId: 2, quantity: 1, optionId: null },
+			],
+			addressId: 1,
+		};
+		const mockProduct2: ProductWithRelations = {
+			id: 2,
+			name: 'Тестовый Товар 2',
+			description: null,
+			price: 50,
+			quantity: 5,
+			sku: 'TEST456',
+			status: ProductStatus.AVAILABLE,
+			isActive: true,
+			isDeleted: false,
+			createdById: 1,
+			updatedById: null,
+			cityId: null,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			categories: [{ id: 2, name: 'Категория 2' }],
+			city: null,
+			options: [],
+		};
+		const cartItems: CartWithProduct[] = [
+			{
+				id: 1,
+				userId,
+				productId: 1,
+				quantity: 2,
+				price: 100,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				optionId: null,
+				product: mockProduct,
+				option: undefined,
+			},
+			{
+				id: 2,
+				userId,
+				productId: 2,
+				quantity: 1,
+				price: 50,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				optionId: null,
+				product: mockProduct2,
+				option: undefined,
+			},
+		];
+
 		it('Должен успешно оформить заказ', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockProduct);
-			cartRepository.checkout = jest.fn().mockResolvedValue([mockCartItem]);
+			cartRepository.getCartItems.mockResolvedValue(cartItems);
+			productsRepository.findProductByKey
+				.mockResolvedValueOnce(mockProduct)
+				.mockResolvedValueOnce(mockProduct2);
+			cartRepository.checkoutCartItems.mockResolvedValue(cartItems);
+			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
-			const dto: CartCheckoutDto = { items: [{ productId: 1, quantity: 2 }] };
-			const result = await cartService.checkout('test@example.com', dto);
+			const result = await cartService.checkoutCartItems(userId, cartCheckoutDto);
 
-			expect(result).toEqual([mockCartItem]);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
-			expect(cartRepository.checkout).toHaveBeenCalledWith(mockUser.id, dto);
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledTimes(2);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', 1);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', 2);
+			expect(cartRepository.checkoutCartItems).toHaveBeenCalledWith(userId, [
+				{ productId: 1, quantity: 2, optionId: null },
+				{ productId: 2, quantity: 1, optionId: null },
+			]);
+			expect(result).toEqual({
+				items: [
+					{
+						id: 1,
+						productId: 1,
+						quantity: 2,
+						price: 100,
+						createdAt: expect.any(String),
+						updatedAt: expect.any(String),
+						product: { name: 'Тестовый Товар' },
+						option: undefined,
+					},
+					{
+						id: 2,
+						productId: 2,
+						quantity: 1,
+						price: 50,
+						createdAt: expect.any(String),
+						updatedAt: expect.any(String),
+						product: { name: 'Тестовый Товар 2' },
+						option: undefined,
+					},
+				],
+				total: 250,
+			});
 		});
 
-		it('Должен успешно оформить заказ с пустым списком товаров', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			cartRepository.checkout = jest.fn().mockResolvedValue([]);
+		it('Должен выбросить ошибку 404, если элемент корзины не найден', async () => {
+			cartRepository.getCartItems.mockResolvedValue([cartItems[0]]);
+			const modifiedCartCheckoutDto: CartCheckoutDto = {
+				items: [{ productId: 2, quantity: 1, optionId: null }],
+				addressId: 1,
+			};
+			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
-			const dto: CartCheckoutDto = { items: [] };
-			const result = await cartService.checkout('test@example.com', dto);
-
-			expect(result).toEqual([]);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(cartRepository.checkout).toHaveBeenCalledWith(mockUser.id, dto);
+			await expect(
+				cartService.checkoutCartItems(userId, modifiedCartCheckoutDto),
+			).rejects.toThrowError(new HTTPError(404, MESSAGES.CART_ITEM_NOT_FOUND));
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
+			expect(productsRepository.findProductByKey).not.toHaveBeenCalled();
 		});
 
-		it('Должен выбросить ошибку 422, если productId в списке товаров невалиден', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
+		it('Должен выбросить ошибку 422, если недостаточно товара в корзине', async () => {
+			cartRepository.getCartItems.mockResolvedValue([
+				{ ...cartItems[0], quantity: 1 },
+				cartItems[1],
+			]);
+			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
-			const dto: CartCheckoutDto = { items: [{ productId: 0, quantity: 2 }] };
-			await expect(cartService.checkout('test@example.com', dto)).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.INVALID_ID),
+			await expect(cartService.checkoutCartItems(userId, cartCheckoutDto)).rejects.toThrowError(
+				new HTTPError(422, MESSAGES.INSUFFICIENT_QUANTITY_IN_CART),
 			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(cartRepository.checkout).not.toHaveBeenCalled();
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
+			expect(productsRepository.findProductByKey).not.toHaveBeenCalled();
 		});
 
-		it('Должен выбросить ошибку 422, если товар отсутствует на складе', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockOutOfStockProduct);
+		it('Должен выбросить ошибку 422, если товар недоступен', async () => {
+			cartRepository.getCartItems.mockResolvedValue(cartItems);
+			productsRepository.findProductByKey
+				.mockResolvedValueOnce(mockOutOfStockProduct)
+				.mockResolvedValueOnce(mockProduct2);
+			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
-			const dto: CartCheckoutDto = { items: [{ productId: 3, quantity: 1 }] };
-			await expect(cartService.checkout('test@example.com', dto)).rejects.toThrowError(
+			await expect(cartService.checkoutCartItems(userId, cartCheckoutDto)).rejects.toThrowError(
 				new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK),
 			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(3);
-			expect(cartRepository.checkout).not.toHaveBeenCalled();
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', 1);
 		});
 
-		it('Должен выбросить ошибку 422, если недостаточно товара на складе', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest
-				.fn()
-				.mockResolvedValue(mockInsufficientStockProduct);
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			const prismaError = new Prisma.PrismaClientKnownRequestError('DB Error', {
+				code: 'P2002',
+				clientVersion: '',
+			});
+			cartRepository.getCartItems.mockResolvedValue(cartItems);
+			productsRepository.findProductByKey
+				.mockResolvedValueOnce(mockProduct)
+				.mockResolvedValueOnce(mockProduct2);
+			cartRepository.checkoutCartItems.mockRejectedValue(prismaError);
+			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
-			const dto: CartCheckoutDto = { items: [{ productId: 4, quantity: 10 }] };
-			await expect(cartService.checkout('test@example.com', dto)).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.PRODUCT_INSUFFICIENT_STOCK),
+			await expect(cartService.checkoutCartItems(userId, cartCheckoutDto)).rejects.toThrowError(
+				prismaError,
 			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(4);
-			expect(cartRepository.checkout).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 404, если товар не найден', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest
-				.fn()
-				.mockRejectedValue(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
-
-			const dto: CartCheckoutDto = { items: [{ productId: 999, quantity: 1 }] };
-			await expect(cartService.checkout('test@example.com', dto)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
-			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(999);
-			expect(cartRepository.checkout).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 404, если email пустой', async () => {
-			const dto: CartCheckoutDto = { items: [{ productId: 1, quantity: 2 }] };
-			await expect(cartService.checkout('', dto)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
-			);
-			expect(usersService.getUserInfoByEmail).not.toHaveBeenCalled();
-			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(cartRepository.checkout).not.toHaveBeenCalled();
+			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledTimes(2);
+			expect(cartRepository.checkoutCartItems).toHaveBeenCalledWith(userId, [
+				{ productId: 1, quantity: 2, optionId: null },
+				{ productId: 2, quantity: 1, optionId: null },
+			]);
 		});
 	});
 
-	describe('Удаление товара из корзины', () => {
+	describe('Удаление из корзины', () => {
+		const userId = 1;
+		const productId = 1;
+
 		it('Должен успешно удалить товар из корзины', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockProduct);
-			cartRepository.removeFromCart = jest.fn().mockResolvedValue(undefined);
+			cartRepository.removeCartItem.mockResolvedValue({ count: 1 });
 
-			await cartService.removeFromCart('test@example.com', 1);
+			await cartService.removeCartItem(userId, productId, undefined);
 
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
-			expect(cartRepository.removeFromCart).toHaveBeenCalledWith(mockUser.id, 1);
+			expect(cartRepository.findCartItem).not.toHaveBeenCalled();
+			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId, null);
 		});
 
-		it('Должен выбросить ошибку 422, если productId невалиден', async () => {
-			await expect(cartService.removeFromCart('test@example.com', 0)).rejects.toThrowError(
-				new HTTPError(422, MESSAGES.INVALID_ID),
-			);
-			expect(usersService.getUserInfoByEmail).not.toHaveBeenCalled();
-			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(cartRepository.removeFromCart).not.toHaveBeenCalled();
-		});
+		it('Должен выбросить ошибку 404, если элемент корзины не найден', async () => {
+			cartRepository.removeCartItem.mockResolvedValue({ count: 0 });
 
-		it('Должен выбросить ошибку 404, если товар не найден', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest
-				.fn()
-				.mockRejectedValue(new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND));
-
-			await expect(cartService.removeFromCart('test@example.com', 999)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
-			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(999);
-			expect(cartRepository.removeFromCart).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 404, если email пустой', async () => {
-			await expect(cartService.removeFromCart('', 1)).rejects.toThrowError(
-				new HTTPError(404, MESSAGES.USER_NOT_FOUND),
-			);
-			expect(usersService.getUserInfoByEmail).not.toHaveBeenCalled();
-			expect(productsRepository.findByIdOrThrow).not.toHaveBeenCalled();
-			expect(cartRepository.removeFromCart).not.toHaveBeenCalled();
-		});
-
-		it('Должен выбросить ошибку 404, если товар не найден в корзине', async () => {
-			usersService.getUserInfoByEmail = jest.fn().mockResolvedValue(mockUser);
-			productsRepository.findByIdOrThrow = jest.fn().mockResolvedValue(mockProduct);
-			cartRepository.removeFromCart = jest
-				.fn()
-				.mockRejectedValue(new HTTPError(404, MESSAGES.CART_ITEM_NOT_FOUND));
-
-			await expect(cartService.removeFromCart('test@example.com', 1)).rejects.toThrowError(
+			await expect(cartService.removeCartItem(userId, productId, undefined)).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.CART_ITEM_NOT_FOUND),
 			);
-			expect(usersService.getUserInfoByEmail).toHaveBeenCalledWith('test@example.com');
-			expect(productsRepository.findByIdOrThrow).toHaveBeenCalledWith(1);
-			expect(cartRepository.removeFromCart).toHaveBeenCalledWith(mockUser.id, 1);
+			expect(cartRepository.findCartItem).not.toHaveBeenCalled();
+			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId, null);
+		});
+
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			const prismaError = new Prisma.PrismaClientKnownRequestError('DB Error', {
+				code: 'P2002',
+				clientVersion: '',
+			});
+			cartRepository.removeCartItem.mockRejectedValue(prismaError);
+
+			await expect(cartService.removeCartItem(userId, productId, undefined)).rejects.toThrowError(
+				prismaError,
+			);
+			expect(cartRepository.findCartItem).not.toHaveBeenCalled();
+			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId, null);
+		});
+	});
+
+	describe('Очистка корзины', () => {
+		const userId = 1;
+
+		it('Должен успешно очистить корзину', async () => {
+			cartRepository.removeAllCartItems.mockResolvedValue();
+
+			await cartService.removeAllCartItems(userId);
+
+			expect(cartRepository.removeAllCartItems).toHaveBeenCalledWith(userId);
+		});
+
+		it('Должен выбросить ошибку при сбое базы данных', async () => {
+			const prismaError = new Prisma.PrismaClientKnownRequestError('DB Error', {
+				code: 'P2002',
+				clientVersion: '',
+			});
+			cartRepository.removeAllCartItems.mockRejectedValue(prismaError);
+
+			await expect(cartService.removeAllCartItems(userId)).rejects.toThrowError(prismaError);
+			expect(cartRepository.removeAllCartItems).toHaveBeenCalledWith(userId);
 		});
 	});
 });

@@ -7,7 +7,7 @@ services:
       - '5432:5432'
     environment:
       POSTGRES_USER: superadmin
-      POSTGRES_PASSWORD: superadmin_password
+      POSTGRES_PASSWORD: superadminPassword123
       POSTGRES_DB: warehouse_db
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:

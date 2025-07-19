@@ -6,16 +6,6 @@ import {
 } from 'class-validator';
 import { MESSAGES } from '../../../common/messages';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     IsFutureDate:
- *       type: string
- *       description: Валидатор, проверяющий, что дата начала акции в будущем.
- *       format: date-time
- *       example: "2023-06-01T00:00:00Z"
- */
 @ValidatorConstraint({ name: 'isFutureDate', async: false })
 export class IsFutureDateConstraint implements ValidatorConstraintInterface {
 	validate(date: string) {

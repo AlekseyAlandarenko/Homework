@@ -1,24 +1,6 @@
-import { IsArray, IsNumber } from 'class-validator';
+import { IsArray, IsNumber, IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { MESSAGES } from '../../common/messages';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     CartResponseDto:
- *       type: object
- *       description: Данные корзины, возвращаемые в ответах API.
- *       properties:
- *         items:
- *           type: array
- *           description: Список элементов корзины.
- *           items:
- *             $ref: '#/components/schemas/CartResponse'
- *         total:
- *           type: number
- *           format: float
- *           description: Итоговая сумма корзины.
- *           example: 2501.98
- */
 export interface CartResponse {
 	id: number;
 	productId: number;
@@ -26,12 +8,23 @@ export interface CartResponse {
 	price: number;
 	createdAt: string;
 	updatedAt: string;
+	product: {
+		name: string;
+	};
+	option?: {
+		id: number;
+		name: string;
+		value: string;
+		priceModifier: number;
+	};
 }
 
 export class CartResponseDto {
-	@IsArray()
+	@IsArray({ message: MESSAGES.ITEMS_INVALID_ARRAY })
+	@IsNotEmpty({ message: MESSAGES.ITEMS_REQUIRED_FIELD })
 	items!: CartResponse[];
 
-	@IsNumber()
+	@IsNumber({}, { message: MESSAGES.TOTAL_INVALID_FORMAT })
+	@IsNotEmpty({ message: MESSAGES.TOTAL_REQUIRED_FIELD })
 	total!: number;
 }

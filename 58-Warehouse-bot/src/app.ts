@@ -13,7 +13,7 @@ import { PrismaService } from './database/prisma.service';
 import { AuthMiddleware } from './common/auth.middleware';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { ITelegramBotService } from './telegram/telegram.service.interface';
+import { ITelegramBotController } from './telegram/telegram-bot.controller.interface';
 
 @injectable()
 export class App {
@@ -29,7 +29,7 @@ export class App {
 		@inject(TYPES.ExceptionFilter) private exceptionFilter: ExceptionFilter,
 		@inject(TYPES.PrismaService) private prismaService: PrismaService,
 		@inject(TYPES.AuthMiddleware) private authMiddleware: AuthMiddleware,
-		@inject(TYPES.TelegramBotService) private telegramBotService: ITelegramBotService,
+		@inject(TYPES.TelegramBotController) private telegramBotController: ITelegramBotController,
 	) {
 		this.app = express();
 		this.port = Number(process.env.PORT) || 8000;
@@ -97,7 +97,7 @@ export class App {
 			this.logger.log(`Документация доступна на http://localhost:${this.port}/api-docs`);
 		});
 		if (process.env.NODE_ENV !== 'test') {
-			await this.telegramBotService.launch();
+			await this.telegramBotController.launch();
 		}
 	}
 
@@ -109,7 +109,7 @@ export class App {
 					await this.prismaService.disconnect();
 					if (process.env.NODE_ENV !== 'test') {
 						try {
-							await this.telegramBotService.stop();
+							await this.telegramBotController.stop();
 							this.logger.log('Telegram бот остановлен');
 						} catch (error) {
 							this.logger.error('Ошибка при остановке Telegram бота:', error);

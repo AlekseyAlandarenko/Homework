@@ -1,70 +1,25 @@
-import { compare, hash } from 'bcryptjs';
-import { UserRole } from '../common/constants';
+import { Role } from '../common/enums/role.enum';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     UserResponse:
- *       type: object
- *       description: Данные пользователя, возвращаемые в ответах API (без пароля).
- *       properties:
- *         id:
- *           type: integer
- *           description: Уникальный идентификатор пользователя.
- *           example: 1
- *         email:
- *           type: string
- *           format: email
- *           description: Электронная почта пользователя. Уникальна.
- *           example: user@example.com
- *         name:
- *           type: string
- *           description: Имя пользователя.
- *           example: Иван Иванов
- *         role:
- *           type: string
- *           enum: [SUPERADMIN, ADMIN, SUPPLIER]
- *           description: Роль пользователя (SUPERADMIN/ADMIN — административные права, SUPPLIER — управление акциями и товарами).
- *           example: SUPPLIER
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: Дата создания пользователя (ISO 8601).
- *           example: "2023-05-01T12:00:00Z"
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: Дата последнего обновления пользователя (ISO 8601).
- *           example: "2023-05-02T12:00:00Z"
- *       required:
- *         - id
- *         - email
- *         - name
- *         - role
- *     UserModel:
- *       allOf:
- *         - $ref: '#/components/schemas/UserResponse'
- *         - type: object
- *           description: Полная модель пользователя, включая хешированный пароль (для внутреннего использования).
- *           properties:
- *             password:
- *               type: string
- *               description: Хешированный пароль пользователя.
- *               example: $2a$10$hashedpassword
- *           required:
- *             - password
- */
 export class User {
 	private _password: string;
 
 	constructor(
 		private readonly _email: string,
 		private readonly _name: string,
-		private readonly _role: UserRole = 'SUPPLIER',
-		passwordHash?: string,
+		private readonly _role: Role = Role.SUPPLIER,
+		passwordHash: string,
+		private readonly _telegramId: string | null = null,
+		private readonly _cityId: number | null = null,
+		private readonly _categoryIds: number[] = [],
+		private readonly _notificationsEnabled: boolean = true,
+		private readonly _id?: number,
+		private readonly _isDeleted: boolean = false,
 	) {
-		this._password = passwordHash || '';
+		this._password = passwordHash;
+	}
+
+	get id(): number | undefined {
+		return this._id;
 	}
 
 	get email(): string {
@@ -79,15 +34,27 @@ export class User {
 		return this._password;
 	}
 
-	get role(): UserRole {
+	get role(): Role {
 		return this._role;
 	}
 
-	public async setPassword(pass: string, salt: number): Promise<void> {
-		this._password = await hash(pass, salt);
+	get telegramId(): string | null {
+		return this._telegramId;
 	}
 
-	public async comparePassword(pass: string): Promise<boolean> {
-		return compare(pass, this._password);
+	get cityId(): number | null {
+		return this._cityId;
+	}
+
+	get preferredCategories(): number[] {
+		return [...this._categoryIds];
+	}
+
+	get notificationsEnabled(): boolean {
+		return this._notificationsEnabled;
+	}
+
+	get isDeleted(): boolean {
+		return this._isDeleted;
 	}
 }

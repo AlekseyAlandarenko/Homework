@@ -3,7 +3,8 @@ import { ExpressReturnType, IControllerRoute } from './route.interface';
 import { ILogger } from '../logger/logger.interface';
 import { injectable } from 'inversify';
 import { PaginationDto } from './dto/pagination.dto';
-import { DEFAULT_PAGINATION } from './pagination.interface';
+import { DEFAULT_PAGINATION } from '../common/constants';
+import { MESSAGES } from '../common/messages';
 export { Router } from 'express';
 import 'reflect-metadata';
 
@@ -62,7 +63,7 @@ export abstract class BaseController {
 
 	protected bindRoutes(routes: IControllerRoute[]): void {
 		for (const route of routes) {
-			this.logger.log(`[${route.method}] ${route.path}`);
+			this.logger.log(MESSAGES.ROUTE_REGISTERED);
 			const middleware = route.middlewares?.map((m) => m.execute.bind(m));
 			const handler = route.func.bind(this);
 			const pipeline = middleware ? [...middleware, handler] : handler;

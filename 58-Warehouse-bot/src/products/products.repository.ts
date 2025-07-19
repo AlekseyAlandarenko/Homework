@@ -1,151 +1,263 @@
-import { Prisma, ProductModel } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { PrismaService } from '../database/prisma.service';
 import { Product } from './product.entity';
-import { IProductsRepository } from './products.repository.interface';
+import { IProductsRepository, ProductWithRelations } from './products.repository.interface';
 import { TYPES } from '../types';
-import { PaginatedResponse, DEFAULT_PAGINATION } from '../common/pagination.interface';
+import { PaginatedResponse } from '../common/pagination.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
-import { HTTPError } from '../errors/http-error.class';
 import { MESSAGES } from '../common/messages';
+import { DEFAULT_PAGINATION } from '../common/constants';
+import { ProductStatus } from '../common/enums/product-status.enum';
 
 @injectable()
 export class ProductsRepository implements IProductsRepository {
+	readonly productInclude = {
+		categories: { select: { id: true, name: true } },
+		city: { select: { id: true, name: true } },
+		options: { select: { id: true, name: true, value: true, priceModifier: true } },
+	};
+
+	private readonly productSelect = {
+		id: true,
+		name: true,
+		description: true,
+		price: true,
+		quantity: true,
+		sku: true,
+		status: true,
+		createdById: true,
+		updatedById: true,
+		cityId: true,
+		createdAt: true,
+		updatedAt: true,
+		isActive: true,
+		isDeleted: true,
+		...this.productInclude,
+	};
+
 	constructor(@inject(TYPES.PrismaService) private prismaService: PrismaService) {}
 
-	async create(product: Product): Promise<ProductModel> {
-		return this.prismaService.client.productModel.create({
-			data: {
-				name: product.name,
-				description: product.description,
-				price: product.price,
-				quantity: product.quantity,
-				category: product.category,
-				sku: product.sku,
-				isActive: product.isActive,
-				isDeleted: product.isDeleted,
-				createdById: product.createdById,
-				updatedById: product.updatedById,
-			},
-		});
+	async createProduct(product: Product): Promise<ProductWithRelations> {
+		return this.prismaService.executePrismaOperation(
+			() =>
+				this.prismaService.client.$transaction(async (prisma) => {
+					return prisma.productModel.create({
+						data: {
+							name: product.name,
+							description: product.description,
+							price: product.price,
+							quantity: product.quantity,
+							sku: product.sku,
+							status: product.status,
+							createdById: product.createdById,
+							updatedById: product.updatedById,
+							cityId: product.cityId,
+							categories: {
+								connect: product.categoryIds?.map((id) => ({ id })) || [],
+							},
+							options: {
+								create:
+									product.options?.map((opt) => ({
+										name: opt.name,
+										value: opt.value,
+										priceModifier: opt.priceModifier,
+									})) || [],
+							},
+							isDeleted: product.isDeleted,
+						},
+						include: this.productInclude,
+					});
+				}),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
 	}
 
-async findById(id: number, userId?: number): Promise<ProductModel | null> {
-    return this.prismaService.client.productModel.findFirst({
-        where: {
-            id,
-            isDeleted: false,
-            ...(userId && { createdById: userId }),
-        },
-    });
-}
-
-	async findByIdOrThrow(id: number): Promise<ProductModel> {
-		const product = await this.findById(id);
-		if (!product) {
-			throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-		}
-		return product;
-	}
-
-	async findBySku(sku: string): Promise<ProductModel | null> {
+	async findProductByKey(
+		key: Extract<keyof ProductWithRelations, 'name' | 'sku' | 'id'>,
+		value: string | number | boolean,
+		userId?: number,
+		includeDeleted: boolean = false,
+	): Promise<ProductWithRelations | null> {
 		return this.prismaService.client.productModel.findFirst({
-			where: { sku, isDeleted: false },
+			where: {
+				[key]: value,
+				...(includeDeleted ? {} : { isDeleted: false }),
+				...(userId && { createdById: userId }),
+			},
+			include: this.productInclude,
 		});
 	}
 
-	async findAll({
-		filters = { isDeleted: false },
-		orderBy = { createdAt: 'desc' },
+	async findProductByKeyOrThrow(
+		key: Extract<keyof ProductWithRelations, 'name' | 'sku' | 'id'>,
+		value: string | number | boolean,
+		userId?: number,
+	): Promise<ProductWithRelations> {
+		return this.prismaService.findOrThrow(
+			() => this.findProductByKey(key, value, userId),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
+	}
+
+	async findProductsByCreator(
+		creatorId: number,
+		pagination: PaginationDto = DEFAULT_PAGINATION,
+	): Promise<PaginatedResponse<ProductWithRelations>> {
+		const { page, limit } = pagination;
+		const skip = (page - 1) * limit;
+
+		const [items, total] = await this.prismaService.executePrismaOperation(
+			() =>
+				this.prismaService.client.$transaction([
+					this.prismaService.client.productModel.findMany({
+						where: { createdById: creatorId, isDeleted: false },
+						select: this.productSelect,
+						skip,
+						take: limit,
+					}),
+					this.prismaService.client.productModel.count({
+						where: { createdById: creatorId, isDeleted: false },
+					}),
+				]),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
+
+		const totalPages = Math.ceil(total / limit);
+
+		return {
+			items,
+			total,
+			meta: {
+				total,
+				page,
+				limit,
+				totalPages,
+			},
+		};
+	}
+
+	async findAllProducts({
+		filters = {},
+		orderBy,
 		pagination = DEFAULT_PAGINATION,
 	}: {
 		filters?: Prisma.ProductModelWhereInput;
 		orderBy?: Prisma.ProductModelOrderByWithRelationInput;
 		pagination?: PaginationDto;
-	} = {}): Promise<PaginatedResponse<ProductModel>> {
+	}): Promise<PaginatedResponse<ProductWithRelations>> {
 		const { page, limit } = pagination;
 		const skip = (page - 1) * limit;
 
-		const [items, total] = await Promise.all([
-			this.prismaService.client.productModel.findMany({
-				where: filters,
-				skip,
-				take: limit,
-				orderBy,
-			}),
-			this.prismaService.client.productModel.count({ where: filters }),
-		]);
+		const combinedFilters: Prisma.ProductModelWhereInput = {
+			...filters,
+			isDeleted: false,
+		};
 
-		return { items, total };
+		const [items, total] = await this.prismaService.executePrismaOperation(
+			() =>
+				this.prismaService.client.$transaction([
+					this.prismaService.client.productModel.findMany({
+						where: combinedFilters,
+						select: this.productSelect,
+						orderBy,
+						skip,
+						take: limit,
+					}),
+					this.prismaService.client.productModel.count({
+						where: combinedFilters,
+					}),
+				]),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
+
+		const totalPages = Math.ceil(total / limit);
+
+		return {
+			items,
+			total,
+			meta: {
+				total,
+				page,
+				limit,
+				totalPages,
+			},
+		};
 	}
 
-	async findStock(
+	async findStockProducts(
 		pagination: PaginationDto = DEFAULT_PAGINATION,
 	): Promise<PaginatedResponse<{ id: number; sku: string; quantity: number }>> {
 		const { page, limit } = pagination;
 		const skip = (page - 1) * limit;
 
-		const [items, total] = await Promise.all([
-			this.prismaService.client.productModel.findMany({
-				where: { isDeleted: false, isActive: true },
-				skip,
-				take: limit,
-				select: { id: true, sku: true, quantity: true },
-			}),
-			this.prismaService.client.productModel.count({
-				where: { isDeleted: false, isActive: true },
-			}),
-		]);
+		const [items, total] = await this.prismaService.executePrismaOperation(
+			() =>
+				this.prismaService.client.$transaction([
+					this.prismaService.client.productModel.findMany({
+						where: { isDeleted: false, status: ProductStatus.AVAILABLE },
+						skip,
+						take: limit,
+						select: { id: true, sku: true, quantity: true },
+					}),
+					this.prismaService.client.productModel.count({
+						where: { isDeleted: false, status: ProductStatus.AVAILABLE },
+					}),
+				]),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
 
-		return { items, total };
+		const totalPages = Math.ceil(total / limit);
+
+		return {
+			items,
+			total,
+			meta: {
+				total,
+				page,
+				limit,
+				totalPages,
+			},
+		};
 	}
 
-	async findByCreator(
-		creatorId: number,
-		pagination: PaginationDto = DEFAULT_PAGINATION,
-	): Promise<PaginatedResponse<ProductModel>> {
-		const { page, limit } = pagination;
-		const skip = (page - 1) * limit;
-
-		const [items, total] = await Promise.all([
-			this.prismaService.client.productModel.findMany({
-				where: { createdById: creatorId, isDeleted: false, isActive: true },
-				skip,
-				take: limit,
-			}),
-			this.prismaService.client.productModel.count({
-				where: { createdById: creatorId, isDeleted: false, isActive: true },
-			}),
-		]);
-
-		return { items, total };
+	async updateProduct(
+		id: number,
+		data: Prisma.ProductModelUpdateInput,
+	): Promise<ProductWithRelations> {
+		return this.prismaService.executePrismaOperation(
+			() =>
+				this.prismaService.client.$transaction(async (prisma) => {
+					return prisma.productModel.update({
+						where: { id },
+						data,
+						include: this.productInclude,
+					});
+				}),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
 	}
 
-	async update(id: number, data: Partial<ProductModel>): Promise<ProductModel> {
-		try {
-			return await this.prismaService.client.productModel.update({
-				where: { id },
-				data: { ...data, isDeleted: false },
-			});
-		} catch (err) {
-			if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-				throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-			}
-			throw err;
-		}
+	async updateProductCreator(currentCreatorId: number, newCreatorId: number): Promise<void> {
+		await this.prismaService.executePrismaOperation(
+			() =>
+				this.prismaService.client.productModel.updateMany({
+					where: { createdById: currentCreatorId, isDeleted: false },
+					data: { createdById: newCreatorId },
+				}),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
 	}
 
-	async delete(id: number): Promise<ProductModel> {
-		try {
-			return await this.prismaService.client.productModel.update({
-				where: { id },
-				data: { isDeleted: true },
-			});
-		} catch (err) {
-			if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-				throw new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND);
-			}
-			throw err;
-		}
+	async deleteProduct(id: number): Promise<ProductWithRelations> {
+		return this.prismaService.executePrismaOperation(
+			() =>
+				this.prismaService.client.productModel.update({
+					where: { id },
+					data: { isDeleted: true },
+					include: this.productInclude,
+				}),
+			MESSAGES.PRODUCT_NOT_FOUND,
+		);
 	}
 }

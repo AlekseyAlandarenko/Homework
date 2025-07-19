@@ -12,7 +12,8 @@ import { PrismaService } from './database/prisma.service';
 import { AuthMiddleware } from './common/auth.middleware';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { ITelegramBotService } from './telegram/telegram.service.interface';
+import { ITelegramBotController } from './telegram/telegram-bot.controller.interface';
+import { CronService } from './cron/cron.service';
 
 @injectable()
 export class App {
@@ -27,7 +28,8 @@ export class App {
 		@inject(TYPES.ExceptionFilter) private exceptionFilter: ExceptionFilter,
 		@inject(TYPES.PrismaService) private prismaService: PrismaService,
 		@inject(TYPES.AuthMiddleware) private authMiddleware: AuthMiddleware,
-		@inject(TYPES.TelegramBotService) private telegramBotService: ITelegramBotService,
+		@inject(TYPES.TelegramBotController) private telegramBotController: ITelegramBotController,
+		@inject(TYPES.CronService) private cronService: CronService,
 	) {
 		this.app = express();
 		this.port = Number(process.env.PORT) || 8000;
@@ -88,12 +90,13 @@ export class App {
 		this.useRoutes();
 		this.useExceptionFilters();
 		await this.prismaService.connect();
+		await this.cronService.start();
 		this.server = this.app.listen(this.port, () => {
 			this.logger.log(`Сервер запущен на http://localhost:${this.port}`);
 			this.logger.log(`Документация доступна на http://localhost:${this.port}/api-docs`);
 		});
 		if (process.env.NODE_ENV !== 'test') {
-			await this.telegramBotService.launch();
+			await this.telegramBotController.launch();
 		}
 	}
 
@@ -103,9 +106,10 @@ export class App {
 				this.server.close(async () => {
 					this.logger.log('Сервер закрыт');
 					await this.prismaService.disconnect();
+					await this.cronService.stop();
 					if (process.env.NODE_ENV !== 'test') {
 						try {
-							await this.telegramBotService.stop();
+							await this.telegramBotController.stop();
 							this.logger.log('Telegram бот остановлен');
 						} catch (error) {
 							this.logger.error('Ошибка при остановке Telegram бота:', error);

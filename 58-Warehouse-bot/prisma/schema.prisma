@@ -8,46 +8,114 @@ datasource db {
 }
 
 model UserModel {
-  id         Int       @id @default(autoincrement())
-  name       String
-  email      String    @unique
-  password   String
-  role       String      @default("WAREHOUSE_MANAGER")
-  telegramId String? @unique
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  createdProducts ProductModel[] @relation("CreatedProducts")
-  modifiedProducts ProductModel[] @relation("ModifiedProducts")
-  Cart CartModel[]
+  id                  Int               @id @default(autoincrement())
+  name                String
+  email               String            @unique
+  password            String
+  role                String            @default("WAREHOUSE_MANAGER")
+  telegramId          String?           @unique
+  cityId              Int?              @map("city_id")
+  city                CityModel?        @relation(name: "UserCity", fields: [cityId], references: [id])
+  preferredCategories CategoryModel[]   @relation(name: "UserCategories")
+  createdProducts     ProductModel[]    @relation(name: "CreatedProducts")
+  modifiedProducts    ProductModel[]    @relation(name: "ModifiedProducts")
+  carts               CartModel[]
+  addresses           AddressModel[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  isDeleted           Boolean           @default(false)
+  sessions            TelegramSession[] @relation(name: "UserSessions")
 }
 
 model ProductModel {
-  id           Int            @id @default(autoincrement())
-  name         String
-  description  String?
-  price        Float
-  quantity     Int            @default(0)
-  category     String?
-  sku          String         @unique
-  isActive     Boolean        @default(true)
-  isDeleted    Boolean        @default(false)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  createdBy    UserModel      @relation("CreatedProducts", fields: [createdById], references: [id])
-  createdById  Int
-  updatedBy    UserModel?     @relation("ModifiedProducts", fields: [updatedById], references: [id])
-  updatedById  Int?
-  Cart CartModel[]
+  id            Int              @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Float
+  quantity      Int              @default(0)
+  sku           String           @unique
+  isActive      Boolean          @default(true)
+  status        String           @default("AVAILABLE")
+  cityId        Int?             @map("city_id")
+  city          CityModel?       @relation(name: "ProductCity", fields: [cityId], references: [id])
+  categories    CategoryModel[]  @relation(name: "ProductCategories")
+  options       ProductOption[]  @relation(name: "ProductOptions")
+  createdById   Int              @map("created_by_id")
+  createdBy     UserModel        @relation(name: "CreatedProducts", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedById   Int?             @map("updated_by_id")
+  updatedBy     UserModel?       @relation(name: "ModifiedProducts", fields: [updatedById], references: [id])
+  carts         CartModel[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  isDeleted     Boolean          @default(false)
+}
+
+model ProductOption {
+  id            Int           @id @default(autoincrement())
+  productId     Int           @map("product_id")
+  product       ProductModel  @relation(name: "ProductOptions", fields: [productId], references: [id], onDelete: Cascade)
+  name          String
+  value         String
+  priceModifier Float         @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  carts         CartModel[]
+  @@unique([productId, name, value])
 }
 
 model CartModel {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  productId Int
-  quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      UserModel @relation(fields: [userId], references: [id])
-  product   ProductModel @relation(fields: [productId], references: [id])
-  @@unique([userId, productId])
+  id         Int            @id @default(autoincrement())
+  userId     Int            @map("user_id")
+  productId  Int            @map("product_id")
+  optionId   Int?           @map("option_id")
+  quantity   Int
+  price      Float
+  user       UserModel      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    ProductModel   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  option     ProductOption? @relation(fields: [optionId], references: [id])
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  @@unique([userId, productId, optionId])
+}
+
+model AddressModel {
+  id         Int        @id @default(autoincrement())
+  userId     Int        @map("user_id")
+  user       UserModel  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address    String
+  cityId     Int?       @map("city_id")
+  city       CityModel? @relation(name: "AddressCity", fields: [cityId], references: [id])
+  isDefault  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  isDeleted  Boolean    @default(false)
+}
+
+model CityModel {
+  id        Int             @id @default(autoincrement())
+  name      String          @unique
+  users     UserModel[]     @relation(name: "UserCity")
+  products  ProductModel[]  @relation(name: "ProductCity")
+  addresses AddressModel[]  @relation(name: "AddressCity")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model CategoryModel {
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
+  description String?
+  products  ProductModel[]   @relation(name: "ProductCategories")
+  users     UserModel[]      @relation(name: "UserCategories")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model TelegramSession {
+  id         Int        @id @default(autoincrement())
+  telegramId String     @unique
+  data       Json       @default("{}")
+  user       UserModel  @relation(name: "UserSessions", fields: [telegramId], references: [telegramId])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }

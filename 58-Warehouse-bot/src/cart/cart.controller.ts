@@ -11,13 +11,8 @@ import { AuthGuard } from '../common/auth.guard';
 import { RoleGuard } from '../common/role.guard';
 import { ValidateMiddleware } from '../common/validate.middleware';
 import { MESSAGES } from '../common/messages';
+import { FULL_ACCESS_ROLES } from '../common/constants';
 
-/**
- * @swagger
- * tags:
- *   name: Cart
- *   description: Управление корзиной
- */
 @injectable()
 export class CartController extends BaseController implements ICartController {
 	constructor(
@@ -29,210 +24,86 @@ export class CartController extends BaseController implements ICartController {
 			{
 				path: '/',
 				method: 'post',
-				func: this.addToCart,
+				func: this.addCartItem,
 				middlewares: [
 					new AuthGuard(),
-					new RoleGuard(['SUPERADMIN', 'ADMIN', 'WAREHOUSE_MANAGER']),
+					new RoleGuard(FULL_ACCESS_ROLES),
 					new ValidateMiddleware(CartAddDto),
 				],
 			},
 			{
 				path: '/',
 				method: 'get',
-				func: this.getCart,
-				middlewares: [new AuthGuard(), new RoleGuard(['SUPERADMIN', 'ADMIN', 'WAREHOUSE_MANAGER'])],
+				func: this.getCartItems,
+				middlewares: [new AuthGuard(), new RoleGuard(FULL_ACCESS_ROLES)],
 			},
 			{
 				path: '/checkout',
 				method: 'post',
-				func: this.checkout,
+				func: this.checkoutCartItems,
 				middlewares: [
 					new AuthGuard(),
-					new RoleGuard(['SUPERADMIN', 'ADMIN', 'WAREHOUSE_MANAGER']),
+					new RoleGuard(FULL_ACCESS_ROLES),
 					new ValidateMiddleware(CartCheckoutDto),
 				],
 			},
 			{
 				path: '/:productId',
 				method: 'delete',
-				func: this.removeFromCart,
-				middlewares: [new AuthGuard(), new RoleGuard(['SUPERADMIN', 'ADMIN', 'WAREHOUSE_MANAGER'])],
+				func: this.removeCartItem,
+				middlewares: [new AuthGuard(), new RoleGuard(FULL_ACCESS_ROLES)],
 			},
 		]);
 	}
 
-	/**
-	 * @swagger
-	 * /cart:
-	 *   post:
-	 *     tags: [Cart]
-	 *     summary: Добавление товара в корзину
-	 *     description: Добавляет товар в корзину пользователя с проверкой наличия. Доступно для SUPERADMIN, ADMIN и WAREHOUSE_MANAGER.
-	 *     security:
-	 *       - bearerAuth: []
-	 *     requestBody:
-	 *       required: true
-	 *       content:
-	 *         application/json:
-	 *           schema:
-	 *             $ref: '#/components/schemas/CartAddDto'
-	 *     responses:
-	 *       201:
-	 *         description: Товар успешно добавлен в корзину
-	 *         content:
-	 *           application/json:
-	 *             schema:
-	 *               type: object
-	 *               properties:
-	 *                 message:
-	 *                   type: string
-	 *                   example: "Товар успешно добавлен в корзину"
-	 *                 data:
-	 *                   $ref: '#/components/schemas/CartResponse'
-	 *       401:
-	 *         description: Не авторизован
-	 *       403:
-	 *         description: Доступ запрещен
-	 *       404:
-	 *         description: Товар не найден
-	 *       422:
-	 *         description: Ошибка валидации данных
-	 */
-	async addToCart({ body, user }: Request, res: Response, next: NextFunction): Promise<void> {
+	private sendSuccess<T>(res: Response, message: string, data: T): void {
+		this.ok(res, { message, data });
+	}
+
+	private sendCreated<T>(res: Response, message: string, data: T): void {
+		this.created(res, { message, data });
+	}
+
+	async addCartItem({ body, user }: Request, res: Response, next: NextFunction): Promise<void> {
 		try {
-			const cartItem = await this.cartService.addToCart(user!.email, body);
-			this.ok(res, { message: MESSAGES.CART_ITEM_ADDED, data: cartItem });
+			const cartItem = await this.cartService.addCartItem(user!.id, body);
+			this.sendCreated(res, MESSAGES.CART_ITEM_ADDED, cartItem);
 		} catch (err) {
 			next(err);
 		}
 	}
 
-	/**
-	 * @swagger
-	 * /cart:
-	 *   get:
-	 *     tags: [Cart]
-	 *     summary: Получение содержимого корзины
-	 *     description: Возвращает список товаров в корзине пользователя с итоговой суммой. Доступно для SUPERADMIN, ADMIN и WAREHOUSE_MANAGER.
-	 *     security:
-	 *       - bearerAuth: []
-	 *     responses:
-	 *       200:
-	 *         description: Содержимое корзины
-	 *         content:
-	 *           application/json:
-	 *             schema:
-	 *               type: object
-	 *               properties:
-	 *                 data:
-	 *                   $ref: '#/components/schemas/CartResponseDto'
-	 *       401:
-	 *         description: Не авторизован
-	 *       403:
-	 *         description: Доступ запрещен
-	 */
-	async getCart({ user }: Request, res: Response, next: NextFunction): Promise<void> {
+	async getCartItems({ user }: Request, res: Response, next: NextFunction): Promise<void> {
 		try {
-			const cart = await this.cartService.getCart(user!.email);
-			this.ok(res, { data: cart });
+			const cart = await this.cartService.getCartItems(user!.id);
+			this.sendSuccess(res, MESSAGES.CART_RETRIEVED, cart);
 		} catch (err) {
 			next(err);
 		}
 	}
 
-	/**
-	 * @swagger
-	 * /cart/checkout:
-	 *   post:
-	 *     tags: [Cart]
-	 *     summary: Оформление заказа из корзины
-	 *     description: Оформляет заказ из корзины, уменьшая количество товаров на складе. Доступно для SUPERADMIN, ADMIN и WAREHOUSE_MANAGER.
-	 *     security:
-	 *       - bearerAuth: []
-	 *     requestBody:
-	 *       required: true
-	 *       content:
-	 *         application/json:
-	 *           schema:
-	 *             $ref: '#/components/schemas/CartCheckoutDto'
-	 *     responses:
-	 *       200:
-	 *         description: Заказ успешно оформлен
-	 *         content:
-	 *           application/json:
-	 *             schema:
-	 *               type: object
-	 *               properties:
-	 *                 message:
-	 *                   type: string
-	 *                   example: "Заказ успешно оформлен"
-	 *                 data:
-	 *                   type: array
-	 *                   items:
-	 *                     $ref: '#/components/schemas/CartResponse'
-	 *       401:
-	 *         description: Не авторизован
-	 *       403:
-	 *         description: Доступ запрещен
-	 *       404:
-	 *         description: Товар не найден
-	 *       422:
-	 *         description: Ошибка валидации данных
-	 */
-	async checkout({ body, user }: Request, res: Response, next: NextFunction): Promise<void> {
+	async checkoutCartItems(
+		{ body, user }: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
 		try {
-			const cartItems = await this.cartService.checkout(user!.email, body);
-			this.ok(res, { message: MESSAGES.CHECKOUT_COMPLETED, data: cartItems });
+			const cartItems = await this.cartService.checkoutCartItems(user!.id, body);
+			this.sendSuccess(res, MESSAGES.CHECKOUT_COMPLETED, cartItems);
 		} catch (err) {
 			next(err);
 		}
 	}
 
-	/**
-	 * @swagger
-	 * /cart/{productId}:
-	 *   delete:
-	 *     tags: [Cart]
-	 *     summary: Удаление товара из корзины
-	 *     description: Удаляет товар из корзины пользователя. Доступно для SUPERADMIN, ADMIN и WAREHOUSE_MANAGER.
-	 *     security:
-	 *       - bearerAuth: []
-	 *     parameters:
-	 *       - in: path
-	 *         name: productId
-	 *         required: true
-	 *         schema:
-	 *           type: integer
-	 *         description: Идентификатор товара
-	 *     responses:
-	 *       200:
-	 *         description: Товар успешно удален из корзины
-	 *         content:
-	 *           application/json:
-	 *             schema:
-	 *               type: object
-	 *               properties:
-	 *                 message:
-	 *                   type: string
-	 *                   example: "Товар успешно удален из корзины"
-	 *       401:
-	 *         description: Не авторизован
-	 *       403:
-	 *         description: Доступ запрещен
-	 *       404:
-	 *         description: Товар не найден в корзине
-	 *       422:
-	 *         description: Ошибка валидации данных
-	 */
-	async removeFromCart(
+	async removeCartItem(
 		{ params, user }: Request,
 		res: Response,
 		next: NextFunction,
 	): Promise<void> {
 		try {
 			const productId = parseInt(params.productId);
-			await this.cartService.removeFromCart(user!.email, productId);
-			this.ok(res, { message: MESSAGES.CART_ITEM_REMOVED });
+			await this.cartService.removeCartItem(user!.id, productId);
+			this.sendSuccess(res, MESSAGES.CART_ITEM_DELETED, null);
 		} catch (err) {
 			next(err);
 		}

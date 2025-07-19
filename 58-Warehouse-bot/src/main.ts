@@ -27,8 +27,12 @@ import { ICartRepository } from './cart/cart.repository.interface';
 import { IProductsService } from './products/products.service.interface';
 import { ICartService } from './cart/cart.service.interface';
 import { AuthMiddleware } from './common/auth.middleware';
-import { TelegramBotService } from './telegram/telegram.service';
-import { ITelegramBotService } from './telegram/telegram.service.interface';
+import { TelegramBotController } from './telegram/telegram-bot.controller';
+import { TelegramBotService } from './telegram/telegram-bot.service';
+import { ITelegramBotController } from './telegram/telegram-bot.controller.interface';
+import { ITelegramBotService } from './telegram/telegram-bot.service.interface';
+import { CallbackHandler } from './telegram/callback.handler';
+import { TelegramUtils } from './telegram/telegram.utils';
 
 export interface IBootstrapReturn {
 	appContainer: Container;
@@ -51,15 +55,25 @@ export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 	bind<ICartRepository>(TYPES.CartRepository).to(CartRepository).inSingletonScope();
 	bind<AuthMiddleware>(TYPES.AuthMiddleware).to(AuthMiddleware).inSingletonScope();
 	bind<ITelegramBotService>(TYPES.TelegramBotService).to(TelegramBotService).inSingletonScope();
+	bind<ITelegramBotController>(TYPES.TelegramBotController)
+		.to(TelegramBotController)
+		.inSingletonScope();
+	bind<CallbackHandler>(TYPES.CallbackHandler).to(CallbackHandler).inSingletonScope();
+	bind<TelegramUtils>(TYPES.TelegramUtils).to(TelegramUtils).inSingletonScope();
 	bind<App>(TYPES.Application).to(App);
 });
 
 async function bootstrap(): Promise<IBootstrapReturn> {
-	const appContainer = new Container();
-	appContainer.load(appBindings);
-	const app = appContainer.get<App>(TYPES.Application);
-	await app.init();
-	return { appContainer, app };
+	try {
+		const appContainer = new Container();
+		appContainer.load(appBindings);
+		const app = appContainer.get<App>(TYPES.Application);
+		await app.init();
+		return { appContainer, app };
+	} catch (error) {
+		console.error('Ошибка при запуске приложения:', error);
+		process.exit(1);
+	}
 }
 
 export const boot = bootstrap();

@@ -1,60 +1,48 @@
-import { UserModel } from '@prisma/client';
+import { UserModel, Prisma } from '@prisma/client';
 import { User } from './user.entity';
 import { PaginatedResponse } from '../common/pagination.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { Role } from '../common/enums/role.enum';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     SupplierResponse:
- *       type: object
- *       description: Данные пользователя с ролью SUPPLIER, возвращаемые в ответах API (без пароля).
- *       properties:
- *         id:
- *           type: integer
- *           description: Уникальный идентификатор пользователя.
- *           example: 1
- *         email:
- *           type: string
- *           format: email
- *           description: Электронная почта пользователя. Уникальна.
- *           example: supplier@example.com
- *         name:
- *           type: string
- *           description: Имя пользователя.
- *           example: Иван Иванов
- *         role:
- *           type: string
- *           enum: [SUPERADMIN, ADMIN, SUPPLIER]
- *           description: Роль пользователя (SUPPLIER для управления акциями и товарами).
- *           example: SUPPLIER
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: Дата создания пользователя (ISO 8601).
- *           example: "2023-05-01T12:00:00Z"
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: Дата последнего обновления пользователя (ISO 8601).
- *           example: "2023-05-02T12:00:00Z"
- *       required:
- *         - id
- *         - email
- *         - name
- *         - role
- */
-export type SupplierResponse = Omit<UserModel, 'password'>;
+export type UserWithCategories = UserModel & {
+	city: { id: number; name: string } | null;
+	preferredCategories: { id: number; name: string }[];
+};
+
+export type SupplierResponse = Omit<UserModel, 'password'> & {
+	cityId: number | null;
+	city: { id: number; name: string } | null;
+	preferredCategories: { id: number; name: string }[];
+};
 
 export interface IUsersRepository {
-	createUser(user: User): Promise<UserModel>;
-	findByEmail(email: string): Promise<UserModel | null>;
-	findByEmailOrThrow(email: string): Promise<UserModel>;
-	findById(id: number): Promise<UserModel | null>;
-	findByIdOrThrow(id: number): Promise<UserModel>;
-	findAllSuppliers(params?: PaginationDto): Promise<PaginatedResponse<SupplierResponse>>;
-	findByTelegramId(telegramId: string): Promise<UserModel | null>;
-	updateUser(id: number, data: Partial<UserModel>): Promise<UserModel>;
-	deleteUser(id: number): Promise<UserModel>;
+	userInclude: Prisma.UserModelInclude;
+	createUser(user: User): Promise<UserWithCategories>;
+	findUserByKey(
+		key: Extract<keyof UserWithCategories, 'email' | 'telegramId' | 'id'>,
+		value: string | number,
+		userId?: number,
+		includeDeleted?: boolean,
+	): Promise<UserWithCategories | null>;
+	findUserByKeyOrThrow(
+		key: Extract<keyof UserWithCategories, 'email' | 'telegramId' | 'id'>,
+		value: string | number,
+	): Promise<UserWithCategories>;
+	findAllUsers({
+		role,
+		filters,
+		pagination,
+		orderBy,
+		includeDeleted,
+	}: {
+		role?: Role;
+		filters?: Prisma.UserModelWhereInput;
+		pagination?: PaginationDto;
+		orderBy?: Prisma.UserModelOrderByWithRelationInput;
+		includeDeleted?: boolean;
+	}): Promise<PaginatedResponse<SupplierResponse>>;
+	updateUser(id: number, data: Prisma.UserModelUpdateInput): Promise<UserWithCategories>;
+	updateUserCity(id: number, cityId: number): Promise<UserWithCategories>;
+	updateUserCategories(id: number, categoryData: { id: number }[]): Promise<UserWithCategories>;
+	deleteUser(id: number): Promise<UserWithCategories>;
 }

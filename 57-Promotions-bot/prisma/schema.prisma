@@ -8,27 +8,67 @@ datasource db {
 }
 
 model UserModel {
-  id         Int @id @default(autoincrement())
-  name       String
-  email      String @unique
-  password   String
-  role       String @default("SUPPLIER")
-  telegramId String? @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  promotions PromotionModel[]
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  email              String              @unique
+  password           String
+  role               String              @default("SUPPLIER")
+  telegramId         String?             @unique
+  cityId             Int?                @map("city_id")
+  city               CityModel?          @relation(name: "UserCity", fields: [cityId], references: [id])
+  preferredCategories CategoryModel[]    @relation(name: "UserCategories")
+  promotions         PromotionModel[]    @relation(name: "UserPromotions")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  isDeleted          Boolean             @default(false)
+  sessions           TelegramSession[]   @relation(name: "UserSessions")
+  notificationsEnabled Boolean           @default(true)
 }
 
 model PromotionModel {
-  id          Int @id @default(autoincrement())
-  title       String
-  description String
-  startDate   DateTime
-  endDate     DateTime
-  status      String @default("PENDING")
-  supplier    UserModel @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  supplierId  Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isDeleted   Boolean @default(false)
+  id              Int              @id @default(autoincrement())
+  title           String           @unique
+  description     String
+  startDate       DateTime
+  endDate         DateTime
+  status          String           @default("PENDING")
+  supplierId      Int
+  supplier        UserModel        @relation(name: "UserPromotions", fields: [supplierId], references: [id], onDelete: Cascade)
+  cityId          Int?             @map("city_id")
+  city            CityModel?       @relation(name: "PromotionCity", fields: [cityId], references: [id])
+  categories      CategoryModel[]  @relation(name: "PromotionCategories")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  isDeleted       Boolean          @default(false)
+  imageUrl        String?          @map("image_url")
+  linkUrl         String?          @map("link_url")
+  publicationDate DateTime?        @map("publication_date")
+}
+
+model CityModel {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  users       UserModel[]       @relation(name: "UserCity")
+  promotions  PromotionModel[]  @relation(name: "PromotionCity")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model CategoryModel {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  promotions  PromotionModel[] @relation(name: "PromotionCategories")
+  users       UserModel[]      @relation(name: "UserCategories")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model TelegramSession {
+  id         Int        @id @default(autoincrement())
+  telegramId String     @unique
+  data       Json       @default("{}")
+  user       UserModel  @relation(name: "UserSessions", fields: [telegramId], references: [telegramId])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
