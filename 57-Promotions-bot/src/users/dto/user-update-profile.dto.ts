@@ -11,33 +11,6 @@ import {
 import { Transform } from 'class-transformer';
 import { MESSAGES } from '../../common/messages';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     UserUpdateProfileDto:
- *       type: object
- *       description: DTO для обновления профиля пользователя.
- *       properties:
- *         name:
- *           type: string
- *           description: Новое имя пользователя (только буквы, пробелы и дефисы).
- *           example: Иван Петров
- *           maxLength: 100
- *           nullable: true
- *         cityId:
- *           type: integer
- *           description: Идентификатор города пользователя.
- *           example: 1
- *           nullable: true
- *         categoryIds:
- *           type: array
- *           items:
- *             type: integer
- *           description: Идентификаторы предпочитаемых категорий.
- *           example: [1, 2]
- *           nullable: true
- */
 export class UserUpdateProfileDto {
 	@IsString({ message: MESSAGES.NAME_INVALID_FORMAT })
 	@MaxLength(100, { message: MESSAGES.NAME_INVALID_NAME_LENGTH })

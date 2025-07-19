@@ -156,4 +156,7 @@ export const MESSAGES = {
 	END_DATE_REQUIRED_FIELD: 'Поле "Дата окончания" обязательно',
 	STATUS_INVALID_FORMAT: 'Поле "Статус" имеет недействительный формат',
 	NON_EMPTY_OBJECT_VALIDATION_FAILED: 'Необходимо указать хотя бы одно поле',
+	TELEGRAM_NOTIFICATIONS_DISABLED: 'Уведомления об акциях отключены.',
+	PUBLICATION_DATE_INVALID_FORMAT: 'Недопустимый формат даты публикации.',
+	INVALID_URL: 'Недопустимый формат URL.',
 };

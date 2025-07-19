@@ -1,88 +1,5 @@
 import { Role } from '../common/enums/role.enum';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     UserResponse:
- *       type: object
- *       description: Данные пользователя, возвращаемые в ответах API, включая связанные категории и город (без пароля).
- *       properties:
- *         id:
- *           type: integer
- *           description: Уникальный идентификатор пользователя.
- *           example: 1
- *         email:
- *           type: string
- *           format: email
- *           description: Электронная почта пользователя. Уникальна.
- *           example: user@example.com
- *         name:
- *           type: string
- *           description: Имя пользователя.
- *           example: Иван Иванов
- *         role:
- *           type: string
- *           enum: [SUPERADMIN, ADMIN, SUPPLIER]
- *           description: Роль пользователя (SUPERADMIN/ADMIN — административные права, SUPPLIER — управление акциями).
- *           example: SUPPLIER
- *         telegramId:
- *           type: string
- *           nullable: true
- *           description: Идентификатор Telegram пользователя.
- *           example: "123456789"
- *         cityId:
- *           type: integer
- *           nullable: true
- *           description: Идентификатор города пользователя.
- *           example: 1
- *         preferredCategories:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               id:
- *                 type: integer
- *                 description: Идентификатор категории.
- *                 example: 1
- *               name:
- *                 type: string
- *                 description: Название категории.
- *                 example: Еда
- *           description: Список предпочитаемых категорий пользователя.
- *           example: [{ id: 1, name: "Еда" }, { id: 2, name: "Напитки" }]
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: Дата создания пользователя (ISO 8601).
- *           example: "2023-05-01T12:00:00Z"
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: Дата последнего обновления пользователя (ISO 8601).
- *           example: "2023-05-02T12:00:00Z"
- *         isDeleted:
- *           type: boolean
- *           description: Флаг мягкого удаления пользователя.
- *           example: false
- *       required:
- *         - id
- *         - email
- *         - name
- *         - role
- *     UserModel:
- *       allOf:
- *         - $ref: '#/components/schemas/UserResponse'
- *         - type: object
- *           description: Полная модель пользователя, включая хешированный пароль (для внутреннего использования).
- *           properties:
- *             password:
- *               type: string
- *               description: Хешированный пароль пользователя.
- *               example: $2a$10$hashedpassword
- *           required:
- *             - password
- */
 export class User {
 	private _password: string;
 
@@ -94,6 +11,7 @@ export class User {
 		private readonly _telegramId: string | null = null,
 		private readonly _cityId: number | null = null,
 		private readonly _categoryIds: number[] = [],
+		private readonly _notificationsEnabled: boolean = true,
 		private readonly _id?: number,
 		private readonly _isDeleted: boolean = false,
 	) {
@@ -130,6 +48,10 @@ export class User {
 
 	get preferredCategories(): number[] {
 		return [...this._categoryIds];
+	}
+
+	get notificationsEnabled(): boolean {
+		return this._notificationsEnabled;
 	}
 
 	get isDeleted(): boolean {

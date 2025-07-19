@@ -12,6 +12,7 @@ import { PrismaService } from '../database/prisma.service';
 import { CallbackHandler } from './callback.handler';
 import { ILogger } from '../logger/logger.interface';
 import { UserWithCategories } from '../users/users.repository.interface';
+import { INotificationService } from '../notification/notification.service.interface';
 
 export interface ExtendedContext extends Context {
 	session: {
@@ -38,6 +39,7 @@ export class TelegramBotController implements ITelegramBotController {
 		@inject(TYPES.PrismaService) private readonly prismaService: PrismaService,
 		@inject(TYPES.CallbackHandler) private readonly callbackHandler: CallbackHandler,
 		@inject(TYPES.UsersService) private readonly usersService: IUsersService,
+		@inject(TYPES.NotificationService) private readonly notificationService: INotificationService,
 		@inject(TYPES.ILogger) private readonly logger: ILogger,
 	) {
 		const token = this.configService.get('TELEGRAM_BOT_TOKEN');
@@ -46,6 +48,7 @@ export class TelegramBotController implements ITelegramBotController {
 			throw new Error(MESSAGES.TELEGRAM_TOKEN_NOT_SET);
 		}
 		this.bot = new Telegraf<ExtendedContext>(token);
+		this.notificationService.setBotInstance(this.bot);
 		this.setupMiddlewares();
 		this.setupCommands();
 	}
@@ -81,10 +84,16 @@ export class TelegramBotController implements ITelegramBotController {
 				await this.sendResponse(
 					ctx,
 					this.telegramService.createErrorResponse(MESSAGES.TELEGRAM_ERROR),
+					false,
 				);
 				return;
 			}
 			ctx.telegramId = telegramId;
+			await next();
+		});
+
+		this.bot.use(async (ctx: ExtendedContext, next) => {
+			const telegramId = ctx.telegramId;
 			let user = await this.usersService.getUserInfoByTelegramId(telegramId);
 			if (!user) {
 				const username = ctx.from?.username || ctx.from?.first_name || 'Пользователь';
@@ -137,19 +146,30 @@ export class TelegramBotController implements ITelegramBotController {
 
 	private setupCommands(): void {
 		this.bot.command('start', (ctx) =>
-			this.executeCommand(ctx, () => this.telegramService.handleStartCommand(ctx), 'start'),
+			this.executeCommand(ctx, () => this.telegramService.handleStartCommand(ctx), 'start', false),
 		);
 		this.bot.command('setcity', (ctx) =>
-			this.executeCommand(ctx, () => this.telegramService.handleSetCityCommand(ctx), 'setcity'),
+			this.executeCommand(
+				ctx,
+				() => this.telegramService.handleSetCityCommand(ctx),
+				'setcity',
+				false,
+			),
 		);
 		this.bot.command('viewcity', (ctx) =>
-			this.executeCommand(ctx, () => this.telegramService.handleViewCityCommand(ctx), 'viewcity'),
+			this.executeCommand(
+				ctx,
+				() => this.telegramService.handleViewCityCommand(ctx),
+				'viewcity',
+				false,
+			),
 		);
 		this.bot.command('setcategories', (ctx) =>
 			this.executeCommand(
 				ctx,
 				() => this.telegramService.handleSetCategoriesCommand(ctx),
 				'setcategories',
+				false,
 			),
 		);
 		this.bot.command('viewcategories', (ctx) =>
@@ -157,6 +177,7 @@ export class TelegramBotController implements ITelegramBotController {
 				ctx,
 				() => this.telegramService.handleViewCategoriesCommand(ctx),
 				'viewcategories',
+				false,
 			),
 		);
 		this.bot.command('removecategories', (ctx) =>
@@ -164,6 +185,7 @@ export class TelegramBotController implements ITelegramBotController {
 				ctx,
 				() => this.telegramService.handleRemoveCategoriesCommand(ctx),
 				'removecategories',
+				false,
 			),
 		);
 		this.bot.command('promotions', (ctx) =>
@@ -171,13 +193,27 @@ export class TelegramBotController implements ITelegramBotController {
 				ctx,
 				() => this.telegramService.handlePromotionsCommand(ctx),
 				'promotions',
+				false,
+			),
+		);
+		this.bot.command('disable_notifications', (ctx) =>
+			this.executeCommand(
+				ctx,
+				() => this.telegramService.handleDisableNotificationsCommand(ctx),
+				'disable_notifications',
+				false,
 			),
 		);
 		this.bot.command('help', (ctx) =>
-			this.executeCommand(ctx, () => this.telegramService.handleHelpCommand(ctx), 'help'),
+			this.executeCommand(ctx, () => this.telegramService.handleHelpCommand(ctx), 'help', false),
 		);
 		this.bot.command('commands', (ctx) =>
-			this.executeCommand(ctx, () => this.telegramService.handleCommandsCommand(ctx), 'commands'),
+			this.executeCommand(
+				ctx,
+				() => this.telegramService.handleCommandsCommand(ctx),
+				'commands',
+				false,
+			),
 		);
 
 		this.bot.on('callback_query', async (ctx) => {
@@ -186,7 +222,7 @@ export class TelegramBotController implements ITelegramBotController {
 				this.logger.warn('Недействительный callback запрос');
 				await this.sendResponse(
 					ctx,
-					this.telegramService.createErrorResponse(MESSAGES.TELEGRAM_INVALID_CALLBACK, true),
+					this.telegramService.createErrorResponse(MESSAGES.TELEGRAM_INVALID_CALLBACK),
 					true,
 				);
 				return;
@@ -215,11 +251,7 @@ export class TelegramBotController implements ITelegramBotController {
 		} catch (error) {
 			const message = error instanceof Error ? error.message : MESSAGES.TELEGRAM_ERROR;
 			this.logger.error(`Ошибка в команде ${commandName}: ${message}`);
-			await this.sendResponse(
-				ctx,
-				this.telegramService.createErrorResponse(message, isCallback),
-				isCallback,
-			);
+			await this.sendResponse(ctx, this.telegramService.createErrorResponse(message), false);
 		}
 	}
 
@@ -239,28 +271,45 @@ export class TelegramBotController implements ITelegramBotController {
 		if (keyboard) {
 			if ('inline_keyboard' in keyboard) {
 				replyOptions = { reply_markup: keyboard };
-			} else if (!editMessage && !isCallback) {
+			} else if (!isCallback) {
 				replyOptions = { reply_markup: keyboard };
 			}
 		}
 		try {
-			if (isCallback || editMessage) {
+			if (isCallback && editMessage && ctx.callbackQuery?.message) {
 				await ctx.editMessageText(
 					message,
 					format === 'markdown' ? { ...replyOptions, parse_mode: 'Markdown' } : replyOptions,
 				);
+				await ctx.answerCbQuery();
+			} else {
+				if (format === 'markdown') {
+					await ctx.replyWithMarkdown(message, replyOptions);
+				} else {
+					await ctx.reply(message, replyOptions);
+				}
 				if (isCallback) {
 					await ctx.answerCbQuery();
 				}
-			} else if (format === 'markdown') {
-				await ctx.replyWithMarkdown(message, replyOptions);
-			} else {
-				await ctx.reply(message, replyOptions);
 			}
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error));
 			this.logger.error(`Ошибка отправки ответа: ${err.message}`);
-			if (err.message.includes('message is not modified') && isCallback) {
+			if (err.message.includes("message can't be edited")) {
+				try {
+					if (format === 'markdown') {
+						await ctx.replyWithMarkdown(message, replyOptions);
+					} else {
+						await ctx.reply(message, replyOptions);
+					}
+					if (isCallback) {
+						await ctx.answerCbQuery();
+					}
+				} catch (retryError) {
+					this.logger.error(`Ошибка при отправке нового сообщения: ${retryError}`);
+					throw retryError;
+				}
+			} else if (err.message.includes('message is not modified') && isCallback) {
 				await ctx.answerCbQuery();
 			} else if (err.message.includes('inline keyboard expected') && (isCallback || editMessage)) {
 				if (format === 'markdown') {

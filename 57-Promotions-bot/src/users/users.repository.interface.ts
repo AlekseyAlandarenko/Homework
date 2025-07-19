@@ -33,13 +33,15 @@ export interface IUsersRepository {
 		filters,
 		pagination,
 		orderBy,
+		includeDeleted,
 	}: {
 		role?: Role;
 		filters?: Prisma.UserModelWhereInput;
 		pagination?: PaginationDto;
 		orderBy?: Prisma.UserModelOrderByWithRelationInput;
+		includeDeleted?: boolean;
 	}): Promise<PaginatedResponse<SupplierResponse>>;
-	updateUser(id: number, data: Partial<UserModel>): Promise<UserWithCategories>;
+	updateUser(id: number, data: Prisma.UserModelUpdateInput): Promise<UserWithCategories>;
 	updateUserCity(id: number, cityId: number): Promise<UserWithCategories>;
 	updateUserCategories(id: number, categoryData: { id: number }[]): Promise<UserWithCategories>;
 	deleteUser(id: number): Promise<UserWithCategories>;

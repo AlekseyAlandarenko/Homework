@@ -27,6 +27,9 @@ export class PromotionsRepository implements IPromotionsRepository {
 		cityId: true,
 		createdAt: true,
 		updatedAt: true,
+		publicationDate: true,
+		imageUrl: true,
+		linkUrl: true,
 		isDeleted: true,
 		...this.promotionInclude,
 	};
@@ -46,6 +49,9 @@ export class PromotionsRepository implements IPromotionsRepository {
 							status: promotion.status,
 							supplierId: promotion.supplierId,
 							cityId: promotion.cityId,
+							imageUrl: promotion.imageUrl,
+							linkUrl: promotion.linkUrl,
+							publicationDate: promotion.publicationDate,
 							categories: {
 								connect: promotion.categoryIds?.map((id) => ({ id })) || [],
 							},

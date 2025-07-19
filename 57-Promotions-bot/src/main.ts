@@ -27,6 +27,8 @@ import { ITelegramBotController } from './telegram/telegram-bot.controller.inter
 import { ITelegramBotService } from './telegram/telegram-bot.service.interface';
 import { CallbackHandler } from './telegram/callback.handler';
 import { TelegramUtils } from './telegram/telegram.utils';
+import { NotificationService } from './notification/notification.service';
+import { CronService } from './cron/cron.service';
 
 export interface IBootstrapReturn {
 	appContainer: Container;
@@ -53,6 +55,8 @@ export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 		.inSingletonScope();
 	bind<CallbackHandler>(TYPES.CallbackHandler).to(CallbackHandler).inSingletonScope();
 	bind<TelegramUtils>(TYPES.TelegramUtils).to(TelegramUtils).inSingletonScope();
+	bind<NotificationService>(TYPES.NotificationService).to(NotificationService).inSingletonScope();
+	bind<CronService>(TYPES.CronService).to(CronService).inSingletonScope();
 	bind<App>(TYPES.Application).to(App);
 });
 

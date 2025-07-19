@@ -10,323 +10,323 @@ let prisma: PrismaClient;
 let adminToken: string;
 
 beforeAll(async () => {
-    const { app } = await boot;
-    application = app;
-    prisma = new PrismaClient();
+	const { app } = await boot;
+	application = app;
+	prisma = new PrismaClient();
 
-    await cleanUp(prisma);
+	await cleanUp(prisma);
 
-    const adminCredentials: UserCredentials = {
-        email: 'superadmin@example.com',
-        password: 'superadminPassword123',
-    };
-    const { token, status } = await loginUser(application.app, adminCredentials);
-    expect(status).toBe(200);
-    adminToken = token;
+	const adminCredentials: UserCredentials = {
+		email: 'superadmin@example.com',
+		password: 'superadminPassword123',
+	};
+	const { token, status } = await loginUser(application.app, adminCredentials);
+	expect(status).toBe(200);
+	adminToken = token;
 });
 
 afterEach(async () => {
-    await cleanUp(prisma);
+	await cleanUp(prisma);
 });
 
 afterAll(async () => {
-    await prisma.$disconnect();
-    await application.close();
+	await prisma.$disconnect();
+	await application.close();
 });
 
 describe('Тестирование пользователей (E2E)', () => {
-    describe('Регистрация администратора', () => {
-        it('Должен успешно зарегистрировать администратора', async () => {
-            const adminData: UserCredentials = {
-                email: 'admin@test.com',
-                password: 'Password123',
-                name: 'Тестовый Админ',
-            };
+	describe('Регистрация администратора', () => {
+		it('Должен успешно зарегистрировать администратора', async () => {
+			const adminData: UserCredentials = {
+				email: 'admin@test.com',
+				password: 'Password123',
+				name: 'Тестовый Админ',
+			};
 
-            const res = await request(application.app)
-                .post('/users/admin')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send(adminData);
+			const res = await request(application.app)
+				.post('/users/admin')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send(adminData);
 
-            expect(res.statusCode).toBe(201);
-            expect(res.body.data).toMatchObject({
-                email: 'admin@test.com',
-                role: 'ADMIN',
-            });
-        });
+			expect(res.statusCode).toBe(201);
+			expect(res.body.data).toMatchObject({
+				email: 'admin@test.com',
+				role: 'ADMIN',
+			});
+		});
 
-        it('Должен выбросить ошибку 422, если email некорректен', async () => {
-            const res = await request(application.app)
-                .post('/users/admin')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    email: '',
-                    password: 'Password123',
-                    name: 'Некорректный Админ',
-                });
+		it('Должен выбросить ошибку 422, если email некорректен', async () => {
+			const res = await request(application.app)
+				.post('/users/admin')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					email: '',
+					password: 'Password123',
+					name: 'Некорректный Админ',
+				});
 
-            expect(res.statusCode).toBe(422);
-            expect(res.body.error).toBe(MESSAGES.EMAIL_REQUIRED_FIELD);
-        });
+			expect(res.statusCode).toBe(422);
+			expect(res.body.error).toBe(MESSAGES.EMAIL_REQUIRED_FIELD);
+		});
 
-        it('Должен выбросить ошибку 409, если пользователь уже существует', async () => {
-            await request(application.app)
-                .post('/users/admin')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    email: 'admin@test.com',
-                    password: 'Password123',
-                    name: 'Тестовый Админ',
-                });
+		it('Должен выбросить ошибку 409, если пользователь уже существует', async () => {
+			await request(application.app)
+				.post('/users/admin')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					email: 'admin@test.com',
+					password: 'Password123',
+					name: 'Тестовый Админ',
+				});
 
-            const res = await request(application.app)
-                .post('/users/admin')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    email: 'admin@test.com',
-                    password: 'Password123',
-                    name: 'Тестовый Админ',
-                });
+			const res = await request(application.app)
+				.post('/users/admin')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					email: 'admin@test.com',
+					password: 'Password123',
+					name: 'Тестовый Админ',
+				});
 
-            expect(res.statusCode).toBe(409);
-            expect(res.body.error).toBe(MESSAGES.EMAIL_ALREADY_EXISTS);
-        });
+			expect(res.statusCode).toBe(409);
+			expect(res.body.error).toBe(MESSAGES.EMAIL_ALREADY_EXISTS);
+		});
 
-        it('Должен выбросить ошибку 422, если пароль слабый', async () => {
-            const res = await request(application.app)
-                .post('/users/admin')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    email: 'weakadmin@test.com',
-                    password: 'weak',
-                    name: 'Слабый Админ',
-                });
+		it('Должен выбросить ошибку 422, если пароль слабый', async () => {
+			const res = await request(application.app)
+				.post('/users/admin')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					email: 'weakadmin@test.com',
+					password: 'weak',
+					name: 'Слабый Админ',
+				});
 
-            expect(res.statusCode).toBe(422);
-            expect(res.body.error).toBe(MESSAGES.PASSWORD_COMPLEXITY);
-        });
+			expect(res.statusCode).toBe(422);
+			expect(res.body.error).toBe(MESSAGES.PASSWORD_COMPLEXITY);
+		});
 
-        it('Должен выбросить ошибку 403, если пользователь не суперадминистратор', async () => {
-            await request(application.app)
-                .post('/users/admin')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    email: 'otheradmin@test.com',
-                    password: 'Password123',
-                    name: 'Другой Админ',
-                });
+		it('Должен выбросить ошибку 403, если пользователь не суперадминистратор', async () => {
+			await request(application.app)
+				.post('/users/admin')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					email: 'otheradmin@test.com',
+					password: 'Password123',
+					name: 'Другой Админ',
+				});
 
-            const { token: otherAdminToken } = await loginUser(application.app, {
-                email: 'otheradmin@test.com',
-                password: 'Password123',
-            });
+			const { token: otherAdminToken } = await loginUser(application.app, {
+				email: 'otheradmin@test.com',
+				password: 'Password123',
+			});
 
-            const res = await request(application.app)
-                .post('/users/admin')
-                .set('Authorization', `Bearer ${otherAdminToken}`)
-                .send({
-                    email: 'newadmin@test.com',
-                    password: 'Password123',
-                    name: 'Новый Админ',
-                });
+			const res = await request(application.app)
+				.post('/users/admin')
+				.set('Authorization', `Bearer ${otherAdminToken}`)
+				.send({
+					email: 'newadmin@test.com',
+					password: 'Password123',
+					name: 'Новый Админ',
+				});
 
-            expect(res.statusCode).toBe(403);
-            expect(res.body.error).toBe(MESSAGES.FORBIDDEN_ACCESS);
-        });
-    });
+			expect(res.statusCode).toBe(403);
+			expect(res.body.error).toBe(MESSAGES.FORBIDDEN_ACCESS);
+		});
+	});
 
-    describe('Регистрация поставщика', () => {
-        it('Должен успешно зарегистрировать поставщика', async () => {
-            const { supplierId, supplierEmail } = await createTestSupplier(application.app, adminToken);
-            const res = await request(application.app)
-                .get('/users/suppliers')
-                .set('Authorization', `Bearer ${adminToken}`);
+	describe('Регистрация поставщика', () => {
+		it('Должен успешно зарегистрировать поставщика', async () => {
+			const { supplierId, supplierEmail } = await createTestSupplier(application.app, adminToken);
+			const res = await request(application.app)
+				.get('/users/suppliers')
+				.set('Authorization', `Bearer ${adminToken}`);
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.data.items).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        id: supplierId,
-                        email: supplierEmail,
-                        role: 'SUPPLIER',
-                    }),
-                ]),
-            );
-        });
+			expect(res.statusCode).toBe(200);
+			expect(res.body.data.items).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						id: supplierId,
+						email: supplierEmail,
+						role: 'SUPPLIER',
+					}),
+				]),
+			);
+		});
 
-        it('Должен выбросить ошибку 409, если поставщик уже существует', async () => {
-            await createTestSupplier(application.app, adminToken);
-            const { supplierEmail } = await createTestSupplier(application.app, adminToken);
-            const res = await request(application.app)
-                .post('/users/supplier')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    email: supplierEmail,
-                    password: 'Password123',
-                    name: 'Тестовый Поставщик',
-                });
+		it('Должен выбросить ошибку 409, если поставщик уже существует', async () => {
+			await createTestSupplier(application.app, adminToken);
+			const { supplierEmail } = await createTestSupplier(application.app, adminToken);
+			const res = await request(application.app)
+				.post('/users/supplier')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					email: supplierEmail,
+					password: 'Password123',
+					name: 'Тестовый Поставщик',
+				});
 
-            expect(res.statusCode).toBe(409);
-            expect(res.body.error).toBe(MESSAGES.EMAIL_ALREADY_EXISTS);
-        });
+			expect(res.statusCode).toBe(409);
+			expect(res.body.error).toBe(MESSAGES.EMAIL_ALREADY_EXISTS);
+		});
 
-        it('Должен выбросить ошибку 422, если имя отсутствует', async () => {
-            const res = await request(application.app)
-                .post('/users/supplier')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    email: 'noname@test.com',
-                    password: 'Password123',
-                });
+		it('Должен выбросить ошибку 422, если имя отсутствует', async () => {
+			const res = await request(application.app)
+				.post('/users/supplier')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					email: 'noname@test.com',
+					password: 'Password123',
+				});
 
-            expect(res.statusCode).toBe(422);
-            expect(res.body.error).toBe(MESSAGES.NAME_REQUIRED_FIELD);
-        });
-    });
+			expect(res.statusCode).toBe(422);
+			expect(res.body.error).toBe(MESSAGES.NAME_REQUIRED_FIELD);
+		});
+	});
 
-    describe('Авторизация', () => {
-        it('Должен успешно войти в систему', async () => {
-            const { supplierEmail } = await createTestSupplier(application.app, adminToken);
-            const { status, token } = await loginUser(application.app, {
-                email: supplierEmail,
-                password: 'Password123',
-            });
+	describe('Авторизация', () => {
+		it('Должен успешно войти в систему', async () => {
+			const { supplierEmail } = await createTestSupplier(application.app, adminToken);
+			const { status, token } = await loginUser(application.app, {
+				email: supplierEmail,
+				password: 'Password123',
+			});
 
-            expect(status).toBe(200);
-            expect(token).toBeDefined();
-        });
+			expect(status).toBe(200);
+			expect(token).toBeDefined();
+		});
 
-        it('Должен выбросить ошибку 401, если учетные данные неверны', async () => {
-            const { supplierEmail } = await createTestSupplier(application.app, adminToken);
-            const { status, error } = await loginUser(application.app, {
-                email: supplierEmail,
-                password: 'wrongPassword123',
-            });
+		it('Должен выбросить ошибку 401, если учетные данные неверны', async () => {
+			const { supplierEmail } = await createTestSupplier(application.app, adminToken);
+			const { status, error } = await loginUser(application.app, {
+				email: supplierEmail,
+				password: 'wrongPassword123',
+			});
 
-            expect(status).toBe(401);
-            expect(error).toBe(MESSAGES.INVALID_CREDENTIALS);
-        });
+			expect(status).toBe(401);
+			expect(error).toBe(MESSAGES.INVALID_CREDENTIALS);
+		});
 
-        it('Должен выбросить ошибку 401, если пользователь не существует', async () => {
-            const { status, error } = await loginUser(application.app, {
-                email: 'nonexistent@test.com',
-                password: 'Password123',
-            });
+		it('Должен выбросить ошибку 401, если пользователь не существует', async () => {
+			const { status, error } = await loginUser(application.app, {
+				email: 'nonexistent@test.com',
+				password: 'Password123',
+			});
 
-            expect(status).toBe(401);
-            expect(error).toBe(MESSAGES.INVALID_CREDENTIALS);
-        });
-    });
+			expect(status).toBe(401);
+			expect(error).toBe(MESSAGES.INVALID_CREDENTIALS);
+		});
+	});
 
-    describe('Обновление пароля поставщика', () => {
-        it('Должен успешно обновить пароль', async () => {
-            const { supplierId, supplierEmail } = await createTestSupplier(application.app, adminToken);
-            const res = await request(application.app)
-                .patch(`/users/supplier/${supplierId}/password`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ newPassword: 'newPassword123', oldPassword: 'Password123' });
+	describe('Обновление пароля поставщика', () => {
+		it('Должен успешно обновить пароль', async () => {
+			const { supplierId, supplierEmail } = await createTestSupplier(application.app, adminToken);
+			const res = await request(application.app)
+				.patch(`/users/supplier/${supplierId}/password`)
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({ newPassword: 'newPassword123', oldPassword: 'Password123' });
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe(MESSAGES.PASSWORD_UPDATED);
+			expect(res.statusCode).toBe(200);
+			expect(res.body.message).toBe(MESSAGES.PASSWORD_UPDATED);
 
-            const { status } = await loginUser(application.app, {
-                email: supplierEmail,
-                password: 'newPassword123',
-            });
+			const { status } = await loginUser(application.app, {
+				email: supplierEmail,
+				password: 'newPassword123',
+			});
 
-            expect(status).toBe(200);
-        });
+			expect(status).toBe(200);
+		});
 
-        it('Должен выбросить ошибку 404, если ID поставщика неверный', async () => {
-            const res = await request(application.app)
-                .patch('/users/supplier/9999/password')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ newPassword: 'newPassword123', oldPassword: 'Password123' });
+		it('Должен выбросить ошибку 404, если ID поставщика неверный', async () => {
+			const res = await request(application.app)
+				.patch('/users/supplier/9999/password')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({ newPassword: 'newPassword123', oldPassword: 'Password123' });
 
-            expect(res.statusCode).toBe(404);
-            expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
-        });
+			expect(res.statusCode).toBe(404);
+			expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
+		});
 
-        it('Должен выбросить ошибку 422, если пароль слабый', async () => {
-            const { supplierId } = await createTestSupplier(application.app, adminToken);
-            const res = await request(application.app)
-                .patch(`/users/supplier/${supplierId}/password`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ newPassword: 'weak', oldPassword: 'Password123' });
+		it('Должен выбросить ошибку 422, если пароль слабый', async () => {
+			const { supplierId } = await createTestSupplier(application.app, adminToken);
+			const res = await request(application.app)
+				.patch(`/users/supplier/${supplierId}/password`)
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({ newPassword: 'weak', oldPassword: 'Password123' });
 
-            expect(res.statusCode).toBe(422);
-            expect(res.body.error).toBe(MESSAGES.NEW_PASSWORD_COMPLEXITY);
-        });
+			expect(res.statusCode).toBe(422);
+			expect(res.body.error).toBe(MESSAGES.NEW_PASSWORD_COMPLEXITY);
+		});
 
-        it('Должен выбросить ошибку 422, если пароль пустой', async () => {
-            const { supplierId } = await createTestSupplier(application.app, adminToken);
-            const res = await request(application.app)
-                .patch(`/users/supplier/${supplierId}/password`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ newPassword: '', oldPassword: 'Password123' });
+		it('Должен выбросить ошибку 422, если пароль пустой', async () => {
+			const { supplierId } = await createTestSupplier(application.app, adminToken);
+			const res = await request(application.app)
+				.patch(`/users/supplier/${supplierId}/password`)
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({ newPassword: '', oldPassword: 'Password123' });
 
-            expect(res.statusCode).toBe(422);
-            expect(res.body.error).toBe(MESSAGES.NEW_PASSWORD_REQUIRED_FIELD);
-        });
-    });
+			expect(res.statusCode).toBe(422);
+			expect(res.body.error).toBe(MESSAGES.NEW_PASSWORD_REQUIRED_FIELD);
+		});
+	});
 
-    describe('Удаление поставщика', () => {
-        it('Должен успешно удалить поставщика', async () => {
-            const { supplierId } = await createTestSupplier(application.app, adminToken);
-            const res = await request(application.app)
-                .delete(`/users/supplier/${supplierId}`)
-                .set('Authorization', `Bearer ${adminToken}`);
+	describe('Удаление поставщика', () => {
+		it('Должен успешно удалить поставщика', async () => {
+			const { supplierId } = await createTestSupplier(application.app, adminToken);
+			const res = await request(application.app)
+				.delete(`/users/supplier/${supplierId}`)
+				.set('Authorization', `Bearer ${adminToken}`);
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe(MESSAGES.USER_DELETED);
-        });
+			expect(res.statusCode).toBe(200);
+			expect(res.body.message).toBe(MESSAGES.USER_DELETED);
+		});
 
-        it('Должен выбросить ошибку 422, если у поставщика есть активные промоакции', async () => {
-            const { supplierId } = await createTestSupplier(application.app, adminToken);
-            const now = new Date();
-            const startDate = new Date(now.getTime() + 2 * 3600000);
-            const endDate = new Date(now.getTime() + 86400000);
+		it('Должен выбросить ошибку 422, если у поставщика есть активные промоакции', async () => {
+			const { supplierId } = await createTestSupplier(application.app, adminToken);
+			const now = new Date();
+			const startDate = new Date(now.getTime() + 2 * 3600000);
+			const endDate = new Date(now.getTime() + 86400000);
 
-            const promotionRes = await request(application.app)
-                .post('/promotions')
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({
-                    title: 'Тестовая Акция',
-                    description: 'Тестовое Описание',
-                    supplierId,
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString(),
-                });
+			const promotionRes = await request(application.app)
+				.post('/promotions')
+				.set('Authorization', `Bearer ${adminToken}`)
+				.send({
+					title: 'Тестовая Акция',
+					description: 'Тестовое Описание',
+					supplierId,
+					startDate: startDate.toISOString(),
+					endDate: endDate.toISOString(),
+				});
 
-            expect(promotionRes.statusCode).toBe(201);
+			expect(promotionRes.statusCode).toBe(201);
 
-            const res = await request(application.app)
-                .delete(`/users/supplier/${supplierId}`)
-                .set('Authorization', `Bearer ${adminToken}`);
+			const res = await request(application.app)
+				.delete(`/users/supplier/${supplierId}`)
+				.set('Authorization', `Bearer ${adminToken}`);
 
-            expect(res.statusCode).toBe(422);
-            expect(res.body.error).toBe(MESSAGES.SUPPLIER_HAS_ACTIVE_PROMOTIONS);
-        });
+			expect(res.statusCode).toBe(422);
+			expect(res.body.error).toBe(MESSAGES.SUPPLIER_HAS_ACTIVE_PROMOTIONS);
+		});
 
-        it('Должен выбросить ошибку 404, если ID поставщика неверный', async () => {
-            const res = await request(application.app)
-                .delete('/users/supplier/9999')
-                .set('Authorization', `Bearer ${adminToken}`);
+		it('Должен выбросить ошибку 404, если ID поставщика неверный', async () => {
+			const res = await request(application.app)
+				.delete('/users/supplier/9999')
+				.set('Authorization', `Bearer ${adminToken}`);
 
-            expect(res.statusCode).toBe(404);
-            expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
-        });
-    });
+			expect(res.statusCode).toBe(404);
+			expect(res.body.error).toBe(MESSAGES.USER_NOT_FOUND);
+		});
+	});
 
-    describe('Получение списка поставщиков', () => {
-        it('Должен успешно получить список поставщиков', async () => {
-            await createTestSupplier(application.app, adminToken);
-            const res = await request(application.app)
-                .get('/users/suppliers')
-                .set('Authorization', `Bearer ${adminToken}`);
+	describe('Получение списка поставщиков', () => {
+		it('Должен успешно получить список поставщиков', async () => {
+			await createTestSupplier(application.app, adminToken);
+			const res = await request(application.app)
+				.get('/users/suppliers')
+				.set('Authorization', `Bearer ${adminToken}`);
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.data.items.length).toBeGreaterThanOrEqual(1);
-        });
-    });
+			expect(res.statusCode).toBe(200);
+			expect(res.body.data.items.length).toBeGreaterThanOrEqual(1);
+		});
+	});
 });

@@ -21,6 +21,7 @@ const PrismaServiceMock = {
 		$transaction: jest.fn((callback) => callback({})),
 	},
 	findUnique: jest.fn(),
+	validateAddresses: jest.fn().mockResolvedValue(undefined),
 };
 
 const CartRepositoryMock: jest.Mocked<ICartRepository> = {
@@ -84,6 +85,7 @@ describe('Сервис корзины', () => {
 		updatedAt: new Date(),
 		categories: [{ id: 1, name: 'Категория 1' }],
 		city: null,
+		options: [],
 	};
 
 	const mockOutOfStockProduct: ProductWithRelations = {
@@ -93,6 +95,7 @@ describe('Сервис корзины', () => {
 		sku: 'OUT123',
 		status: ProductStatus.OUT_OF_STOCK,
 		categories: [{ id: 2, name: 'Категория 2' }],
+		options: [],
 	};
 
 	const mockCartItem: CartModel = {
@@ -103,6 +106,7 @@ describe('Сервис корзины', () => {
 		price: 100,
 		createdAt: new Date(),
 		updatedAt: new Date(),
+		optionId: null,
 	};
 
 	const mockCartWithProduct: CartWithProduct[] = [
@@ -114,6 +118,7 @@ describe('Сервис корзины', () => {
 			price: 100,
 			createdAt: new Date(),
 			updatedAt: new Date(),
+			optionId: null,
 			product: {
 				id: 1,
 				name: 'Тестовый Товар',
@@ -131,7 +136,9 @@ describe('Сервис корзины', () => {
 				updatedAt: new Date(),
 				categories: [{ id: 1, name: 'Категория 1' }],
 				city: null,
+				options: [],
 			},
+			option: undefined,
 		},
 	];
 
@@ -139,22 +146,20 @@ describe('Сервис корзины', () => {
 		jest.clearAllMocks();
 		PrismaServiceMock.findUnique.mockResolvedValue(null);
 		PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+		PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 	});
 
 	describe('Добавление в корзину', () => {
-		const cartAddDto: CartAddDto = { productId: 1, quantity: 2 };
+		const cartAddDto: CartAddDto = { productId: 1, quantity: 2, optionId: null };
 		const userId = 1;
 
 		it('Должен успешно добавить товар в корзину', async () => {
-			productsRepository.findProductByKeyOrThrow.mockResolvedValue(mockProduct);
+			productsRepository.findProductByKey.mockResolvedValue(mockProduct);
 			cartRepository.addCartItem.mockResolvedValue(mockCartItem);
 
 			const result = await cartService.addCartItem(userId, cartAddDto);
 
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledWith(
-				'id',
-				cartAddDto.productId,
-			);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
 			expect(cartRepository.addCartItem).toHaveBeenCalledWith(expect.any(Cart));
 			expect(result).toEqual({
 				id: mockCartItem.id,
@@ -164,34 +169,27 @@ describe('Сервис корзины', () => {
 				createdAt: mockCartItem.createdAt.toISOString(),
 				updatedAt: mockCartItem.updatedAt.toISOString(),
 				product: { name: mockProduct.name },
+				option: undefined,
 			});
 		});
 
 		it('Должен выбросить ошибку 404, если товар не найден', async () => {
-			productsRepository.findProductByKeyOrThrow.mockRejectedValue(
-				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
-			);
+			productsRepository.findProductByKey.mockResolvedValue(null);
 
 			await expect(cartService.addCartItem(userId, cartAddDto)).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.PRODUCT_NOT_FOUND),
 			);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledWith(
-				'id',
-				cartAddDto.productId,
-			);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
 			expect(cartRepository.addCartItem).not.toHaveBeenCalled();
 		});
 
 		it('Должен выбросить ошибку 422, если товар недоступен', async () => {
-			productsRepository.findProductByKeyOrThrow.mockResolvedValue(mockOutOfStockProduct);
+			productsRepository.findProductByKey.mockResolvedValue(mockOutOfStockProduct);
 
 			await expect(cartService.addCartItem(userId, cartAddDto)).rejects.toThrowError(
 				new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK),
 			);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledWith(
-				'id',
-				cartAddDto.productId,
-			);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
 			expect(cartRepository.addCartItem).not.toHaveBeenCalled();
 		});
 
@@ -200,14 +198,11 @@ describe('Сервис корзины', () => {
 				code: 'P2002',
 				clientVersion: '',
 			});
-			productsRepository.findProductByKeyOrThrow.mockResolvedValue(mockProduct);
+			productsRepository.findProductByKey.mockResolvedValue(mockProduct);
 			cartRepository.addCartItem.mockRejectedValue(prismaError);
 
 			await expect(cartService.addCartItem(userId, cartAddDto)).rejects.toThrowError(prismaError);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledWith(
-				'id',
-				cartAddDto.productId,
-			);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', cartAddDto.productId);
 			expect(cartRepository.addCartItem).toHaveBeenCalledWith(expect.any(Cart));
 		});
 	});
@@ -231,6 +226,7 @@ describe('Сервис корзины', () => {
 						createdAt: expect.any(String),
 						updatedAt: expect.any(String),
 						product: { name: 'Тестовый Товар' },
+						option: undefined,
 					},
 				],
 				total: mockCartWithProduct[0].price * mockCartWithProduct[0].quantity,
@@ -262,9 +258,10 @@ describe('Сервис корзины', () => {
 		const userId = 1;
 		const cartCheckoutDto: CartCheckoutDto = {
 			items: [
-				{ productId: 1, quantity: 2 },
-				{ productId: 2, quantity: 1 },
+				{ productId: 1, quantity: 2, optionId: null },
+				{ productId: 2, quantity: 1, optionId: null },
 			],
+			addressId: 1,
 		};
 		const mockProduct2: ProductWithRelations = {
 			id: 2,
@@ -283,6 +280,7 @@ describe('Сервис корзины', () => {
 			updatedAt: new Date(),
 			categories: [{ id: 2, name: 'Категория 2' }],
 			city: null,
+			options: [],
 		};
 		const cartItems: CartWithProduct[] = [
 			{
@@ -293,7 +291,9 @@ describe('Сервис корзины', () => {
 				price: 100,
 				createdAt: new Date(),
 				updatedAt: new Date(),
+				optionId: null,
 				product: mockProduct,
+				option: undefined,
 			},
 			{
 				id: 2,
@@ -303,45 +303,72 @@ describe('Сервис корзины', () => {
 				price: 50,
 				createdAt: new Date(),
 				updatedAt: new Date(),
+				optionId: null,
 				product: mockProduct2,
+				option: undefined,
 			},
 		];
 
 		it('Должен успешно оформить заказ', async () => {
 			cartRepository.getCartItems.mockResolvedValue(cartItems);
-			productsRepository.findProductByKeyOrThrow
+			productsRepository.findProductByKey
 				.mockResolvedValueOnce(mockProduct)
 				.mockResolvedValueOnce(mockProduct2);
-			productsRepository.updateProduct.mockResolvedValue({} as any);
 			cartRepository.checkoutCartItems.mockResolvedValue(cartItems);
 			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
 			const result = await cartService.checkoutCartItems(userId, cartCheckoutDto);
 
 			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledTimes(2);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledWith('id', 1);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledWith('id', 2);
-			expect(productsRepository.updateProduct).toHaveBeenCalledTimes(2);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledTimes(2);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', 1);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', 2);
 			expect(cartRepository.checkoutCartItems).toHaveBeenCalledWith(userId, [
-				{ productId: 1, quantity: 2 },
-				{ productId: 2, quantity: 1 },
+				{ productId: 1, quantity: 2, optionId: null },
+				{ productId: 2, quantity: 1, optionId: null },
 			]);
-			expect(result).toEqual(cartItems);
+			expect(result).toEqual({
+				items: [
+					{
+						id: 1,
+						productId: 1,
+						quantity: 2,
+						price: 100,
+						createdAt: expect.any(String),
+						updatedAt: expect.any(String),
+						product: { name: 'Тестовый Товар' },
+						option: undefined,
+					},
+					{
+						id: 2,
+						productId: 2,
+						quantity: 1,
+						price: 50,
+						createdAt: expect.any(String),
+						updatedAt: expect.any(String),
+						product: { name: 'Тестовый Товар 2' },
+						option: undefined,
+					},
+				],
+				total: 250,
+			});
 		});
 
 		it('Должен выбросить ошибку 404, если элемент корзины не найден', async () => {
 			cartRepository.getCartItems.mockResolvedValue([cartItems[0]]);
 			const modifiedCartCheckoutDto: CartCheckoutDto = {
-				items: [{ productId: 2, quantity: 1 }],
+				items: [{ productId: 2, quantity: 1, optionId: null }],
+				addressId: 1,
 			};
 			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
 			await expect(
 				cartService.checkoutCartItems(userId, modifiedCartCheckoutDto),
 			).rejects.toThrowError(new HTTPError(404, MESSAGES.CART_ITEM_NOT_FOUND));
 			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
-			expect(productsRepository.findProductByKeyOrThrow).not.toHaveBeenCalled();
+			expect(productsRepository.findProductByKey).not.toHaveBeenCalled();
 		});
 
 		it('Должен выбросить ошибку 422, если недостаточно товара в корзине', async () => {
@@ -350,26 +377,28 @@ describe('Сервис корзины', () => {
 				cartItems[1],
 			]);
 			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
 			await expect(cartService.checkoutCartItems(userId, cartCheckoutDto)).rejects.toThrowError(
 				new HTTPError(422, MESSAGES.INSUFFICIENT_QUANTITY_IN_CART),
 			);
 			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
-			expect(productsRepository.findProductByKeyOrThrow).not.toHaveBeenCalled();
+			expect(productsRepository.findProductByKey).not.toHaveBeenCalled();
 		});
 
 		it('Должен выбросить ошибку 422, если товар недоступен', async () => {
 			cartRepository.getCartItems.mockResolvedValue(cartItems);
-			productsRepository.findProductByKeyOrThrow
+			productsRepository.findProductByKey
 				.mockResolvedValueOnce(mockOutOfStockProduct)
 				.mockResolvedValueOnce(mockProduct2);
 			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
 			await expect(cartService.checkoutCartItems(userId, cartCheckoutDto)).rejects.toThrowError(
 				new HTTPError(422, MESSAGES.PRODUCT_OUT_OF_STOCK),
 			);
 			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledWith('id', 1);
+			expect(productsRepository.findProductByKey).toHaveBeenCalledWith('id', 1);
 		});
 
 		it('Должен выбросить ошибку при сбое базы данных', async () => {
@@ -378,18 +407,22 @@ describe('Сервис корзины', () => {
 				clientVersion: '',
 			});
 			cartRepository.getCartItems.mockResolvedValue(cartItems);
-			productsRepository.findProductByKeyOrThrow
+			productsRepository.findProductByKey
 				.mockResolvedValueOnce(mockProduct)
 				.mockResolvedValueOnce(mockProduct2);
-			productsRepository.updateProduct.mockRejectedValue(prismaError);
+			cartRepository.checkoutCartItems.mockRejectedValue(prismaError);
 			PrismaServiceMock.client.$transaction.mockImplementation((callback) => callback({}));
+			PrismaServiceMock.validateAddresses.mockResolvedValue(undefined);
 
 			await expect(cartService.checkoutCartItems(userId, cartCheckoutDto)).rejects.toThrowError(
 				prismaError,
 			);
 			expect(cartRepository.getCartItems).toHaveBeenCalledWith(userId);
-			expect(productsRepository.findProductByKeyOrThrow).toHaveBeenCalledTimes(2);
-			expect(productsRepository.updateProduct).toHaveBeenCalled();
+			expect(productsRepository.findProductByKey).toHaveBeenCalledTimes(2);
+			expect(cartRepository.checkoutCartItems).toHaveBeenCalledWith(userId, [
+				{ productId: 1, quantity: 2, optionId: null },
+				{ productId: 2, quantity: 1, optionId: null },
+			]);
 		});
 	});
 
@@ -398,23 +431,22 @@ describe('Сервис корзины', () => {
 		const productId = 1;
 
 		it('Должен успешно удалить товар из корзины', async () => {
-			cartRepository.findCartItem.mockResolvedValue(mockCartItem);
-			cartRepository.removeCartItem.mockResolvedValue(undefined);
+			cartRepository.removeCartItem.mockResolvedValue({ count: 1 });
 
-			await cartService.removeCartItem(userId, productId);
+			await cartService.removeCartItem(userId, productId, undefined);
 
-			expect(cartRepository.findCartItem).toHaveBeenCalledWith(userId, productId);
-			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId);
+			expect(cartRepository.findCartItem).not.toHaveBeenCalled();
+			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId, null);
 		});
 
 		it('Должен выбросить ошибку 404, если элемент корзины не найден', async () => {
-			cartRepository.findCartItem.mockResolvedValue(null);
+			cartRepository.removeCartItem.mockResolvedValue({ count: 0 });
 
-			await expect(cartService.removeCartItem(userId, productId)).rejects.toThrowError(
+			await expect(cartService.removeCartItem(userId, productId, undefined)).rejects.toThrowError(
 				new HTTPError(404, MESSAGES.CART_ITEM_NOT_FOUND),
 			);
-			expect(cartRepository.findCartItem).toHaveBeenCalledWith(userId, productId);
-			expect(cartRepository.removeCartItem).not.toHaveBeenCalled();
+			expect(cartRepository.findCartItem).not.toHaveBeenCalled();
+			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId, null);
 		});
 
 		it('Должен выбросить ошибку при сбое базы данных', async () => {
@@ -422,12 +454,13 @@ describe('Сервис корзины', () => {
 				code: 'P2002',
 				clientVersion: '',
 			});
-			cartRepository.findCartItem.mockResolvedValue(mockCartItem);
 			cartRepository.removeCartItem.mockRejectedValue(prismaError);
 
-			await expect(cartService.removeCartItem(userId, productId)).rejects.toThrowError(prismaError);
-			expect(cartRepository.findCartItem).toHaveBeenCalledWith(userId, productId);
-			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId);
+			await expect(cartService.removeCartItem(userId, productId, undefined)).rejects.toThrowError(
+				prismaError,
+			);
+			expect(cartRepository.findCartItem).not.toHaveBeenCalled();
+			expect(cartRepository.removeCartItem).toHaveBeenCalledWith(userId, productId, null);
 		});
 	});
 

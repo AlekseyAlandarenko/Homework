@@ -18,10 +18,8 @@ export class PrismaService {
 			await this.client.$connect();
 			this.logger.log(MESSAGES.PRISMA_DB_CONNECT_SUCCESS);
 		} catch (e) {
-			if (e instanceof Error) {
-				this.logger.error(MESSAGES.PRISMA_DB_CONNECT_FAILED);
-			}
-			throw e;
+			this.logger.error(`${MESSAGES.PRISMA_DB_CONNECT_FAILED}: ${e}`);
+			throw new Error(MESSAGES.DATABASE_CONNECTION_ERROR);
 		}
 	}
 
@@ -51,25 +49,39 @@ export class PrismaService {
 			if (validAddresses.length !== addressIds.length) {
 				throw new HTTPError(422, MESSAGES.INVALID_ADDRESSES);
 			}
+			for (const address of validAddresses) {
+				if (!address.cityId) {
+					throw new HTTPError(422, MESSAGES.ADDRESS_CITY_NOT_SPECIFIED);
+				}
+			}
 		}
+	}
+
+	private getErrorMessage(
+		meta: { field_name?: string } | undefined,
+		defaultMessage: string,
+	): string {
+		const field = meta?.field_name;
+		const errorMap: Record<string, string> = {
+			cityId: MESSAGES.CITY_NOT_FOUND,
+			categoryId: MESSAGES.CATEGORY_NOT_FOUND,
+			productId: MESSAGES.PRODUCT_NOT_FOUND,
+			userId: MESSAGES.USER_NOT_FOUND,
+			optionId: MESSAGES.OPTION_NOT_FOUND,
+		};
+		return field && errorMap[field] ? errorMap[field] : defaultMessage;
 	}
 
 	handlePrismaError(error: unknown, errorMessage: string): never {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			const meta = error.meta as { field_name?: string } | undefined;
-			this.logger.error(MESSAGES.PRISMA_ERROR_LOG);
+			this.logger.error(`${MESSAGES.PRISMA_ERROR_LOG}: ${error.message}`);
 			switch (error.code) {
 				case 'P2002':
 					throw new HTTPError(409, MESSAGES.UNIQUE_CONSTRAINT_FAILED);
 				case 'P2025':
-					throw new HTTPError(404, errorMessage);
 				case 'P2003':
-					throw new HTTPError(
-						422,
-						meta?.field_name?.includes('cityId')
-							? MESSAGES.CITY_NOT_FOUND
-							: MESSAGES.INVALID_CATEGORIES,
-					);
+					throw new HTTPError(404, this.getErrorMessage(meta, errorMessage));
 				case 'P2014':
 					throw new HTTPError(409, MESSAGES.REQUIRED_RELATION_VIOLATION);
 				case 'P2009':
@@ -85,7 +97,7 @@ export class PrismaService {
 					throw new HTTPError(500, MESSAGES.INTERNAL_SERVER_ERROR);
 			}
 		}
-		this.logger.error(MESSAGES.PRISMA_ERROR_LOG);
+		this.logger.error(`${MESSAGES.PRISMA_ERROR_LOG}: ${error}`);
 		throw new HTTPError(500, MESSAGES.INTERNAL_SERVER_ERROR);
 	}
 
@@ -131,7 +143,7 @@ export class PrismaService {
 	async findAddressesById(
 		addressIds: number[],
 		userId: number,
-	): Promise<{ id: number; address: string; isDefault: boolean }[]> {
+	): Promise<{ id: number; address: string; isDefault: boolean; cityId: number | null }[]> {
 		return this.executePrismaOperation(
 			() =>
 				this.client.addressModel.findMany({
@@ -140,7 +152,7 @@ export class PrismaService {
 						userId,
 						isDeleted: false,
 					},
-					select: { id: true, address: true, isDefault: true },
+					select: { id: true, address: true, isDefault: true, cityId: true },
 				}),
 			MESSAGES.ADDRESSES_NOT_FOUND,
 		);
@@ -148,7 +160,7 @@ export class PrismaService {
 
 	async createAddresses(
 		userId: number,
-		addresses: { address: string; isDefault: boolean }[],
+		addresses: { address: string; isDefault: boolean; cityId?: number }[],
 	): Promise<void> {
 		await this.executePrismaOperation(
 			() =>
@@ -157,6 +169,7 @@ export class PrismaService {
 						userId,
 						address: a.address,
 						isDefault: a.isDefault,
+						cityId: a.cityId,
 					})),
 				}),
 			MESSAGES.ADDRESSES_CREATION_FAILED,
@@ -176,12 +189,12 @@ export class PrismaService {
 
 	async findUserAddresses(
 		userId: number,
-	): Promise<{ id: number; address: string; isDefault: boolean }[]> {
+	): Promise<{ id: number; address: string; isDefault: boolean; cityId: number | null }[]> {
 		return this.executePrismaOperation(
 			() =>
 				this.client.addressModel.findMany({
 					where: { userId, isDeleted: false },
-					select: { id: true, address: true, isDefault: true },
+					select: { id: true, address: true, isDefault: true, cityId: true },
 				}),
 			MESSAGES.ADDRESSES_NOT_FOUND,
 		);

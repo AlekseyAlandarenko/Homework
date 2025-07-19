@@ -39,6 +39,9 @@ export class PromotionsService implements IPromotionsService {
 			supplierId,
 			dto.cityId,
 			dto.categoryIds || [],
+			dto.publicationDate ? new Date(dto.publicationDate) : undefined,
+			dto.imageUrl,
+			dto.linkUrl,
 		);
 	}
 
@@ -209,12 +212,15 @@ export class PromotionsService implements IPromotionsService {
 		if (dto.description !== undefined) data.description = dto.description;
 		if (dto.startDate) data.startDate = new Date(dto.startDate);
 		if (dto.endDate) data.endDate = new Date(dto.endDate);
+		if (dto.publicationDate) data.publicationDate = new Date(dto.publicationDate);
 		if (dto.cityId !== undefined) {
 			data.city = dto.cityId ? { connect: { id: dto.cityId } } : { disconnect: true };
 		}
 		if (dto.categoryIds) {
 			data.categories = { set: dto.categoryIds.map((id) => ({ id })) };
 		}
+		if (dto.imageUrl !== undefined) data.imageUrl = dto.imageUrl;
+		if (dto.linkUrl !== undefined) data.linkUrl = dto.linkUrl;
 
 		return this.promotionsRepository.updatePromotion(id, data);
 	}

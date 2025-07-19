@@ -15,6 +15,7 @@ export class ProductsRepository implements IProductsRepository {
 	readonly productInclude = {
 		categories: { select: { id: true, name: true } },
 		city: { select: { id: true, name: true } },
+		options: { select: { id: true, name: true, value: true, priceModifier: true } },
 	};
 
 	private readonly productSelect = {
@@ -41,12 +42,6 @@ export class ProductsRepository implements IProductsRepository {
 		return this.prismaService.executePrismaOperation(
 			() =>
 				this.prismaService.client.$transaction(async (prisma) => {
-					if (product.cityId) {
-						await this.prismaService.validateCity(product.cityId);
-					}
-					if (product.categoryIds?.length) {
-						await this.prismaService.validateCategories(product.categoryIds);
-					}
 					return prisma.productModel.create({
 						data: {
 							name: product.name,
@@ -60,6 +55,14 @@ export class ProductsRepository implements IProductsRepository {
 							cityId: product.cityId,
 							categories: {
 								connect: product.categoryIds?.map((id) => ({ id })) || [],
+							},
+							options: {
+								create:
+									product.options?.map((opt) => ({
+										name: opt.name,
+										value: opt.value,
+										priceModifier: opt.priceModifier,
+									})) || [],
 							},
 							isDeleted: product.isDeleted,
 						},
@@ -222,17 +225,6 @@ export class ProductsRepository implements IProductsRepository {
 		id: number,
 		data: Prisma.ProductModelUpdateInput,
 	): Promise<ProductWithRelations> {
-		if (data.city && typeof data.city === 'object' && 'connect' in data.city && data.city.connect) {
-			const cityId = (data.city.connect as { id: number }).id;
-			await this.prismaService.validateCity(cityId);
-		}
-		if (data.categories?.set) {
-			const categoryIds = (data.categories.set as { id: number }[]).map((c) => c.id);
-			if (categoryIds.length) {
-				await this.prismaService.validateCategories(categoryIds);
-			}
-		}
-
 		return this.prismaService.executePrismaOperation(
 			() =>
 				this.prismaService.client.$transaction(async (prisma) => {

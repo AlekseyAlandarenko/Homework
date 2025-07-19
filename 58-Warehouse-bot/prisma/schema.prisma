@@ -24,7 +24,7 @@ model UserModel {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   isDeleted           Boolean           @default(false)
-  sessions           TelegramSession[]   @relation(name: "UserSessions")
+  sessions            TelegramSession[] @relation(name: "UserSessions")
 }
 
 model ProductModel {
@@ -39,6 +39,7 @@ model ProductModel {
   cityId        Int?             @map("city_id")
   city          CityModel?       @relation(name: "ProductCity", fields: [cityId], references: [id])
   categories    CategoryModel[]  @relation(name: "ProductCategories")
+  options       ProductOption[]  @relation(name: "ProductOptions")
   createdById   Int              @map("created_by_id")
   createdBy     UserModel        @relation(name: "CreatedProducts", fields: [createdById], references: [id], onDelete: Cascade)
   updatedById   Int?             @map("updated_by_id")
@@ -49,17 +50,32 @@ model ProductModel {
   isDeleted     Boolean          @default(false)
 }
 
+model ProductOption {
+  id            Int           @id @default(autoincrement())
+  productId     Int           @map("product_id")
+  product       ProductModel  @relation(name: "ProductOptions", fields: [productId], references: [id], onDelete: Cascade)
+  name          String
+  value         String
+  priceModifier Float         @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  carts         CartModel[]
+  @@unique([productId, name, value])
+}
+
 model CartModel {
-  id         Int           @id @default(autoincrement())
-  userId     Int           @map("user_id")
-  productId  Int           @map("product_id")
+  id         Int            @id @default(autoincrement())
+  userId     Int            @map("user_id")
+  productId  Int            @map("product_id")
+  optionId   Int?           @map("option_id")
   quantity   Int
   price      Float
-  user       UserModel     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product    ProductModel  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  @@unique([userId, productId])
+  user       UserModel      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    ProductModel   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  option     ProductOption? @relation(fields: [optionId], references: [id])
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  @@unique([userId, productId, optionId])
 }
 
 model AddressModel {
@@ -67,6 +83,8 @@ model AddressModel {
   userId     Int        @map("user_id")
   user       UserModel  @relation(fields: [userId], references: [id], onDelete: Cascade)
   address    String
+  cityId     Int?       @map("city_id")
+  city       CityModel? @relation(name: "AddressCity", fields: [cityId], references: [id])
   isDefault  Boolean    @default(false)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -78,6 +96,7 @@ model CityModel {
   name      String          @unique
   users     UserModel[]     @relation(name: "UserCity")
   products  ProductModel[]  @relation(name: "ProductCity")
+  addresses AddressModel[]  @relation(name: "AddressCity")
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 }

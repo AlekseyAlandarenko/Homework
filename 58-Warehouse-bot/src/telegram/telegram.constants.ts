@@ -13,6 +13,10 @@ export const TELEGRAM_ACTIONS = {
 	SELECT_ADDRESS: 'select_address',
 	AWAITING_ADDRESS_INPUT: 'awaiting_address_input',
 	FINISH_ADD_TO_CART: 'finish_add_to_cart',
+	SEARCH_PRODUCTS: 'search_products',
+	REMOVE_FROM_CART: 'remove_from_cart',
+	SELECT_OPTION: 'select_option',
+	CONFIRM_CHECKOUT: 'confirm_checkout',
 } as const;
 
 export type CallbackAction = (typeof TELEGRAM_ACTIONS)[keyof typeof TELEGRAM_ACTIONS];
@@ -26,4 +30,8 @@ export const TELEGRAM_BUTTONS = {
 	ADD_TO_CART: 'Добавить в корзину',
 	FINISH_ADDRESS: 'Завершить ввод адреса',
 	FINISH_ADD_TO_CART: 'Завершить добавление в корзину',
+	SEARCH_PRODUCTS: 'Поиск товаров',
+	REMOVE_FROM_CART: 'Удалить из корзины',
+	SELECT_OPTION: 'Выбрать вариант',
+	CONFIRM_CHECKOUT: 'Подтвердить заказ',
 } as const;

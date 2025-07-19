@@ -13,6 +13,7 @@ import { AuthMiddleware } from './common/auth.middleware';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { ITelegramBotController } from './telegram/telegram-bot.controller.interface';
+import { CronService } from './cron/cron.service';
 
 @injectable()
 export class App {
@@ -28,6 +29,7 @@ export class App {
 		@inject(TYPES.PrismaService) private prismaService: PrismaService,
 		@inject(TYPES.AuthMiddleware) private authMiddleware: AuthMiddleware,
 		@inject(TYPES.TelegramBotController) private telegramBotController: ITelegramBotController,
+		@inject(TYPES.CronService) private cronService: CronService,
 	) {
 		this.app = express();
 		this.port = Number(process.env.PORT) || 8000;
@@ -88,6 +90,7 @@ export class App {
 		this.useRoutes();
 		this.useExceptionFilters();
 		await this.prismaService.connect();
+		await this.cronService.start();
 		this.server = this.app.listen(this.port, () => {
 			this.logger.log(`Сервер запущен на http://localhost:${this.port}`);
 			this.logger.log(`Документация доступна на http://localhost:${this.port}/api-docs`);
@@ -103,6 +106,7 @@ export class App {
 				this.server.close(async () => {
 					this.logger.log('Сервер закрыт');
 					await this.prismaService.disconnect();
+					await this.cronService.stop();
 					if (process.env.NODE_ENV !== 'test') {
 						try {
 							await this.telegramBotController.stop();

@@ -59,6 +59,15 @@ async function seed() {
     const { SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, SEED_ADMIN_NAME, SEED_ADMIN_CITY, SALT } = validateEnv();
     logger.info(MESSAGES.SEED_START);
 
+    await prisma.userModel.deleteMany();
+    await prisma.productModel.deleteMany();
+    await prisma.productOption.deleteMany();
+    await prisma.categoryModel.deleteMany();
+    await prisma.cityModel.deleteMany();
+    await prisma.addressModel.deleteMany();
+    await prisma.telegramSession.deleteMany();
+    logger.info('База данных очищена');
+
     const cities = [
       { name: 'Москва' },
       { name: 'Санкт-Петербург' },
@@ -134,6 +143,13 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Москва',
           categories: ['Одежда', 'Развлечения'],
+          options: [
+            { name: 'Размер', value: 'S', priceModifier: 0 },
+            { name: 'Размер', value: 'M', priceModifier: 50 },
+            { name: 'Размер', value: 'L', priceModifier: 100 },
+            { name: 'Цвет', value: 'Белый', priceModifier: 0 },
+            { name: 'Цвет', value: 'Черный', priceModifier: 20 },
+          ],
         },
         {
           name: 'Кофе в зернах',
@@ -144,6 +160,10 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Санкт-Петербург',
           categories: ['Еда'],
+          options: [
+            { name: 'Вес', value: '250г', priceModifier: 0 },
+            { name: 'Вес', value: '500г', priceModifier: 800 },
+          ],
         },
         {
           name: 'Смартфон X',
@@ -154,6 +174,12 @@ async function seed() {
           status: 'OUT_OF_STOCK',
           city: 'Новосибирск',
           categories: ['Техника'],
+          options: [
+            { name: 'Память', value: '128GB', priceModifier: 0 },
+            { name: 'Память', value: '256GB', priceModifier: 5000 },
+            { name: 'Цвет', value: 'Черный', priceModifier: 0 },
+            { name: 'Цвет', value: 'Синий', priceModifier: 1000 },
+          ],
         },
         {
           name: 'Наушники беспроводные',
@@ -164,6 +190,10 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Москва',
           categories: ['Техника', 'Развлечения'],
+          options: [
+            { name: 'Цвет', value: 'Белый', priceModifier: 0 },
+            { name: 'Цвет', value: 'Черный', priceModifier: 500 },
+          ],
         },
         {
           name: 'Шоколадный торт',
@@ -174,6 +204,10 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Санкт-Петербург',
           categories: ['Еда'],
+          options: [
+            { name: 'Размер', value: '1кг', priceModifier: 0 },
+            { name: 'Размер', value: '2кг', priceModifier: 1000 },
+          ],
         },
         {
           name: 'Джинсы классические',
@@ -184,6 +218,12 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Новосибирск',
           categories: ['Одежда'],
+          options: [
+            { name: 'Размер', value: '30', priceModifier: 0 },
+            { name: 'Размер', value: '32', priceModifier: 200 },
+            { name: 'Цвет', value: 'Синий', priceModifier: 0 },
+            { name: 'Цвет', value: 'Черный', priceModifier: 300 },
+          ],
         },
         {
           name: 'Ноутбук Pro',
@@ -194,6 +234,10 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Москва',
           categories: ['Техника'],
+          options: [
+            { name: 'Память', value: '16GB', priceModifier: 0 },
+            { name: 'Память', value: '32GB', priceModifier: 10000 },
+          ],
         },
         {
           name: 'Кроссовки спортивные',
@@ -204,6 +248,12 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Санкт-Петербург',
           categories: ['Одежда', 'Развлечения'],
+          options: [
+            { name: 'Размер', value: '41', priceModifier: 0 },
+            { name: 'Размер', value: '42', priceModifier: 100 },
+            { name: 'Цвет', value: 'Белый', priceModifier: 0 },
+            { name: 'Цвет', value: 'Красный', priceModifier: 200 },
+          ],
         },
         {
           name: 'Чай зеленый',
@@ -214,6 +264,10 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Новосибирск',
           categories: ['Еда'],
+          options: [
+            { name: 'Вес', value: '100г', priceModifier: 0 },
+            { name: 'Вес', value: '200г', priceModifier: 300 },
+          ],
         },
         {
           name: 'Планшет 10"',
@@ -224,6 +278,12 @@ async function seed() {
           status: 'AVAILABLE',
           city: 'Москва',
           categories: ['Техника'],
+          options: [
+            { name: 'Память', value: '64GB', priceModifier: 0 },
+            { name: 'Память', value: '128GB', priceModifier: 3000 },
+            { name: 'Цвет', value: 'Серебристый', priceModifier: 0 },
+            { name: 'Цвет', value: 'Черный', priceModifier: 500 },
+          ],
         },
       ];
 
@@ -255,6 +315,13 @@ async function seed() {
                 }
                 return { id: cat.id };
               }),
+            },
+            options: {
+              create: product.options.map(option => ({
+                name: option.name,
+                value: option.value,
+                priceModifier: option.priceModifier,
+              })),
             },
           },
         });

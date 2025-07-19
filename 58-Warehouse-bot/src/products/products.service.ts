@@ -41,6 +41,7 @@ export class ProductsService implements IProductsService {
 			creatorId,
 			dto.cityId,
 			dto.categoryIds || [],
+			dto.options || [],
 		);
 	}
 
@@ -177,13 +178,12 @@ export class ProductsService implements IProductsService {
 	}
 
 	async getProductById(id: number): Promise<ProductWithRelations> {
-		const product = await this.ensureProductExists(id);
-		return product;
+		return this.ensureProductExists(id);
 	}
 
 	async getProductsForUser(
 		telegramId: string,
-		pagination: PaginationDto = DEFAULT_PAGINATION,
+		pagination: PaginationDto,
 	): Promise<PaginatedResponse<ProductWithRelations>> {
 		const { page = DEFAULT_PAGINATION.page, limit = DEFAULT_PAGINATION.limit } = pagination;
 		const skip = (page - 1) * limit;
@@ -228,6 +228,23 @@ export class ProductsService implements IProductsService {
 			await this.ensureUniqueSku(dto.sku, id);
 		}
 
+		if (dto.options?.length) {
+			for (const option of dto.options) {
+				const exists = await this.prismaService.client.productOption.findUnique({
+					where: {
+						productId_name_value: {
+							productId: id,
+							name: option.name,
+							value: option.value,
+						},
+					},
+				});
+				if (exists) {
+					throw new HTTPError(409, MESSAGES.OPTION_ALREADY_EXISTS);
+				}
+			}
+		}
+
 		const data: Prisma.ProductModelUpdateInput = {};
 		if (dto.name) data.name = dto.name;
 		if (dto.description !== undefined) data.description = dto.description;
@@ -244,6 +261,16 @@ export class ProductsService implements IProductsService {
 		}
 		if (dto.categoryIds) {
 			data.categories = { set: dto.categoryIds.map((id) => ({ id })) };
+		}
+		if (dto.options) {
+			data.options = {
+				deleteMany: {},
+				create: dto.options.map((opt) => ({
+					name: opt.name,
+					value: opt.value,
+					priceModifier: opt.priceModifier,
+				})),
+			};
 		}
 
 		data.updatedBy = { connect: { id: userId } };

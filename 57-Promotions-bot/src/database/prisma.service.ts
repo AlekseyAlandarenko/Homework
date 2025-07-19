@@ -45,22 +45,30 @@ export class PrismaService {
 		}
 	}
 
+	private getErrorMessage(
+		meta: { field_name?: string } | undefined,
+		defaultMessage: string,
+	): string {
+		const field = meta?.field_name;
+		const errorMap: Record<string, string> = {
+			cityId: MESSAGES.CITY_NOT_FOUND,
+			categoryId: MESSAGES.CATEGORY_NOT_FOUND,
+			productId: MESSAGES.PROMOTION_NOT_FOUND,
+			userId: MESSAGES.USER_NOT_FOUND,
+		};
+		return field && errorMap[field] ? errorMap[field] : defaultMessage;
+	}
+
 	handlePrismaError(error: unknown, errorMessage: string): never {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			const meta = error.meta as { field_name?: string } | undefined;
-			this.logger.error(MESSAGES.PRISMA_ERROR_LOG);
+			this.logger.error(`${MESSAGES.PRISMA_ERROR_LOG}: ${error.message}`);
 			switch (error.code) {
 				case 'P2002':
 					throw new HTTPError(409, MESSAGES.UNIQUE_CONSTRAINT_FAILED);
 				case 'P2025':
-					throw new HTTPError(404, errorMessage);
 				case 'P2003':
-					throw new HTTPError(
-						422,
-						meta?.field_name?.includes('cityId')
-							? MESSAGES.CITY_NOT_FOUND
-							: MESSAGES.INVALID_CATEGORIES,
-					);
+					throw new HTTPError(404, this.getErrorMessage(meta, errorMessage));
 				case 'P2014':
 					throw new HTTPError(409, MESSAGES.REQUIRED_RELATION_VIOLATION);
 				case 'P2009':
@@ -76,7 +84,7 @@ export class PrismaService {
 					throw new HTTPError(500, MESSAGES.INTERNAL_SERVER_ERROR);
 			}
 		}
-		this.logger.error(MESSAGES.PRISMA_ERROR_LOG);
+		this.logger.error(`${MESSAGES.PRISMA_ERROR_LOG}: ${error}`);
 		throw new HTTPError(500, MESSAGES.INTERNAL_SERVER_ERROR);
 	}
 

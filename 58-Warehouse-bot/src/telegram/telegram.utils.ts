@@ -10,9 +10,10 @@ export interface CallbackData {
 	action: CallbackAction;
 	id?: number;
 	page?: number;
+	optionId?: number;
 }
 
-type IdType = 'CITY' | 'CATEGORY' | 'PRODUCT' | 'ADDRESS';
+type IdType = 'CITY' | 'CATEGORY' | 'PRODUCT' | 'ADDRESS' | 'OPTION';
 
 @injectable()
 export class TelegramUtils {
@@ -46,6 +47,10 @@ export class TelegramUtils {
 			categoriesCache: [],
 			awaitingAddressInput: false,
 			selectedAddress: '',
+			awaitingSearchInput: false,
+			searchQuery: '',
+			awaitingOptionSelection: false,
+			selectedProductId: undefined,
 		};
 	}
 
@@ -54,67 +59,87 @@ export class TelegramUtils {
 		ctx.session.awaitingCategories = false;
 		ctx.session.awaitingRemoveCategories = false;
 		ctx.session.awaitingAddressInput = false;
+		ctx.session.awaitingSearchInput = false;
+		ctx.session.awaitingOptionSelection = false;
 		Object.assign(ctx.session, flags);
 	}
 
 	parseCallbackData(data: string): CallbackData {
 		const parts = data.split('_');
-		let action: string;
-		let param: string | undefined;
 
-		if (
-			data === TELEGRAM_ACTIONS.CANCEL_ACTION ||
-			data === TELEGRAM_ACTIONS.FINISH_CATEGORIES ||
-			data === TELEGRAM_ACTIONS.FINISH_REMOVE_CATEGORIES ||
-			data === TELEGRAM_ACTIONS.AWAITING_ADDRESS_INPUT ||
-			data === TELEGRAM_ACTIONS.FINISH_ADD_TO_CART
-		) {
-			action = data;
-		} else if (data.startsWith(TELEGRAM_ACTIONS.SELECT_CITY)) {
-			action = TELEGRAM_ACTIONS.SELECT_CITY;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.SELECT_CATEGORY)) {
-			action = TELEGRAM_ACTIONS.SELECT_CATEGORY;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.REMOVE_CATEGORY)) {
-			action = TELEGRAM_ACTIONS.REMOVE_CATEGORY;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.PREV_PAGE)) {
-			action = TELEGRAM_ACTIONS.PREV_PAGE;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.NEXT_PAGE)) {
-			action = TELEGRAM_ACTIONS.NEXT_PAGE;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.PREV_PRODUCT_PAGE)) {
-			action = TELEGRAM_ACTIONS.PREV_PRODUCT_PAGE;
-			param = parts[3];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.NEXT_PRODUCT_PAGE)) {
-			action = TELEGRAM_ACTIONS.NEXT_PRODUCT_PAGE;
-			param = parts[3];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.ADD_TO_CART)) {
-			action = TELEGRAM_ACTIONS.ADD_TO_CART;
-			param = parts[3];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.SELECT_ADDRESS)) {
-			action = TELEGRAM_ACTIONS.SELECT_ADDRESS;
-			param = parts[2];
-		} else {
+		const actions: {
+			[key: string]: { action: CallbackAction; idIndex?: number; optionIdIndex?: number };
+		} = {
+			[TELEGRAM_ACTIONS.CANCEL_ACTION]: { action: TELEGRAM_ACTIONS.CANCEL_ACTION },
+			[TELEGRAM_ACTIONS.FINISH_CATEGORIES]: { action: TELEGRAM_ACTIONS.FINISH_CATEGORIES },
+			[TELEGRAM_ACTIONS.FINISH_REMOVE_CATEGORIES]: {
+				action: TELEGRAM_ACTIONS.FINISH_REMOVE_CATEGORIES,
+			},
+			[TELEGRAM_ACTIONS.AWAITING_ADDRESS_INPUT]: {
+				action: TELEGRAM_ACTIONS.AWAITING_ADDRESS_INPUT,
+			},
+			[TELEGRAM_ACTIONS.FINISH_ADD_TO_CART]: { action: TELEGRAM_ACTIONS.FINISH_ADD_TO_CART },
+			[TELEGRAM_ACTIONS.SEARCH_PRODUCTS]: { action: TELEGRAM_ACTIONS.SEARCH_PRODUCTS },
+			[TELEGRAM_ACTIONS.CONFIRM_CHECKOUT]: { action: TELEGRAM_ACTIONS.CONFIRM_CHECKOUT },
+			[TELEGRAM_ACTIONS.SELECT_CITY]: { action: TELEGRAM_ACTIONS.SELECT_CITY, idIndex: 2 },
+			[TELEGRAM_ACTIONS.SELECT_CATEGORY]: { action: TELEGRAM_ACTIONS.SELECT_CATEGORY, idIndex: 2 },
+			[TELEGRAM_ACTIONS.REMOVE_CATEGORY]: { action: TELEGRAM_ACTIONS.REMOVE_CATEGORY, idIndex: 2 },
+			[TELEGRAM_ACTIONS.PREV_PAGE]: { action: TELEGRAM_ACTIONS.PREV_PAGE, idIndex: 2 },
+			[TELEGRAM_ACTIONS.NEXT_PAGE]: { action: TELEGRAM_ACTIONS.NEXT_PAGE, idIndex: 2 },
+			[TELEGRAM_ACTIONS.PREV_PRODUCT_PAGE]: {
+				action: TELEGRAM_ACTIONS.PREV_PRODUCT_PAGE,
+				idIndex: 3,
+			},
+			[TELEGRAM_ACTIONS.NEXT_PRODUCT_PAGE]: {
+				action: TELEGRAM_ACTIONS.NEXT_PRODUCT_PAGE,
+				idIndex: 3,
+			},
+			[TELEGRAM_ACTIONS.ADD_TO_CART]: { action: TELEGRAM_ACTIONS.ADD_TO_CART, idIndex: 3 },
+			[TELEGRAM_ACTIONS.SELECT_ADDRESS]: { action: TELEGRAM_ACTIONS.SELECT_ADDRESS, idIndex: 2 },
+			[TELEGRAM_ACTIONS.REMOVE_FROM_CART]: {
+				action: TELEGRAM_ACTIONS.REMOVE_FROM_CART,
+				idIndex: 3,
+				optionIdIndex: 4,
+			},
+			[TELEGRAM_ACTIONS.SELECT_OPTION]: {
+				action: TELEGRAM_ACTIONS.SELECT_OPTION,
+				idIndex: 2,
+				optionIdIndex: 3,
+			},
+		};
+
+		const match = Object.keys(actions).find((key) => data === key || data.startsWith(key + '_'));
+		if (!match) {
 			this.logger.error(`Недействительное действие callback: ${data}`);
 			throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_ACTION);
 		}
 
-		if (!Object.values(TELEGRAM_ACTIONS).includes(action as CallbackAction)) {
-			this.logger.error(`Недействительное действие callback: ${action}`);
-			throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_ACTION);
-		}
+		const { action, idIndex, optionIdIndex } = actions[match];
+		const result: CallbackData = { action };
 
-		const result: CallbackData = { action: action as CallbackAction };
-		if (param) {
+		if (idIndex !== undefined) {
+			const param = parts[idIndex];
+			if (!param) {
+				this.logger.warn(`Отсутствует параметр для действия ${action}`);
+				throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_PARAM);
+			}
 			const num = Number(param);
-			if (!isNaN(num) && num > 0) {
-				result[action.includes('page') ? 'page' : 'id'] = num;
-			} else {
+			if (isNaN(num) || num <= 0) {
 				this.logger.warn(`Недопустимый параметр в callback: ${param}`);
 				throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_PARAM);
+			}
+			result[action.includes('page') ? 'page' : 'id'] = num;
+		}
+
+		if (optionIdIndex !== undefined) {
+			const optionParam = parts[optionIdIndex];
+			if (optionParam) {
+				const num = Number(optionParam);
+				if (isNaN(num) || num <= 0) {
+					this.logger.warn(`Недопустимый optionId в callback: ${optionParam}`);
+					throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_PARAM);
+				}
+				result.optionId = num;
 			}
 		}
 

@@ -218,7 +218,9 @@ describe('Тестирование промоакций (E2E)', () => {
 
 			expect(res.statusCode).toBe(200);
 			expect(res.body.data.items).toHaveLength(7);
-			expect(res.body.data.items.every((p: any) => p.status === PromotionStatus.APPROVED)).toBe(true);
+			expect(res.body.data.items.every((p: any) => p.status === PromotionStatus.APPROVED)).toBe(
+				true,
+			);
 		});
 
 		it('Должен получить все промоакции без фильтра', async () => {

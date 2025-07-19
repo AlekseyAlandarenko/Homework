@@ -31,6 +31,7 @@ export class UsersRepository implements IUsersRepository {
 		createdAt: true,
 		updatedAt: true,
 		isDeleted: true,
+		notificationsEnabled: true,
 		...this.userInclude,
 	};
 
@@ -48,6 +49,7 @@ export class UsersRepository implements IUsersRepository {
 							password: user.password,
 							telegramId: user.telegramId,
 							cityId: user.cityId,
+							notificationsEnabled: user.notificationsEnabled ?? true,
 							preferredCategories: {
 								connect: user.preferredCategories?.map((id) => ({ id })) || [],
 							},
@@ -70,7 +72,7 @@ export class UsersRepository implements IUsersRepository {
 			where: {
 				[key]: value,
 				...(includeDeleted ? {} : { isDeleted: false }),
-				...(userId && { supplierId: userId }),
+				...(userId && { id: userId }),
 			},
 			include: this.userInclude,
 		});
@@ -108,23 +110,20 @@ export class UsersRepository implements IUsersRepository {
 			...(role ? { role } : {}),
 		};
 
-		const items = await this.prismaService.executePrismaOperation(
+		const [items, total] = await this.prismaService.executePrismaOperation(
 			() =>
-				this.prismaService.client.userModel.findMany({
-					where: combinedFilters,
-					select: this.userSelect,
-					skip,
-					take: limit,
-					orderBy,
-				}),
-			MESSAGES.USER_NOT_FOUND,
-		);
-
-		const total = await this.prismaService.executePrismaOperation(
-			() =>
-				this.prismaService.client.userModel.count({
-					where: combinedFilters,
-				}),
+				this.prismaService.client.$transaction([
+					this.prismaService.client.userModel.findMany({
+						where: combinedFilters,
+						select: this.userSelect,
+						skip,
+						take: limit,
+						orderBy,
+					}),
+					this.prismaService.client.userModel.count({
+						where: combinedFilters,
+					}),
+				]),
 			MESSAGES.USER_NOT_FOUND,
 		);
 

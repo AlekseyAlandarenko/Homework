@@ -47,6 +47,7 @@ export class UsersService implements IUsersService {
 			user.telegramId,
 			user.cityId,
 			user.preferredCategories?.map((c) => c.id) || [],
+			user.notificationsEnabled ?? true,
 			user.id,
 		);
 	}

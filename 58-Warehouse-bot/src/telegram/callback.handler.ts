@@ -3,11 +3,12 @@ import { ExtendedContext } from './telegram-bot.controller';
 import { TelegramBotResponse } from './telegram-bot.service.interface';
 import { ITelegramBotService } from './telegram-bot.service.interface';
 import { TelegramUtils } from './telegram.utils';
-import { TELEGRAM_ACTIONS } from './telegram.constants';
+import { TELEGRAM_ACTIONS, TELEGRAM_BUTTONS } from './telegram.constants';
 import { MESSAGES } from '../common/messages';
 import { TYPES } from '../types';
 import { HTTPError } from '../errors/http-error.class';
 import { ILogger } from '../logger/logger.interface';
+import { Markup } from 'telegraf';
 
 @injectable()
 export class CallbackHandler {
@@ -19,9 +20,11 @@ export class CallbackHandler {
 
 	async handle(ctx: ExtendedContext, callbackData: string): Promise<TelegramBotResponse | null> {
 		try {
-			const { action, id, page } = this.telegramUtils.parseCallbackData(callbackData);
+			const { action, id, page, optionId } = this.telegramUtils.parseCallbackData(callbackData);
 			if (process.env.DEBUG_LOGGING === 'true') {
-				this.logger.log(`Разобранное действие: ${action}, id: ${id}, page: ${page}`);
+				this.logger.log(
+					`Разобранное действие: ${action}, id: ${id}, page: ${page}, optionId: ${optionId}`,
+				);
 			}
 
 			switch (action) {
@@ -32,6 +35,18 @@ export class CallbackHandler {
 						return this.telegramService.createErrorResponse(MESSAGES.TELEGRAM_INVALID_PAGE, true);
 					}
 					return this.telegramService.handleProductPageNavigation(ctx, `${action}_${page}`);
+				case TELEGRAM_ACTIONS.SEARCH_PRODUCTS:
+					ctx.session.awaitingSearchInput = true;
+					return {
+						message: MESSAGES.TELEGRAM_ENTER_SEARCH_QUERY,
+						keyboard: {
+							inline_keyboard: [
+								[Markup.button.callback(TELEGRAM_BUTTONS.CANCEL, TELEGRAM_ACTIONS.CANCEL_ACTION)],
+							],
+						},
+						format: 'plain',
+						editMessage: true,
+					};
 				case TELEGRAM_ACTIONS.SELECT_CITY:
 					if (!id) {
 						this.logger.warn(`Недействительный ID города для действия ${action}`);
@@ -102,7 +117,9 @@ export class CallbackHandler {
 					return {
 						message: MESSAGES.TELEGRAM_ENTER_ADDRESS_PROMPT,
 						keyboard: {
-							inline_keyboard: [],
+							inline_keyboard: [
+								[Markup.button.callback(TELEGRAM_BUTTONS.CANCEL, TELEGRAM_ACTIONS.CANCEL_ACTION)],
+							],
 						},
 						format: 'plain',
 						editMessage: true,
@@ -113,6 +130,26 @@ export class CallbackHandler {
 						this.logger.log(`Завершение добавления в корзину для пользователя ${ctx.from?.id}`);
 					}
 					return this.telegramService.handleCartCommand(ctx);
+				case TELEGRAM_ACTIONS.REMOVE_FROM_CART:
+					if (!id) {
+						this.logger.warn(`Недействительный ID товара для действия ${action}`);
+						return this.telegramService.createErrorResponse(
+							MESSAGES.TELEGRAM_INVALID_PRODUCT,
+							true,
+						);
+					}
+					return this.telegramService.handleRemoveFromCart(ctx, id, optionId);
+				case TELEGRAM_ACTIONS.SELECT_OPTION:
+					if (!id || !optionId) {
+						this.logger.warn(`Недействительные ID товара или опции для действия ${action}`);
+						return this.telegramService.createErrorResponse(
+							MESSAGES.TELEGRAM_INVALID_PRODUCT,
+							true,
+						);
+					}
+					return this.telegramService.handleOptionSelection(ctx, id, optionId);
+				case TELEGRAM_ACTIONS.CONFIRM_CHECKOUT:
+					return this.telegramService.handleConfirmCheckout(ctx);
 				case TELEGRAM_ACTIONS.CANCEL_ACTION:
 					this.telegramUtils.resetSession(ctx);
 					if (process.env.DEBUG_LOGGING === 'true') {

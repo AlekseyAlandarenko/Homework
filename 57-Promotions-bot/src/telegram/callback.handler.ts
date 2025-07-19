@@ -91,7 +91,6 @@ export class CallbackHandler {
 						message: MESSAGES.TELEGRAM_COMMANDS_LIST,
 						keyboard: this.telegramService.createMainMenu(),
 						format: 'plain',
-						editMessage: true,
 					};
 				case TELEGRAM_ACTIONS.PREV_PAGE:
 				case TELEGRAM_ACTIONS.NEXT_PAGE:

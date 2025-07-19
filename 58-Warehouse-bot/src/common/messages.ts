@@ -1,5 +1,4 @@
 export const MESSAGES = {
-	// Общие ошибки
 	UNAUTHORIZED: 'Не авторизован',
 	FORBIDDEN_ACCESS: 'Доступ запрещен',
 	SERVER_ERROR: 'Внутренняя ошибка сервера',
@@ -16,8 +15,6 @@ export const MESSAGES = {
 	INVALID_TOKEN: 'Недействительный токен',
 	ROUTE_REGISTERED: '[BaseController] Маршрут зарегистрирован',
 	CATEGORY_NOT_FOUND: 'Категория не найдена',
-
-	// Валидация
 	PAGE_INVALID_INTEGER: 'Поле "Страница" должно быть целым числом ≥ 1',
 	LIMIT_INVALID_INTEGER: 'Поле "Лимит" должно быть целым числом ≥ 1',
 	INVALID_EMAIL_FORMAT: 'Поле "{{field}}" имеет недействительный формат email',
@@ -90,8 +87,11 @@ export const MESSAGES = {
 	PASSWORD_INVALID_FORMAT: 'Поле "{{field}}" имеет недействительный формат пароля',
 	PASSWORD_REQUIRED_FIELD: 'Поле "Пароль" обязательно',
 	TELEGRAM_ACTION_CANCELLED: 'Действие отменено',
-
-	// Конфигурация и инициализация
+	VALUE_INVALID_FORMAT: 'Поле "Значение" имеет недействительный формат',
+	VALUE_INVALID_LENGTH: 'Поле "Значение" должно быть длиной до 100 символов',
+	VALUE_REQUIRED_FIELD: 'Поле "Значение" обязательно',
+	OPTIONS_INVALID_ARRAY: 'Поле "Опции" имеет недействительный формат массива',
+	OPTION_ALREADY_EXISTS: 'Опция с указанным именем и значением уже существует',
 	CONFIG_ENV_LOADED: '[ConfigService] Конфигурация .env загружена',
 	CONFIG_ENV_READ_FAILED: '[ConfigService] Не удалось прочитать файл .env или он отсутствует',
 	CONFIG_KEY_NOT_SET: '[ConfigService] Переменная конфигурации не установлена',
@@ -115,8 +115,6 @@ export const MESSAGES = {
 	SEED_ADMIN_CITY_NOT_FOUND: 'Город для администратора не найден',
 	SEED_PRODUCT_CITY_NOT_FOUND: 'Город для товара не найден',
 	SEED_INVALID_PRODUCT_CATEGORY: 'Категория для товара недействительна',
-
-	// Пользователи
 	USER_NOT_FOUND: 'Пользователь не найден',
 	USER_ALREADY_EXISTS: 'Пользователь уже существует',
 	USER_NOT_FOUND_AFTER_UNIQUE_CONSTRAINT: 'Пользователь не найден после нарушения уникальности',
@@ -129,12 +127,8 @@ export const MESSAGES = {
 	EMAIL_REQUIRED: 'Электронная почта обязательна',
 	TELEGRAM_USER_NOT_FOUND: 'Пользователь Telegram не найден',
 	EMAIL_ALREADY_EXISTS: 'Электронная почта уже существует',
-
-	// Города
 	CITY_NOT_FOUND: 'Город не найден',
 	CITY_NOT_SELECTED: 'Город не выбран',
-
-	// Продукт
 	PRODUCT_CREATED: 'Товар успешно создан',
 	PRODUCT_UPDATED: 'Товар успешно обновлен',
 	PRODUCT_DELETED: 'Товар успешно удален',
@@ -152,8 +146,6 @@ export const MESSAGES = {
 	PRODUCT_STOCK_RETRIEVED: 'Данные о складских запасах успешно получены',
 	INSUFFICIENT_PRODUCT_QUANTITY: 'Недостаточное количество товара',
 	TELEGRAM_INVALID_PRODUCT: 'Недействительный товар. Пожалуйста, выберите другой.',
-
-	// Корзина
 	CART_ITEM_ADDED: 'Товар добавлен в корзину',
 	CART_RETRIEVED: 'Корзина успешно получена',
 	CHECKOUT_COMPLETED: 'Заказ успешно оформлен',
@@ -162,8 +154,6 @@ export const MESSAGES = {
 	INSUFFICIENT_QUANTITY_IN_CART: 'Недостаточное количество товара в корзине',
 	CART_ADD_FAILED: 'Ошибка при добавлении товара в корзину',
 	CART_ITEM_DELETED: 'Товар удален из корзины',
-
-	// Адрес
 	INVALID_ADDRESSES: 'Неверный адрес',
 	MULTIPLE_DEFAULT_ADDRESS: 'Несколько адресов отмечены как основные',
 	ADDRESSES_RETRIEVED: 'Адреса пользователя успешно получены',
@@ -174,8 +164,6 @@ export const MESSAGES = {
 	ADDRESS_REQUIRED_FIELD: 'Поле "Адрес" обязательно',
 	ADDRESS_INVALID_LENGTH: 'Поле "Адрес" должно быть длиной до 255 символов',
 	ADDRESS_INVALID_DEFAULT: 'Поле "По умолчанию" должно быть булевым значением',
-
-	// Telegram
 	TELEGRAM_TOKEN_NOT_SET: 'Переменная TELEGRAM_BOT_TOKEN не установлена',
 	TELEGRAM_WELCOME_BACK: 'С возвращением, {{username}}!',
 	TELEGRAM_NO_CITY_SELECTED: 'Город не выбран. Используйте /setcity для выбора города.',
@@ -184,7 +172,7 @@ export const MESSAGES = {
 	TELEGRAM_NO_PRODUCTS: 'Нет доступных товаров.',
 	TELEGRAM_NO_CATEGORIES_SELECTED: 'Категории не выбраны. Используйте /setcategories для выбора.',
 	TELEGRAM_CATEGORIES_REMOVED:
-		'Выбранные категории удалены! Используйте /viewcategories для проверки.',
+		'Выбранные категории удалены! Используйте /viewcategories для проверки!',
 	TELEGRAM_NO_CATEGORIES_TO_REMOVE: 'Нет категорий для удаления.',
 	TELEGRAM_USER_ACTIONS_PROMPT:
 		'Используйте /products для просмотра товаров, /setcity для смены города, /viewcity для просмотра текущего города, /setcategories для выбора категорий, /viewcategories для просмотра текущих категорий, /removecategories для удаления категорий, /setaddress для указания адреса доставки, /viewaddress для просмотра текущего адреса, /cart для просмотра корзины или /checkout для оформления заказа.',
@@ -220,15 +208,25 @@ export const MESSAGES = {
 	TELEGRAM_PRODUCT_OUT_OF_STOCK: 'Товар временно недоступен (закончился на складе).',
 	TELEGRAM_ERROR: 'Произошла ошибка. Попробуйте позже.',
 	TELEGRAM_INVALID_PAGE: 'Недействительная страница. Пожалуйста, попробуйте снова.',
-
-	// Признаковые сообщения для Prisma ошибок
+	TELEGRAM_ENTER_SEARCH_QUERY: 'Введите поисковый запрос для поиска товаров:',
+	TELEGRAM_INVALID_SEARCH_QUERY: 'Недействительный поисковой запрос для поиска товаров:',
 	UNIQUE_CONSTRAINT_FAILED: 'Нарушение уникальности данных',
 	REQUIRED_RELATION_VIOLATION: 'Нарушение обязательной связи',
 	INVALID_DATA: 'Недействительные данные',
 	DATABASE_CONNECTION_ERROR: 'Ошибка соединения с базой данных',
 	DATABASE_PANIC: 'Критическая ошибка базы данных',
 	PRISMA_ERROR_LOG: '[PrismaService] Обнаружена ошибка Prisma',
-
-	// Сообщения валидации для DTO
 	NAME_INVALID_LENGTH: 'Поле "Название" должно быть длиной до 200 символов',
+	PRODUCT_CREATION_FAILED: 'Не удалось создать товар',
+	OPTION_NOT_FOUND: 'Опция товара не найдена',
+	PRODUCT_UPDATE_FAILED: 'Не удалось обновить товар',
+	PRODUCT_DELETION_FAILED: 'Не удалось удалить товар',
+	CHECKOUT_FAILED: 'Не удалось оформить заказ',
+	OPTION_ID_INVALID_INTEGER: 'Поле "Идентификатор опции" должно быть целым числом ≥ 1',
+	ADDRESS_ID_INVALID_INTEGER: 'Поле "Идентификатор адреса" должно быть целым числом ≥ 1',
+	ADDRESS_ID_REQUIRED_FIELD: 'Поле "Идентификатор адреса" обязательно',
+	OPTION_ID_INVALID: 'Поле "Идентификатор опции" должно быть целым числом ≥ 1',
+	ADDRESS_CITY_NOT_SPECIFIED: 'Город для адреса не указан',
+	EMPTY_CART_NOT_ALLOWED: 'Нельзя оформить заказ с пустой корзиной',
+	TELEGRAM_INVALID_CITY: 'Нельзя оформить заказ с пустой корзиной',
 } as const;

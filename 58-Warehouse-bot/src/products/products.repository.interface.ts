@@ -6,6 +6,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 export type ProductWithRelations = ProductModel & {
 	categories: { id: number; name: string }[];
 	city: { id: number; name: string } | null;
+	options: { id: number; name: string; value: string; priceModifier: number }[];
 };
 
 export interface IProductsRepository {

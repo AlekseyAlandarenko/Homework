@@ -35,10 +35,24 @@ CREATE TABLE "ProductModel" (
 );
 
 -- CreateTable
+CREATE TABLE "ProductOption" (
+    "id" SERIAL NOT NULL,
+    "product_id" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "priceModifier" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProductOption_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "CartModel" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "product_id" INTEGER NOT NULL,
+    "option_id" INTEGER,
     "quantity" INTEGER NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -52,6 +66,7 @@ CREATE TABLE "AddressModel" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "address" TEXT NOT NULL,
+    "city_id" INTEGER,
     "isDefault" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -118,7 +133,10 @@ CREATE UNIQUE INDEX "UserModel_telegramId_key" ON "UserModel"("telegramId");
 CREATE UNIQUE INDEX "ProductModel_sku_key" ON "ProductModel"("sku");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CartModel_user_id_product_id_key" ON "CartModel"("user_id", "product_id");
+CREATE UNIQUE INDEX "ProductOption_product_id_name_value_key" ON "ProductOption"("product_id", "name", "value");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CartModel_user_id_product_id_option_id_key" ON "CartModel"("user_id", "product_id", "option_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CityModel_name_key" ON "CityModel"("name");
@@ -148,13 +166,22 @@ ALTER TABLE "ProductModel" ADD CONSTRAINT "ProductModel_created_by_id_fkey" FORE
 ALTER TABLE "ProductModel" ADD CONSTRAINT "ProductModel_updated_by_id_fkey" FOREIGN KEY ("updated_by_id") REFERENCES "UserModel"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ProductOption" ADD CONSTRAINT "ProductOption_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "ProductModel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "CartModel" ADD CONSTRAINT "CartModel_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "UserModel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CartModel" ADD CONSTRAINT "CartModel_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "ProductModel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "CartModel" ADD CONSTRAINT "CartModel_option_id_fkey" FOREIGN KEY ("option_id") REFERENCES "ProductOption"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "AddressModel" ADD CONSTRAINT "AddressModel_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "UserModel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AddressModel" ADD CONSTRAINT "AddressModel_city_id_fkey" FOREIGN KEY ("city_id") REFERENCES "CityModel"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TelegramSession" ADD CONSTRAINT "TelegramSession_telegramId_fkey" FOREIGN KEY ("telegramId") REFERENCES "UserModel"("telegramId") ON DELETE RESTRICT ON UPDATE CASCADE;

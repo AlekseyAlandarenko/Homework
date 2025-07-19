@@ -4,45 +4,6 @@ import { MESSAGES } from '../../common/messages';
 import { PROMOTION_STATUSES } from '../../common/constants';
 import { PromotionStatus } from '../../common/enums/promotion-status.enum';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     PromotionsFilterDto:
- *       type: object
- *       description: DTO для фильтрации акций.
- *       properties:
- *         status:
- *           type: string
- *           enum: [PENDING, APPROVED, REJECTED]
- *           description: Статус акции для фильтрации (PENDING — на рассмотрении, APPROVED — утверждена, REJECTED — отклонена).
- *           example: APPROVED
- *         active:
- *           type: boolean
- *           description: Флаг активности акции.
- *           example: true
- *         cityId:
- *           type: integer
- *           description: Идентификатор города для фильтрации.
- *           example: 1
- *         categoryIds:
- *           type: array
- *           items:
- *             type: integer
- *             minimum: 1
- *           description: Идентификаторы категорий для фильтрации.
- *           example: [1, 2]
- *         sortBy:
- *           type: string
- *           enum: [createdAt, title, startDate, endDate, status]
- *           description: Поле для сортировки.
- *           example: createdAt
- *         sortOrder:
- *           type: string
- *           enum: [asc, desc]
- *           description: Порядок сортировки.
- *           example: desc
- */
 export class PromotionsFilterDto {
 	@IsIn(PROMOTION_STATUSES, { message: MESSAGES.STATUS_INVALID_FORMAT })
 	@IsOptional()

@@ -16,6 +16,7 @@ import { PromotionWithRelations } from '../promotions/promotions.repository.inte
 import { DEFAULT_PAGINATION } from '../common/constants';
 import { ILogger } from '../logger/logger.interface';
 import { TelegramUtils } from './telegram.utils';
+import { InlineKeyboardMarkup, ReplyKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
 
 @injectable()
 export class TelegramBotService implements ITelegramBotService {
@@ -36,7 +37,7 @@ export class TelegramBotService implements ITelegramBotService {
 		};
 	}
 
-	private createCancelOnlyKeyboard(): { inline_keyboard: any[][] } {
+	private createCancelOnlyKeyboard(): InlineKeyboardMarkup {
 		return {
 			inline_keyboard: [
 				[Markup.button.callback(TELEGRAM_BUTTONS.CANCEL, TELEGRAM_ACTIONS.CANCEL_ACTION)],
@@ -56,6 +57,26 @@ export class TelegramBotService implements ITelegramBotService {
 				MESSAGES.TELEGRAM_USER_ACTIONS_PROMPT,
 			keyboard: this.createMainMenu(),
 			format: 'plain',
+			editMessage: false,
+		};
+	}
+
+	async handleDisableNotificationsCommand(ctx: ExtendedContext): Promise<TelegramBotResponse> {
+		const dto: UserUpdateProfileDto = {};
+		await this.usersService.updateUserProfile(ctx.user.id, dto, {
+			id: ctx.user.id,
+			role: ctx.user.role as Role,
+		});
+		await this.prismaService.client.userModel.update({
+			where: { id: ctx.user.id },
+			data: { notificationsEnabled: false },
+		});
+		this.logger.log(`Уведомления отключены для пользователя ${ctx.telegramId}`);
+		return {
+			message: MESSAGES.TELEGRAM_NOTIFICATIONS_DISABLED,
+			keyboard: this.createMainMenu(),
+			format: 'plain',
+			editMessage: false,
 		};
 	}
 
@@ -65,7 +86,7 @@ export class TelegramBotService implements ITelegramBotService {
 		});
 		if (!cities.length) {
 			this.logger.warn(`Нет доступных городов для пользователя ${ctx.telegramId}`);
-			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CITIES_AVAILABLE);
+			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CITIES_AVAILABLE, false);
 		}
 		this.telegramUtils.resetSessionFlags(ctx, { awaitingCity: true });
 		return {
@@ -76,13 +97,14 @@ export class TelegramBotService implements ITelegramBotService {
 				(city) => `${TELEGRAM_ACTIONS.SELECT_CITY}_${city.id}`,
 			),
 			format: 'plain',
+			editMessage: false,
 		};
 	}
 
 	async handleViewCityCommand(ctx: ExtendedContext): Promise<TelegramBotResponse> {
 		if (!ctx.user.cityId) {
 			this.logger.warn(`Город не выбран для пользователя ${ctx.telegramId}`);
-			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CITY_SELECTED);
+			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CITY_SELECTED, false);
 		}
 		const city = await this.prismaService.client.cityModel.findUnique({
 			where: { id: ctx.user.cityId },
@@ -92,6 +114,7 @@ export class TelegramBotService implements ITelegramBotService {
 			message: `${MESSAGES.TELEGRAM_VIEW_CITY_PREFIX} ${city?.name ?? 'Неизвестный город'}`,
 			keyboard: this.createInlineKeyboard([]),
 			format: 'plain',
+			editMessage: false,
 		};
 	}
 
@@ -134,6 +157,7 @@ export class TelegramBotService implements ITelegramBotService {
 				{ page, totalPages: Math.ceil(total / limit), actionPrefix: TELEGRAM_ACTIONS.PREV_PAGE },
 			),
 			format: 'plain',
+			editMessage: false,
 		};
 	}
 
@@ -144,13 +168,14 @@ export class TelegramBotService implements ITelegramBotService {
 		});
 		if (!categories.length) {
 			this.logger.warn(`Нет выбранных категорий для пользователя ${ctx.telegramId}`);
-			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CATEGORIES_SELECTED);
+			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CATEGORIES_SELECTED, false);
 		}
 		const categoryList = categories.map((c) => `- ${c.name}`).join('\n');
 		return {
 			message: `${MESSAGES.TELEGRAM_VIEW_CATEGORIES_PREFIX}\n${categoryList}`,
 			keyboard: this.createInlineKeyboard([]),
 			format: 'plain',
+			editMessage: false,
 		};
 	}
 
@@ -161,7 +186,7 @@ export class TelegramBotService implements ITelegramBotService {
 		});
 		if (!categories.length) {
 			this.logger.warn(`Нет категорий для удаления для пользователя ${ctx.telegramId}`);
-			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CATEGORIES_TO_REMOVE);
+			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CATEGORIES_TO_REMOVE, false);
 		}
 		this.telegramUtils.resetSessionFlags(ctx, {
 			awaitingRemoveCategories: true,
@@ -181,10 +206,25 @@ export class TelegramBotService implements ITelegramBotService {
 				],
 			),
 			format: 'plain',
+			editMessage: false,
 		};
 	}
 
 	async handlePromotionsCommand(ctx: ExtendedContext): Promise<TelegramBotResponse> {
+		if (!ctx.user.cityId) {
+			this.logger.warn(`Город не выбран для пользователя ${ctx.telegramId}`);
+			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CITY_SELECTED, false);
+		}
+
+		const userCategories = await this.prismaService.client.categoryModel.findMany({
+			where: { users: { some: { telegramId: ctx.telegramId } } },
+			select: { id: true },
+		});
+		if (!userCategories.length) {
+			this.logger.warn(`Нет выбранных категорий для пользователя ${ctx.telegramId}`);
+			return this.handleSetCategoriesCommand(ctx);
+		}
+
 		const pagination: PaginationDto = {
 			page: ctx.session.promotionPage || DEFAULT_PAGINATION.page,
 			limit: DEFAULT_PAGINATION.limit,
@@ -211,6 +251,7 @@ export class TelegramBotService implements ITelegramBotService {
 			message: MESSAGES.TELEGRAM_HELP,
 			keyboard: this.createMainMenu(),
 			format: 'plain',
+			editMessage: false,
 		};
 	}
 
@@ -219,21 +260,38 @@ export class TelegramBotService implements ITelegramBotService {
 			message: MESSAGES.TELEGRAM_COMMANDS_LIST,
 			keyboard: this.createMainMenu(),
 			format: 'plain',
+			editMessage: false,
 		};
 	}
 
 	async handleCitySelection(ctx: ExtendedContext, cityId: number): Promise<TelegramBotResponse> {
 		this.telegramUtils.validateId(cityId, 'CITY');
 		await this.prismaService.validateCity(cityId);
-		const dto: UserUpdateProfileDto = { cityId };
-		const currentUser = { id: ctx.user.id, role: ctx.user.role as Role };
-		await this.usersService.updateUserProfile(ctx.user.id, dto, currentUser);
-		this.telegramUtils.resetSessionFlags(ctx, { awaitingCategories: true });
-		if (process.env.DEBUG_LOGGING === 'true') {
-			this.logger.log(
-				`Город установлен для пользователя ${ctx.telegramId}, awaitingCity установлено в false, awaitingCategories в true`,
+
+		try {
+			if (ctx.user.cityId === cityId) {
+				this.logger.log(`Город ${cityId} уже выбран для пользователя ${ctx.telegramId}`);
+				await ctx.answerCbQuery('Этот город уже выбран.');
+				return this.handlePromotionsCommand(ctx);
+			}
+			const dto: UserUpdateProfileDto = { cityId };
+			const currentUser = { id: ctx.user.id, role: ctx.user.role as Role };
+			await this.usersService.updateUserProfile(ctx.user.id, dto, currentUser);
+			this.telegramUtils.resetSessionFlags(ctx, { awaitingCategories: true });
+			if (process.env.DEBUG_LOGGING === 'true') {
+				this.logger.log(
+					`Город установлен для пользователя ${ctx.telegramId}, awaitingCity установлено в false, awaitingCategories в true`,
+				);
+			}
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : 'Неизвестная ошибка при смене города';
+			this.logger.error(
+				`Ошибка при смене города для пользователя ${ctx.telegramId}: ${errorMessage}`,
 			);
+			return this.createErrorResponse(`Ошибка при смене города: ${errorMessage}`, false);
 		}
+
 		const existingCategories = await this.prismaService.client.categoryModel.findMany({
 			where: { users: { some: { telegramId: ctx.telegramId } } },
 			select: { id: true },
@@ -399,7 +457,7 @@ export class TelegramBotService implements ITelegramBotService {
 			}
 		}
 		this.telegramUtils.resetSessionFlags(ctx);
-		return this.createErrorResponse(MESSAGES.TELEGRAM_CATEGORIES_REMOVED);
+		return this.createErrorResponse(MESSAGES.TELEGRAM_CATEGORIES_REMOVED, false);
 	}
 
 	private async renderPromotions(
@@ -408,12 +466,12 @@ export class TelegramBotService implements ITelegramBotService {
 	): Promise<TelegramBotResponse> {
 		if (!ctx.user) {
 			this.logger.warn(`Пользователь не найден для telegramId ${ctx.telegramId}`);
-			return this.createErrorResponse(MESSAGES.TELEGRAM_USER_NOT_FOUND);
+			return this.createErrorResponse(MESSAGES.TELEGRAM_USER_NOT_FOUND, false);
 		}
 
 		if (!ctx.user.cityId) {
 			this.logger.warn(`Город не выбран для пользователя ${ctx.telegramId}`);
-			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CITY_SELECTED);
+			return this.createErrorResponse(MESSAGES.TELEGRAM_NO_CITY_SELECTED, false);
 		}
 
 		const userCategories = await this.prismaService.client.categoryModel.findMany({
@@ -424,6 +482,7 @@ export class TelegramBotService implements ITelegramBotService {
 			this.logger.warn(`Нет выбранных категорий для пользователя ${ctx.telegramId}`);
 			return this.createErrorResponse(
 				'Категории не выбраны. Используйте /setcategories для выбора.',
+				false,
 			);
 		}
 
@@ -442,12 +501,19 @@ export class TelegramBotService implements ITelegramBotService {
 		}
 
 		const promotionList = promotions.items
-			.map(
-				(p: PromotionWithRelations) =>
+			.map((p: PromotionWithRelations) => {
+				let message =
 					`*${p.title.replace(/([_*[\]()~`>#+\-=|{}.!])/g, '\\$1')}*\n` +
 					`${p.description?.replace(/([_*[\]()~`>#+\-=|{}.!])/g, '\\$1') ?? ''}\n` +
-					`С ${p.startDate.toLocaleDateString('ru-RU')} по ${p.endDate.toLocaleDateString('ru-RU')}`,
-			)
+					`С ${p.startDate.toLocaleDateString('ru-RU')} по ${p.endDate.toLocaleDateString('ru-RU')}`;
+				if (p.imageUrl) {
+					message += `\n[Изображение](${p.imageUrl})`;
+				}
+				if (p.linkUrl) {
+					message += `\n[Подробнее](${p.linkUrl})`;
+				}
+				return message;
+			})
 			.join('\n\n');
 
 		const keyboard = this.createInlineKeyboard(
@@ -476,7 +542,7 @@ export class TelegramBotService implements ITelegramBotService {
 		getCallback: (item: T) => string = () => '',
 		extraButtons: { text: string; callback: string }[] = [],
 		pagination?: { page: number; totalPages: number; actionPrefix: string },
-	) {
+	): InlineKeyboardMarkup {
 		const buttons = items.map((item) => [Markup.button.callback(getText(item), getCallback(item))]);
 		const extra = extraButtons.map((btn) => [Markup.button.callback(btn.text, btn.callback)]);
 		extra.push([Markup.button.callback(TELEGRAM_BUTTONS.CANCEL, TELEGRAM_ACTIONS.CANCEL_ACTION)]);
@@ -496,13 +562,13 @@ export class TelegramBotService implements ITelegramBotService {
 		return { inline_keyboard: [...buttons, ...extra] };
 	}
 
-	public createMainMenu() {
+	public createMainMenu(): ReplyKeyboardMarkup {
 		return {
 			keyboard: [
 				['/setcity', '/setcategories'],
 				['/viewcity', '/viewcategories'],
 				['/removecategories', '/promotions'],
-				['/help'],
+				['/disable_notifications', '/help'],
 			],
 			resize_keyboard: true,
 		};

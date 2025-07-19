@@ -195,6 +195,7 @@ describe('UsersService', () => {
 				isDeleted: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
+				options: [],
 			},
 		],
 		total: 1,

@@ -15,4 +15,6 @@ export const TYPES = {
 	TelegramBotController: Symbol.for('TelegramBotController'),
 	CallbackHandler: Symbol.for('CallbackHandler'),
 	TelegramUtils: Symbol.for('TelegramUtils'),
+	NotificationService: Symbol.for('NotificationService'),
+	CronService: Symbol.for('CronService'),
 };

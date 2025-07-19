@@ -10,6 +10,7 @@ CREATE TABLE "UserModel" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "notificationsEnabled" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "UserModel_pkey" PRIMARY KEY ("id")
 );
@@ -27,6 +28,9 @@ CREATE TABLE "PromotionModel" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "image_url" TEXT,
+    "link_url" TEXT,
+    "publication_date" TIMESTAMP(3),
 
     CONSTRAINT "PromotionModel_pkey" PRIMARY KEY ("id")
 );

@@ -103,6 +103,7 @@ describe('UsersService', () => {
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		isDeleted: false,
+		notificationsEnabled: true,
 		city: { id: 1, name: 'Москва' },
 	};
 
@@ -118,6 +119,7 @@ describe('UsersService', () => {
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		isDeleted: false,
+		notificationsEnabled: false,
 		city: null,
 	};
 
@@ -133,6 +135,7 @@ describe('UsersService', () => {
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		isDeleted: false,
+		notificationsEnabled: false,
 		city: null,
 	};
 
@@ -149,6 +152,7 @@ describe('UsersService', () => {
 			city: null,
 			preferredCategories: [],
 			isDeleted: false,
+			notificationsEnabled: true,
 		},
 		{
 			id: 4,
@@ -162,6 +166,7 @@ describe('UsersService', () => {
 			city: null,
 			preferredCategories: [],
 			isDeleted: false,
+			notificationsEnabled: true,
 		},
 	];
 
@@ -181,6 +186,9 @@ describe('UsersService', () => {
 				isDeleted: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
+				imageUrl: null,
+				linkUrl: null,
+				publicationDate: null,
 			},
 		],
 		total: 1,

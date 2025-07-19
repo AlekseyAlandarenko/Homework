@@ -55,56 +55,51 @@ export class TelegramUtils {
 	}
 
 	parseCallbackData(data: string): CallbackData {
-		const parts = data.split('_');
-		let action: string;
-		let param: string | undefined;
+		const actions: { [key: string]: { action: CallbackAction; paramIndex?: number } } = {
+			[TELEGRAM_ACTIONS.CANCEL_ACTION]: { action: TELEGRAM_ACTIONS.CANCEL_ACTION },
+			[TELEGRAM_ACTIONS.FINISH_CATEGORIES]: { action: TELEGRAM_ACTIONS.FINISH_CATEGORIES },
+			[TELEGRAM_ACTIONS.FINISH_REMOVE_CATEGORIES]: {
+				action: TELEGRAM_ACTIONS.FINISH_REMOVE_CATEGORIES,
+			},
+			[TELEGRAM_ACTIONS.SELECT_CITY]: { action: TELEGRAM_ACTIONS.SELECT_CITY, paramIndex: 2 },
+			[TELEGRAM_ACTIONS.SELECT_CATEGORY]: {
+				action: TELEGRAM_ACTIONS.SELECT_CATEGORY,
+				paramIndex: 2,
+			},
+			[TELEGRAM_ACTIONS.REMOVE_CATEGORY]: {
+				action: TELEGRAM_ACTIONS.REMOVE_CATEGORY,
+				paramIndex: 2,
+			},
+			[TELEGRAM_ACTIONS.PREV_PAGE]: { action: TELEGRAM_ACTIONS.PREV_PAGE, paramIndex: 2 },
+			[TELEGRAM_ACTIONS.NEXT_PAGE]: { action: TELEGRAM_ACTIONS.NEXT_PAGE, paramIndex: 2 },
+			[TELEGRAM_ACTIONS.PREV_PROMOTION_PAGE]: {
+				action: TELEGRAM_ACTIONS.PREV_PROMOTION_PAGE,
+				paramIndex: 3,
+			},
+			[TELEGRAM_ACTIONS.NEXT_PROMOTION_PAGE]: {
+				action: TELEGRAM_ACTIONS.NEXT_PROMOTION_PAGE,
+				paramIndex: 3,
+			},
+		};
 
-		if (
-			data === TELEGRAM_ACTIONS.CANCEL_ACTION ||
-			data === TELEGRAM_ACTIONS.FINISH_CATEGORIES ||
-			data === TELEGRAM_ACTIONS.FINISH_REMOVE_CATEGORIES
-		) {
-			action = data;
-		} else if (data.startsWith(TELEGRAM_ACTIONS.SELECT_CITY)) {
-			action = TELEGRAM_ACTIONS.SELECT_CITY;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.SELECT_CATEGORY)) {
-			action = TELEGRAM_ACTIONS.SELECT_CATEGORY;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.REMOVE_CATEGORY)) {
-			action = TELEGRAM_ACTIONS.REMOVE_CATEGORY;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.PREV_PAGE)) {
-			action = TELEGRAM_ACTIONS.PREV_PAGE;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.NEXT_PAGE)) {
-			action = TELEGRAM_ACTIONS.NEXT_PAGE;
-			param = parts[2];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.PREV_PROMOTION_PAGE)) {
-			action = TELEGRAM_ACTIONS.PREV_PROMOTION_PAGE;
-			param = parts[3];
-		} else if (data.startsWith(TELEGRAM_ACTIONS.NEXT_PROMOTION_PAGE)) {
-			action = TELEGRAM_ACTIONS.NEXT_PROMOTION_PAGE;
-			param = parts[3];
-		} else {
+		const parts = data.split('_');
+		const match = Object.keys(actions).find((key) => data.startsWith(key));
+		if (!match) {
 			this.logger.error(`Недействительное действие callback: ${data}`);
 			throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_ACTION);
 		}
 
-		if (!Object.values(TELEGRAM_ACTIONS).includes(action as CallbackAction)) {
-			this.logger.error(`Недействительное действие callback: ${action}`);
-			throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_ACTION);
-		}
+		const action = actions[match].action;
+		const param = actions[match].paramIndex ? parts[actions[match].paramIndex] : undefined;
 
-		const result: CallbackData = { action: action as CallbackAction };
+		const result: CallbackData = { action };
 		if (param) {
 			const num = Number(param);
-			if (!isNaN(num) && num > 0) {
-				result[action.includes('page') ? 'page' : 'id'] = num;
-			} else {
+			if (isNaN(num) || num <= 0) {
 				this.logger.warn(`Недопустимый параметр в callback: ${param}`);
 				throw new HTTPError(400, MESSAGES.TELEGRAM_INVALID_PARAM);
 			}
+			result[action.includes('page') ? 'page' : 'id'] = num;
 		}
 
 		if (process.env.DEBUG_LOGGING === 'true') {

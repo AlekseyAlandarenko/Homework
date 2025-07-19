@@ -1,8 +1,9 @@
+import { InlineKeyboardMarkup, ReplyKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
 import { ExtendedContext } from './telegram-bot.controller';
 
 export interface TelegramBotResponse {
 	message: string;
-	keyboard?: any;
+	keyboard?: ReplyKeyboardMarkup | InlineKeyboardMarkup;
 	format: 'plain' | 'markdown';
 	editMessage?: boolean;
 }
@@ -39,6 +40,19 @@ export interface ITelegramBotService {
 	): Promise<TelegramBotResponse | null>;
 	handleFinishCategories(ctx: ExtendedContext): Promise<TelegramBotResponse>;
 	handleFinishRemoveCategories(ctx: ExtendedContext): Promise<TelegramBotResponse>;
-	createMainMenu(): any;
+	handleSearchCommand(ctx: ExtendedContext): Promise<TelegramBotResponse>;
+	handleSearchInput(ctx: ExtendedContext, query: string): Promise<TelegramBotResponse>;
+	handleRemoveFromCart(
+		ctx: ExtendedContext,
+		productId: number,
+		optionId?: number,
+	): Promise<TelegramBotResponse | null>;
+	handleOptionSelection(
+		ctx: ExtendedContext,
+		productId: number,
+		optionId: number,
+	): Promise<TelegramBotResponse | null>;
+	handleConfirmCheckout(ctx: ExtendedContext): Promise<TelegramBotResponse>;
+	createMainMenu(): ReplyKeyboardMarkup;
 	createErrorResponse(message: string, editMessage?: boolean): TelegramBotResponse;
 }

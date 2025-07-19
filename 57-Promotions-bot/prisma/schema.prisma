@@ -22,23 +22,27 @@ model UserModel {
   updatedAt          DateTime            @updatedAt
   isDeleted          Boolean             @default(false)
   sessions           TelegramSession[]   @relation(name: "UserSessions")
+  notificationsEnabled Boolean           @default(true)
 }
 
 model PromotionModel {
-  id          Int              @id @default(autoincrement())
-  title       String           @unique
-  description String
-  startDate   DateTime
-  endDate     DateTime
-  status      String           @default("PENDING")
-  supplierId  Int
-  supplier    UserModel        @relation(name: "UserPromotions", fields: [supplierId], references: [id], onDelete: Cascade)
-  cityId      Int?             @map("city_id")
-  city        CityModel?       @relation(name: "PromotionCity", fields: [cityId], references: [id])
-  categories  CategoryModel[]  @relation(name: "PromotionCategories")
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  isDeleted   Boolean          @default(false)
+  id              Int              @id @default(autoincrement())
+  title           String           @unique
+  description     String
+  startDate       DateTime
+  endDate         DateTime
+  status          String           @default("PENDING")
+  supplierId      Int
+  supplier        UserModel        @relation(name: "UserPromotions", fields: [supplierId], references: [id], onDelete: Cascade)
+  cityId          Int?             @map("city_id")
+  city            CityModel?       @relation(name: "PromotionCity", fields: [cityId], references: [id])
+  categories      CategoryModel[]  @relation(name: "PromotionCategories")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  isDeleted       Boolean          @default(false)
+  imageUrl        String?          @map("image_url")
+  linkUrl         String?          @map("link_url")
+  publicationDate DateTime?        @map("publication_date")
 }
 
 model CityModel {
