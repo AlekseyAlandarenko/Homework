@@ -1,4 +1,134 @@
 import { Role } from '../common/enums/role.enum';
+import { UserModel } from '@prisma/client';
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     SupplierResponse:
+ *       type: object
+ *       description: Данные пользователя, возвращаемые в ответах API, включая связанные категории и город (без пароля).
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: Уникальный идентификатор пользователя.
+ *           example: 1
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Электронная почта пользователя. Уникальна.
+ *           example: user@example.com
+ *         name:
+ *           type: string
+ *           description: Имя пользователя.
+ *           example: Иван Иванов
+ *         role:
+ *           type: string
+ *           enum: [SUPERADMIN, ADMIN, SUPPLIER]
+ *           description: Роль пользователя (SUPERADMIN/ADMIN — административные права, SUPPLIER — управление акциями).
+ *           example: SUPPLIER
+ *         telegramId:
+ *           type: string
+ *           nullable: true
+ *           description: Идентификатор Telegram пользователя.
+ *           example: "123456789"
+ *         cityId:
+ *           type: integer
+ *           nullable: true
+ *           description: Идентификатор города пользователя.
+ *           example: 1
+ *         city:
+ *           type: object
+ *           nullable: true
+ *           properties:
+ *             id:
+ *               type: integer
+ *               description: Идентификатор города.
+ *               example: 1
+ *             name:
+ *               type: string
+ *               description: Название города.
+ *               example: Москва
+ *           description: Город, связанный с пользователем.
+ *         preferredCategories:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: Идентификатор категории.
+ *                 example: 1
+ *               name:
+ *                 type: string
+ *                 description: Название категории.
+ *                 example: Еда
+ *           description: Список предпочитаемых категорий пользователя.
+ *           example: [{ id: 1, name: "Еда" }, { id: 2, name: "Напитки" }]
+ *         notificationsEnabled:
+ *           type: boolean
+ *           description: Флаг включения уведомлений для пользователя.
+ *           example: true
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Дата создания пользователя (ISO 8601).
+ *           example: "2023-05-01T12:00:00Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Дата последнего обновления пользователя (ISO 8601).
+ *           example: "2023-05-02T12:00:00Z"
+ *         isDeleted:
+ *           type: boolean
+ *           description: Флаг мягкого удаления пользователя.
+ *           example: false
+ *       required:
+ *         - id
+ *         - email
+ *         - name
+ *         - role
+ *         - notificationsEnabled
+ *         - isDeleted
+ *     UserModel:
+ *       allOf:
+ *         - $ref: '#/components/schemas/SupplierResponse'
+ *         - type: object
+ *           description: Полная модель пользователя, включая хешированный пароль (для внутреннего использования).
+ *           properties:
+ *             password:
+ *               type: string
+ *               description: Хешированный пароль пользователя.
+ *               example: $2a$10$hashedpassword
+ *           required:
+ *             - password
+ *     ErrorResponse:
+ *       type: object
+ *       description: Стандартный формат ответа для ошибок API.
+ *       properties:
+ *         statusCode:
+ *           type: integer
+ *           description: HTTP-код статуса ошибки.
+ *           example: 400
+ *         message:
+ *           type: string
+ *           description: Сообщение об ошибке.
+ *           example: Неверный формат данных
+ *         error:
+ *           type: string
+ *           description: Дополнительное описание ошибки (может быть null).
+ *           example: Bad Request
+ *           nullable: true
+ *       required:
+ *         - statusCode
+ *         - message
+ */
+
+export type UserResponse = Omit<UserModel, 'password'> & {
+	cityId: number | null;
+	city: { id: number; name: string } | null;
+	preferredCategories: { id: number; name: string }[];
+};
 
 export class User {
 	private _password: string;

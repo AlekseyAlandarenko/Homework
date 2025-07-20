@@ -17,6 +17,68 @@ import { MESSAGES } from '../../common/messages';
 import { ProductStatus } from '../../common/enums/product-status.enum';
 import { PRODUCT_STATUSES } from '../../common/constants';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     ProductCreateDto:
+ *       type: object
+ *       description: DTO для создания нового товара.
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Название товара.
+ *           example: "Ноутбук HP EliteBook"
+ *           maxLength: 200
+ *         description:
+ *           type: string
+ *           description: Описание товара.
+ *           example: "15.6\", Core i7, 16GB RAM"
+ *           maxLength: 1000
+ *           nullable: true
+ *         price:
+ *           type: number
+ *           format: float
+ *           description: Цена товара.
+ *           example: 1250.99
+ *           minimum: 0
+ *         quantity:
+ *           type: integer
+ *           description: Количество товара на складе.
+ *           example: 10
+ *           minimum: 0
+ *         sku:
+ *           type: string
+ *           description: Уникальный артикул товара.
+ *           example: "NB-HP-ELITE-001"
+ *         cityId:
+ *           type: integer
+ *           description: Идентификатор города, связанного с товаром.
+ *           example: 1
+ *           nullable: true
+ *           minimum: 1
+ *         categoryIds:
+ *           type: array
+ *           items:
+ *             type: integer
+ *             minimum: 1
+ *           description: Список идентификаторов категорий, связанных с товаром.
+ *           example: [1, 2]
+ *           minItems: 1
+ *           maxItems: 50
+ *           nullable: true
+ *         status:
+ *           type: string
+ *           enum: [AVAILABLE, OUT_OF_STOCK, DISCONTINUED]
+ *           description: Статус товара (AVAILABLE — в наличии, OUT_OF_STOCK — отсутствует, DISCONTINUED — снят с производства).
+ *           example: AVAILABLE
+ *           nullable: true
+ *       required:
+ *         - name
+ *         - price
+ *         - quantity
+ *         - sku
+ */
 export class ProductOptionDto {
 	@IsString({ message: MESSAGES.NAME_INVALID_FORMAT })
 	@MaxLength(100, { message: MESSAGES.NAME_INVALID_LENGTH })

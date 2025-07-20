@@ -22,6 +22,39 @@ class NonEmptyArray implements ValidatorConstraintInterface {
 	}
 }
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CartCheckoutItemDto:
+ *       type: object
+ *       description: DTO для элемента корзины при оформлении заказа.
+ *       properties:
+ *         productId:
+ *           type: integer
+ *           description: Идентификатор товара в корзине.
+ *           example: 1
+ *           minimum: 1
+ *         quantity:
+ *           type: integer
+ *           description: Количество товара для покупки.
+ *           example: 2
+ *           minimum: 1
+ *       required:
+ *         - productId
+ *         - quantity
+ *     CartCheckoutDto:
+ *       type: object
+ *       description: DTO для оформления заказа из корзины.
+ *       properties:
+ *         items:
+ *           type: array
+ *           description: Список товаров для оформления заказа.
+ *           items:
+ *             $ref: '#/components/schemas/CartCheckoutItemDto'
+ *       required:
+ *         - items
+ */
 export class CartCheckoutItemDto {
 	@IsInt({ message: MESSAGES.PRODUCT_ID_INVALID_INTEGER })
 	@Min(1, { message: MESSAGES.PRODUCT_ID_INVALID_INTEGER })

@@ -58,6 +58,67 @@ class NonEmptyObjectValidator implements ValidatorConstraintInterface {
 	}
 }
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     ProductUpdateDto:
+ *       type: object
+ *       description: DTO для обновления товара. Должен содержать хотя бы одно заполненное поле.
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Название товара.
+ *           example: "Ноутбук HP EliteBook"
+ *           maxLength: 200
+ *           nullable: true
+ *         description:
+ *           type: string
+ *           description: Описание товара.
+ *           example: "15.6\", Core i7, 16GB RAM"
+ *           maxLength: 1000
+ *           nullable: true
+ *         price:
+ *           type: number
+ *           format: float
+ *           description: Цена товара.
+ *           example: 1250.99
+ *           minimum: 0
+ *           nullable: true
+ *         quantity:
+ *           type: integer
+ *           description: Количество товара на складе.
+ *           example: 10
+ *           minimum: 0
+ *           nullable: true
+ *         sku:
+ *           type: string
+ *           description: Уникальный артикул товара.
+ *           example: "NB-HP-ELITE-001"
+ *           nullable: true
+ *         cityId:
+ *           type: integer
+ *           description: Идентификатор города, связанного с товаром.
+ *           example: 1
+ *           minimum: 1
+ *           nullable: true
+ *         categoryIds:
+ *           type: array
+ *           items:
+ *             type: integer
+ *             minimum: 1
+ *           description: Список идентификаторов категорий, связанных с товаром.
+ *           example: [1, 2]
+ *           minItems: 1
+ *           maxItems: 50
+ *           nullable: true
+ *         status:
+ *           type: string
+ *           enum: [AVAILABLE, OUT_OF_STOCK, DISCONTINUED]
+ *           description: Статус товара (AVAILABLE — в наличии, OUT_OF_STOCK — отсутствует, DISCONTINUED — снят с производства).
+ *           example: AVAILABLE
+ *           nullable: true
+ */
 export class ProductUpdateDto {
 	@IsString({ message: MESSAGES.NAME_INVALID_FORMAT })
 	@MaxLength(200, { message: MESSAGES.NAME_INVALID_LENGTH })

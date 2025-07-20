@@ -17,10 +17,11 @@ import { ProductWithRelations } from '../products/products.repository.interface'
 import { DEFAULT_PAGINATION } from '../common/constants';
 import { ILogger } from '../logger/logger.interface';
 import { TelegramUtils } from './telegram.utils';
-import { CartResponse, CartResponseDto } from '../cart/dto/cart-response.dto';
+import { CartResponseDto } from '../cart/dto/cart-response.dto';
 import { CartCheckoutDto } from '../cart/dto/cart-checkout.dto';
 import { ProductStatus } from '../common/enums/product-status.enum';
 import { InlineKeyboardMarkup, ReplyKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
+import { CartResponse } from '../cart/cart.repository.interface';
 
 @injectable()
 export class TelegramBotService implements ITelegramBotService {

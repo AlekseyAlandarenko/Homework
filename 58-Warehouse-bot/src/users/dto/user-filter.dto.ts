@@ -2,6 +2,49 @@ import { IsOptional, IsBoolean, IsInt, IsIn, Min, IsArray, ArrayMaxSize } from '
 import { Transform } from 'class-transformer';
 import { MESSAGES } from '../../common/messages';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserFilterDto:
+ *       type: object
+ *       description: DTO для фильтрации начальников склада.
+ *       properties:
+ *         hasProducts:
+ *           type: boolean
+ *           description: Фильтр по наличию активных продуктов.
+ *           example: true
+ *           nullable: true
+ *         hasAddresses:
+ *           type: boolean
+ *           description: Фильтр по наличию адресов.
+ *           example: true
+ *           nullable: true
+ *         cityId:
+ *           type: integer
+ *           description: Идентификатор города для фильтрации.
+ *           example: 1
+ *           nullable: true
+ *         categoryIds:
+ *           type: array
+ *           items:
+ *             type: integer
+ *           description: Идентификаторы категорий для фильтрации.
+ *           example: [1, 2]
+ *           nullable: true
+ *         sortBy:
+ *           type: string
+ *           enum: [createdAt, email, name]
+ *           description: Поле для сортировки.
+ *           example: createdAt
+ *           nullable: true
+ *         sortOrder:
+ *           type: string
+ *           enum: [asc, desc]
+ *           description: Порядок сортировки.
+ *           example: desc
+ *           nullable: true
+ */
 export class UserFilterDto {
 	@IsBoolean({ message: MESSAGES.ACTIVE_INVALID_BOOLEAN })
 	@IsOptional()

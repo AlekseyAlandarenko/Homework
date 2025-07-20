@@ -1,6 +1,7 @@
+import { CartResponse } from './cart.repository.interface';
 import { CartAddDto } from './dto/cart-add.dto';
 import { CartCheckoutDto } from './dto/cart-checkout.dto';
-import { CartResponseDto, CartResponse } from './dto/cart-response.dto';
+import { CartResponseDto } from './dto/cart-response.dto';
 
 export interface ICartService {
 	addCartItem(userId: number, dto: CartAddDto): Promise<CartResponse>;

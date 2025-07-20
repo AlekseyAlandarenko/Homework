@@ -64,6 +64,64 @@ export class CartController extends BaseController implements ICartController {
 		this.created(res, { message, data });
 	}
 
+	/**
+	 * @swagger
+	 * /cart:
+	 *   post:
+	 *     summary: Добавление товара в корзину
+	 *     tags: [Cart]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/CartAddDto'
+	 *     responses:
+	 *       201:
+	 *         description: Товар успешно добавлен в корзину
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Товар успешно добавлен в корзину
+	 *                 data:
+	 *                   $ref: '#/components/schemas/CartResponse'
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Не авторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Доступ запрещён
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       404:
+	 *         description: Товар или опция не найдены
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       422:
+	 *         description: Товар отсутствует на складе или недостаточное количество
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async addCartItem({ body, user }: Request, res: Response, next: NextFunction): Promise<void> {
 		try {
 			const cartItem = await this.cartService.addCartItem(user!.id, body);
@@ -73,6 +131,52 @@ export class CartController extends BaseController implements ICartController {
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /cart:
+	 *   get:
+	 *     summary: Получение содержимого корзины
+	 *     tags: [Cart]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     responses:
+	 *       200:
+	 *         description: Корзина успешно получена
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Корзина успешно получена
+	 *                 data:
+	 *                   $ref: '#/components/schemas/CartResponseDto'
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Не авторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Доступ запрещён
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       422:
+	 *         description: Ошибка валидации
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async getCartItems({ user }: Request, res: Response, next: NextFunction): Promise<void> {
 		try {
 			const cart = await this.cartService.getCartItems(user!.id);
@@ -82,6 +186,64 @@ export class CartController extends BaseController implements ICartController {
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /cart/checkout:
+	 *   post:
+	 *     summary: Оформление заказа из корзины
+	 *     tags: [Cart]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/CartCheckoutDto'
+	 *     responses:
+	 *       200:
+	 *         description: Заказ успешно оформлен
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Заказ успешно оформлен
+	 *                 data:
+	 *                   $ref: '#/components/schemas/CartResponseDto'
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Не авторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Доступ запрещён
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       404:
+	 *         description: Товар, элемент корзины или адрес не найдены
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       422:
+	 *         description: Недостаточное количество товара или товар не доступен
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async checkoutCartItems(
 		{ body, user }: Request,
 		res: Response,
@@ -95,14 +257,75 @@ export class CartController extends BaseController implements ICartController {
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /cart/{productId}:
+	 *   delete:
+	 *     summary: Удаление товара из корзины
+	 *     tags: [Cart]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: productId
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *         description: Идентификатор товара для удаления из корзины
+	 *       - in: query
+	 *         name: optionId
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *         description: Идентификатор опции товара (если применимо)
+	 *     responses:
+	 *       200:
+	 *         description: Товар успешно удалён из корзины
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Товар успешно удалён из корзины
+	 *                 data:
+	 *                   type: null
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Не авторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Доступ запрещён
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       404:
+	 *         description: Элемент корзины не найден
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async removeCartItem(
-		{ params, user }: Request,
+		{ params, query, user }: Request,
 		res: Response,
 		next: NextFunction,
 	): Promise<void> {
 		try {
 			const productId = parseInt(params.productId);
-			await this.cartService.removeCartItem(user!.id, productId);
+			const optionId = query.optionId ? parseInt(query.optionId as string) : undefined;
+			await this.cartService.removeCartItem(user!.id, productId, optionId);
 			this.sendSuccess(res, MESSAGES.CART_ITEM_DELETED, null);
 		} catch (err) {
 			next(err);
