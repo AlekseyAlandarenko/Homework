@@ -1,0 +1,18 @@
+.button {
+	padding: var(--button-padding);
+	border: 2px solid var(--button-accent-bg);
+	border-radius: var(--button-radius);
+	cursor: var(--button-cursor);
+	transition: var(--button-transition);
+	font-weight: var(--button-font-weight);
+	font-size: var(--button-font-size);
+}
+
+.accent {
+	background-color: var(--button-accent-bg);
+	color: var(--button-accent-color);
+}
+
+.accent:hover {
+	background-color: var(--button-accent-bg-hover);
+}

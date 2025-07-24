@@ -1,0 +1,72 @@
+:root {
+  --button-radius: 12px;
+  --button-padding: 16px 32px;
+  --button-gap: 8px;
+  --button-font-size: 16px;
+  --button-font-weight: 500;
+  --button-text-color: #fff;
+  --button-border-width: 2px;
+  --button-cursor: pointer;
+  --button-transition: 0.3s ease;
+
+  --button-accent-bg: #7B6EF6;
+  --button-accent-bg-hover: #675be0;
+  --button-accent-color: #fff;
+  --button-accent-border: #7B6EF6;
+
+  --paragraph-color: #8E95A9;
+  --paragraph-margin-bottom: 24px;
+
+  --paragraph-extra-small-size: 12px;
+  --paragraph-extra-small-line-height: 16px;
+
+  --paragraph-regular-size: 16px;
+  --paragraph-regular-line-height: 24px;
+
+  --paragraph-large-size: 20px;
+  --paragraph-large-line-height: 32px;
+
+  --title-color: #EBEEF5;
+  --title-font-weight: 600;
+  --title-margin-bottom: 16px;
+
+  --title-1-size: 64px;
+  --title-1-line-height: 80px;
+  --title-1-letter-spacing: -0.02em;
+
+  --title-2-size: 48px;
+  --title-2-line-height: 56px;
+  --title-2-letter-spacing: -0.02em;
+
+  --title-3-size: 32px;
+  --title-3-line-height: 40px;
+  --title-3-letter-spacing: -0.02em;
+
+  --input-border-color: #323B54;
+  --input-focus-border-color: #7B6EF6;
+  --input-background-color: rgba(0, 0, 0, 0.1);
+  --input-invalid-border-color: #e53935;
+  --input-invalid-background-color: #fff5f5;
+
+  --input-small-size: 14px;
+  --input-small-line-height: 16px;
+
+  --input-regular-size: 16px;
+  --input-regular-line-height: 24px;
+
+  --input-large-size: 20px;
+  --input-large-line-height: 32px;
+
+  --background-color: #121829;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

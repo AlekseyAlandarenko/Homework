@@ -1,0 +1,10 @@
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-wrapper-fixed {
+  width: 384px;
+  height: 64px;
+}
