@@ -16,6 +16,73 @@ import { IsEndDateAfterStartDate } from './validators/end-date-after-start-date.
 import { IsFutureDate } from './validators/is-future-date.validator';
 import { MESSAGES } from '../../common/messages';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     PromotionCreateOrProposeDto:
+ *       type: object
+ *       description: DTO для создания или предложения акции.
+ *       properties:
+ *         title:
+ *           type: string
+ *           description: Название акции (уникальное, максимум 200 символов).
+ *           example: Летняя распродажа 2023
+ *           maxLength: 200
+ *         description:
+ *           type: string
+ *           description: Описание акции (максимум 1000 символов).
+ *           example: Скидка на летнюю коллекцию
+ *           maxLength: 1000
+ *         startDate:
+ *           type: string
+ *           format: date-time
+ *           description: Дата начала акции (ISO 8601). Должна быть в будущем для предложений поставщиками.
+ *           example: 2023-06-01T00:00:00Z
+ *         endDate:
+ *           type: string
+ *           format: date-time
+ *           description: Дата окончания акции (ISO 8601). Должна быть позже даты начала.
+ *           example: 2023-06-30T23:59:59Z
+ *         cityId:
+ *           type: integer
+ *           nullable: true
+ *           description: Идентификатор города, связанного с акцией. Может быть null.
+ *           example: 1
+ *         categoryIds:
+ *           type: array
+ *           items:
+ *             type: integer
+ *             minimum: 1
+ *           description: Идентификаторы категорий акции (от 1 до 50 элементов).
+ *           example: [1, 2]
+ *         supplierId:
+ *           type: integer
+ *           nullable: true
+ *           description: Идентификатор поставщика (обязателен для администраторов, опционален для поставщиков).
+ *           example: 5
+ *         imageUrl:
+ *           type: string
+ *           nullable: true
+ *           description: URL изображения акции.
+ *           example: "https://example.com/promo.jpg"
+ *         linkUrl:
+ *           type: string
+ *           nullable: true
+ *           description: URL ссылки на акцию.
+ *           example: "https://example.com/promo"
+ *         publicationDate:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Дата публикации акции (ISO 8601).
+ *           example: "2023-06-01T12:00:00Z"
+ *       required:
+ *         - title
+ *         - description
+ *         - startDate
+ *         - endDate
+ */
 export class PromotionCreateOrProposeDto {
 	@IsString({ message: MESSAGES.TITLE_INVALID_FORMAT })
 	@MaxLength(200, { message: MESSAGES.TITLE_INVALID_LENGTH })

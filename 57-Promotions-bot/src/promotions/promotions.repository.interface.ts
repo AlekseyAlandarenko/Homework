@@ -4,8 +4,9 @@ import { PaginatedResponse } from '../common/pagination.interface';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 export type PromotionWithRelations = PromotionModel & {
-	categories: { id: number; name: string }[];
+	cityId: number | null;
 	city: { id: number; name: string } | null;
+	categories: { id: number; name: string }[];
 };
 
 export interface IPromotionsRepository {

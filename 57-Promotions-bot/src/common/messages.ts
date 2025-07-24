@@ -75,6 +75,7 @@ export const MESSAGES = {
 	PROMOTION_UPDATED: 'Акция успешно обновлена',
 	PROMOTION_DELETED: 'Акция успешно удалена',
 	PROMOTIONS_RETRIEVED: 'Список акций успешно получен',
+	PROMOTION_RETRIEVED: 'Акция успешно получена',
 	CANNOT_DELETE_ACTIVE_PROMOTION: 'Нельзя удалить активную акцию',
 	PROMOTION_TITLE_ALREADY_EXISTS: 'Акция с таким заголовком уже существует',
 	FORBIDDEN_ACCESS_TO_PROMOTION: 'Доступ к акции запрещен',

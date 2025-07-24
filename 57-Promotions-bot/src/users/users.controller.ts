@@ -102,6 +102,112 @@ export class UsersController extends BaseController implements IUsersController 
 		this.created(res, { message, data });
 	}
 
+	/**
+	 * @swagger
+	 * /users/admin:
+	 *   post:
+	 *     summary: Создание администратора
+	 *     description: Создает нового администратора (требуется роль SUPERADMIN).
+	 *     tags: [Users]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/UserRegisterDto'
+	 *     responses:
+	 *       201:
+	 *         description: Администратор успешно создан
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Пользователь успешно создан
+	 *                 data:
+	 *                   $ref: '#/components/schemas/SupplierResponse'
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Неавторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Недостаточно прав
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       409:
+	 *         description: Email уже существует
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
+	/**
+	 * @swagger
+	 * /users/supplier:
+	 *   post:
+	 *     summary: Создание поставщика
+	 *     description: Создает нового поставщика (требуется роль SUPERADMIN или ADMIN).
+	 *     tags: [Users]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/UserRegisterDto'
+	 *     responses:
+	 *       201:
+	 *         description: Поставщик успешно создан
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Пользователь успешно создан
+	 *                 data:
+	 *                   $ref: '#/components/schemas/SupplierResponse'
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Неавторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Недостаточно прав
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       409:
+	 *         description: Email уже существует
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async createUser(
 		req: Request<{}, {}, UserRegisterDto>,
 		res: Response,
@@ -110,22 +216,112 @@ export class UsersController extends BaseController implements IUsersController 
 		try {
 			const role = req.targetRole;
 			const result = await this.usersService.createUser(req.body, role);
-			this.sendCreated(res, MESSAGES.USER_CREATED, {
-				id: result.id,
-				email: result.email,
-				name: result.name,
-				role: result.role,
-				telegramId: result.telegramId,
-				cityId: result.cityId,
-				categoryIds: result.preferredCategories?.map((c) => c.id) ?? [],
-				createdAt: result.createdAt,
-				updatedAt: result.updatedAt,
-			});
+			this.sendCreated(res, MESSAGES.USER_CREATED, result);
 		} catch (err) {
 			next(err);
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /users/suppliers:
+	 *   get:
+	 *     summary: Получение списка поставщиков
+	 *     description: Возвращает пагинированный список поставщиков с фильтрацией (требуется роль SUPERADMIN или ADMIN).
+	 *     tags: [Users]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: query
+	 *         name: page
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *           default: 1
+	 *         description: Номер страницы
+	 *       - in: query
+	 *         name: limit
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *           default: 10
+	 *         description: Количество элементов на странице
+	 *       - in: query
+	 *         name: active
+	 *         schema:
+	 *           type: boolean
+	 *         description: Фильтр по активности поставщика
+	 *       - in: query
+	 *         name: cityId
+	 *         schema:
+	 *           type: integer
+	 *         description: Идентификатор города
+	 *       - in: query
+	 *         name: categoryIds
+	 *         schema:
+	 *           type: array
+	 *           items:
+	 *             type: integer
+	 *         description: Идентификаторы категорий
+	 *       - in: query
+	 *         name: sortBy
+	 *         schema:
+	 *           type: string
+	 *           enum: [createdAt, email, name]
+	 *         description: Поле для сортировки
+	 *       - in: query
+	 *         name: sortOrder
+	 *         schema:
+	 *           type: string
+	 *           enum: [asc, desc]
+	 *         description: Порядок сортировки
+	 *     responses:
+	 *       200:
+	 *         description: Список поставщиков успешно получен
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Поставщики успешно получены
+	 *                 data:
+	 *                   type: object
+	 *                   properties:
+	 *                     items:
+	 *                       type: array
+	 *                       items:
+	 *                         $ref: '#/components/schemas/SupplierResponse'
+	 *                     total:
+	 *                       type: integer
+	 *                       description: Общее количество поставщиков
+	 *                       example: 100
+	 *                     page:
+	 *                       type: integer
+	 *                       description: Текущая страница
+	 *                       example: 1
+	 *                     limit:
+	 *                       type: integer
+	 *                       description: Количество элементов на странице
+	 *                       example: 10
+	 *                     totalPages:
+	 *                       type: integer
+	 *                       description: Общее количество страниц
+	 *                       example: 10
+	 *       401:
+	 *         description: Неавторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Недостаточно прав
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async getAllSuppliers(req: Request, res: Response, next: NextFunction): Promise<void> {
 		try {
 			const pagination = this.getPagination(req);
@@ -138,17 +334,76 @@ export class UsersController extends BaseController implements IUsersController 
 				sortOrder: req.query.sortOrder as string,
 			};
 			const result = await this.usersService.getAllSuppliers({ filters, pagination });
-			this.sendSuccess(res, MESSAGES.SUPPLIERS_RETRIEVED, {
-				items: result.items,
-				total: result.total,
-				page: pagination.page,
-				limit: pagination.limit,
-			});
+			this.sendSuccess(res, MESSAGES.SUPPLIERS_RETRIEVED, result);
 		} catch (err) {
 			next(err);
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /users/supplier/{id}/password:
+	 *   patch:
+	 *     summary: Обновление пароля поставщика
+	 *     description: Обновляет пароль указанного поставщика (требуется роль SUPERADMIN или ADMIN).
+	 *     tags: [Users]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Идентификатор поставщика
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/UserUpdatePasswordDto'
+	 *     responses:
+	 *       200:
+	 *         description: Пароль успешно обновлен
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Пароль успешно обновлен
+	 *                 data:
+	 *                   type: object
+	 *                   properties:
+	 *                     id:
+	 *                       type: integer
+	 *                       example: 1
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Неавторизован или неверный текущий пароль
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Недостаточно прав
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       404:
+	 *         description: Пользователь не найден
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async updateSupplierPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
 		try {
 			const id = parseInt(req.params.id);
@@ -160,6 +415,59 @@ export class UsersController extends BaseController implements IUsersController 
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /users/profile:
+	 *   patch:
+	 *     summary: Обновление профиля пользователя
+	 *     description: Обновляет профиль текущего пользователя (доступно для всех ролей).
+	 *     tags: [Users]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/UserUpdateProfileDto'
+	 *     responses:
+	 *       200:
+	 *         description: Профиль успешно обновлен
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Профиль успешно обновлен
+	 *                 data:
+	 *                   $ref: '#/components/schemas/SupplierResponse'
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Неавторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Недостаточно прав
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       404:
+	 *         description: Пользователь не найден
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async updateUserProfile(
 		req: Request<{}, {}, UserUpdateProfileDto>,
 		res: Response,
@@ -171,22 +479,76 @@ export class UsersController extends BaseController implements IUsersController 
 				id: req.user!.id,
 				role: req.user!.role,
 			});
-			this.sendSuccess(res, MESSAGES.PROFILE_UPDATED, {
-				id: result.id,
-				email: result.email,
-				name: result.name,
-				role: result.role,
-				telegramId: result.telegramId,
-				cityId: result.cityId,
-				categoryIds: result.preferredCategories?.map((c) => c.id) || [],
-				createdAt: result.createdAt,
-				updatedAt: result.updatedAt,
-			});
+			this.sendSuccess(res, MESSAGES.PROFILE_UPDATED, result);
 		} catch (err) {
 			next(err);
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /users/supplier/{id}:
+	 *   delete:
+	 *     summary: Удаление поставщика (мягкое удаление)
+	 *     description: Удаляет поставщика по ID (требуется роль SUPERADMIN или ADMIN).
+	 *     tags: [Users]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Идентификатор поставщика
+	 *     responses:
+	 *       200:
+	 *         description: Поставщик успешно удален
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Пользователь успешно удален
+	 *                 data:
+	 *                   type: object
+	 *                   properties:
+	 *                     id:
+	 *                       type: integer
+	 *                       example: 1
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Неавторизован
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       403:
+	 *         description: Недостаточно прав
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       404:
+	 *         description: Пользователь не найден
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       422:
+	 *         description: У поставщика есть активные акции, требуется новый ответственный
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async deleteSupplier(req: Request, res: Response, next: NextFunction): Promise<void> {
 		try {
 			const id = parseInt(req.params.id);
@@ -197,6 +559,50 @@ export class UsersController extends BaseController implements IUsersController 
 		}
 	}
 
+	/**
+	 * @swagger
+	 * /users/login:
+	 *   post:
+	 *     summary: Аутентификация пользователя
+	 *     description: Аутентифицирует пользователя и возвращает JWT-токен.
+	 *     tags: [Users]
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/UserLoginDto'
+	 *     responses:
+	 *       200:
+	 *         description: Успешная аутентификация
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Аутентификация успешна
+	 *                 data:
+	 *                   type: object
+	 *                   properties:
+	 *                     jwt:
+	 *                       type: string
+	 *                       description: JWT-токен для аутентификации
+	 *                       example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+	 *       400:
+	 *         description: Неверный формат данных
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 *       401:
+	 *         description: Неверные учетные данные
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ErrorResponse'
+	 */
 	async login(
 		req: Request<{}, {}, UserLoginDto>,
 		res: Response,

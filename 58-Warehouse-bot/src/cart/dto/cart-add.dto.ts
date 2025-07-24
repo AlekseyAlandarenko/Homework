@@ -1,6 +1,28 @@
 import { IsInt, IsNotEmpty, Min, IsOptional } from 'class-validator';
 import { MESSAGES } from '../../common/messages';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CartAddDto:
+ *       type: object
+ *       description: DTO для добавления товара в корзину.
+ *       properties:
+ *         productId:
+ *           type: integer
+ *           description: Идентификатор товара, добавляемого в корзину.
+ *           example: 1
+ *           minimum: 1
+ *         quantity:
+ *           type: integer
+ *           description: Количество товара для добавления.
+ *           example: 2
+ *           minimum: 1
+ *       required:
+ *         - productId
+ *         - quantity
+ */
 export class CartAddDto {
 	@IsInt({ message: MESSAGES.PRODUCT_ID_INVALID_INTEGER })
 	@Min(1, { message: MESSAGES.PRODUCT_ID_INVALID_INTEGER })

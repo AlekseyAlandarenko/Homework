@@ -7,6 +7,17 @@ export interface CartWithProduct extends CartModel {
 	option?: { id: number; name: string; value: string; priceModifier: number };
 }
 
+export interface CartResponse {
+	id: number;
+	productId: number;
+	quantity: number;
+	price: number;
+	createdAt: string;
+	updatedAt: string;
+	product: { name: string };
+	option?: { id: number; name: string; value: string; priceModifier: number };
+}
+
 export interface ICartRepository {
 	addCartItem(cart: Cart): Promise<CartModel>;
 	getCartItems(userId: number): Promise<CartWithProduct[]>;

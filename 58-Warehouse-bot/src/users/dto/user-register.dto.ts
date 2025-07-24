@@ -16,6 +16,54 @@ import { Type, Transform } from 'class-transformer';
 import { MESSAGES } from '../../common/messages';
 import { AddressDto } from './user-address.dto';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserRegisterDto:
+ *       type: object
+ *       description: DTO для регистрации пользователя.
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Электронная почта пользователя.
+ *           example: user@example.com
+ *           maxLength: 255
+ *         password:
+ *           type: string
+ *           description: Пароль пользователя (минимум 8 символов, должен содержать буквы и цифры).
+ *           example: Password123
+ *           minLength: 8
+ *         name:
+ *           type: string
+ *           description: Имя пользователя (только буквы, пробелы и дефисы).
+ *           example: Иван Иванов
+ *           maxLength: 100
+ *         cityId:
+ *           type: integer
+ *           description: Идентификатор города пользователя.
+ *           example: 1
+ *           nullable: true
+ *         categoryIds:
+ *           type: array
+ *           items:
+ *             type: integer
+ *           description: Идентификаторы предпочитаемых категорий.
+ *           example: [1, 2]
+ *           nullable: true
+ *         addresses:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/AddressDto'
+ *           description: Список адресов доставки пользователя.
+ *           example: [{ address: "ул. Примерная, д. 1, Москва", isDefault: true }]
+ *           nullable: true
+ *       required:
+ *         - email
+ *         - password
+ *         - name
+ */
 export class UserRegisterDto {
 	@IsEmail({}, { message: MESSAGES.EMAIL_INVALID_EMAIL_FORMAT })
 	@MaxLength(255, { message: MESSAGES.EMAIL_INVALID_LENGTH })

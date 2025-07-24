@@ -2,6 +2,29 @@ import { IsEmail, IsString, MinLength, Matches, MaxLength, IsNotEmpty } from 'cl
 import { Transform } from 'class-transformer';
 import { MESSAGES } from '../../common/messages';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserLoginDto:
+ *       type: object
+ *       description: DTO для аутентификации пользователя.
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Электронная почта пользователя.
+ *           example: user@example.com
+ *           maxLength: 255
+ *         password:
+ *           type: string
+ *           description: Пароль пользователя (минимум 8 символов, должен содержать буквы и цифры).
+ *           example: Password123
+ *           minLength: 8
+ *       required:
+ *         - email
+ *         - password
+ */
 export class UserLoginDto {
 	@IsEmail({}, { message: MESSAGES.EMAIL_INVALID_EMAIL_FORMAT })
 	@MaxLength(255, { message: MESSAGES.EMAIL_INVALID_LENGTH })

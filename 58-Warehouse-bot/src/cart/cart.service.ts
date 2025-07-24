@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../types';
 import { ICartService } from './cart.service.interface';
-import { ICartRepository } from './cart.repository.interface';
+import { CartResponse, ICartRepository } from './cart.repository.interface';
 import {
 	IProductsRepository,
 	ProductWithRelations,
@@ -9,7 +9,7 @@ import {
 import { CartAddDto } from './dto/cart-add.dto';
 import { CartCheckoutDto } from './dto/cart-checkout.dto';
 import { Cart } from './cart.entity';
-import { CartResponseDto, CartResponse } from './dto/cart-response.dto';
+import { CartResponseDto } from './dto/cart-response.dto';
 import { HTTPError } from '../errors/http-error.class';
 import { MESSAGES } from '../common/messages';
 import { ProductStatus } from '../common/enums/product-status.enum';
