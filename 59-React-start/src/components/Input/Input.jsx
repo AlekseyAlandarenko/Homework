@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import PropTypes from 'prop-types';
 import './Input.css';
+import { classNames } from '../../utils/classNames';
 
 const Input = forwardRef(function Input(
   {
@@ -13,22 +14,21 @@ const Input = forwardRef(function Input(
   },
   ref
 ) {
-  const inputClasses = [
+  const inputClasses = classNames(
     'input',
     appearance && `input-${appearance}`,
     icon && 'input-with-icon',
-    isValid === false && 'invalid',
-    inputClassName,
-  ]
-    .filter(Boolean)
-    .join(' ');
+    isValid === false && 'input-invalid',
+    inputClassName
+  );
 
   return (
-    <div className={`input-wrapper ${className}`.trim()}>
+    <div className={classNames('input-wrapper', className)}>
       {icon && <span className="input-icon">{icon}</span>}
       <input
         ref={ref}
         className={inputClasses}
+        aria-invalid={isValid === false}
         {...props}
       />
     </div>

@@ -1,0 +1,76 @@
+.movie-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--movie-card-bg);
+  backdrop-filter: var(--movie-card-backdrop);
+  border-radius: var(--movie-card-radius);
+  width: var(--movie-card-width);
+  height: var(--movie-card-height);
+  padding: var(--movie-card-padding);
+  box-shadow: var(--movie-card-shadow);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.movie-card-image-wrapper {
+  position: relative;
+  width: var(--movie-card-image-wrapper-width);
+  height: var(--movie-card-image-wrapper-height);
+  overflow: hidden;
+  border-radius: var(--movie-card-radius);
+  margin-bottom: var(--movie-card-image-wrapper-margin-bottom);
+}
+
+.movie-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.movie-card-views {
+  position: absolute;
+  top: var(--movie-card-views-top);
+  left: var(--movie-card-views-left);
+  min-width: var(--movie-card-views-min-width);
+  background-color: var(--color-movie-card-views-bg);
+  color: var(--color-movie-card-views);
+  padding: var(--movie-card-views-padding);
+  border-radius: var(--movie-card-views-radius);
+  font-family: var(--font-family);
+  font-size: var(--movie-card-views-font-size);
+  font-weight: var(--movie-card-views-font-weight);
+  line-height: var(--movie-card-views-line-height);
+  display: flex;
+  align-items: center;
+  gap: var(--movie-card-views-gap);
+}
+
+.movie-card-views-icon {
+  width: var(--movie-card-views-icon-size);
+  height: var(--movie-card-views-icon-size);
+}
+
+.movie-card-title {
+  align-self: flex-start;
+  font-family: var(--font-family);
+  font-weight: var(--movie-card-title-font-weight);
+  font-size: var(--movie-card-title-font-size);
+  line-height: var(--movie-card-title-line-height);
+  letter-spacing: var(--movie-card-title-letter-spacing);
+  color: var(--color-title);
+  margin-bottom: var(--movie-card-title-margin-bottom);
+}
+
+.movie-card-info {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--spacing-sm);
+}
+
+.favorite-icon {
+  width: var(--movie-card-favorite-icon-size);
+  height: var(--movie-card-favorite-icon-size);
+  transition: opacity 0.3s ease;
+}

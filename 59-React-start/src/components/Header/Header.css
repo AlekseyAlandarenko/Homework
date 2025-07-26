@@ -1,0 +1,50 @@
+.header-logo {
+  display: flex;
+  align-items: center;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--header-nav-gap);
+}
+
+.header-link-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--header-link-icon-gap);
+}
+
+.header-link {
+  display: flex;
+  align-items: center;
+  gap: var(--header-link-icon-gap);
+  color: var(--header-link-color);
+  text-decoration: none;
+  transition: var(--header-link-transition);
+}
+
+.header-link:hover,
+.header-link:hover .header-link-icon {
+  color: var(--header-link-hover-color);
+}
+
+.header-link-icon {
+  width: var(--header-link-icon-width);
+  height: var(--header-link-icon-height);
+  color: var(--header-link-color);
+  transition: var(--header-link-transition);
+}
+
+.header-link-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--header-link-badge-size);
+  height: var(--header-link-badge-size);
+  border-radius: var(--header-link-badge-radius);
+  background-color: var(--header-link-badge-bg);
+  color: var(--header-link-badge-color);
+  font-size: var(--header-link-badge-font-size);
+  font-weight: var(--header-link-badge-font-weight);
+}

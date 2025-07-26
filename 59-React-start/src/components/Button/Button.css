@@ -1,18 +1,51 @@
 .button {
-	padding: var(--button-padding);
-	border: 2px solid var(--button-accent-bg);
-	border-radius: var(--button-radius);
-	cursor: var(--button-cursor);
-	transition: var(--button-transition);
-	font-weight: var(--button-font-weight);
-	font-size: var(--button-font-size);
+  padding: var(--button-padding);
+  border: var(--button-border-width) solid var(--color-accent);
+  border-radius: var(--radius-base);
+  cursor: var(--button-cursor);
+  transition: var(--button-transition);
+  font-weight: var(--button-font-weight);
+  font-size: var(--button-font-size);
+  background-color: transparent;
+  color: var(--color-accent);
 }
 
-.accent {
-	background-color: var(--button-accent-bg);
-	color: var(--button-accent-color);
+.button--search {
+  background-color: var(--button-search-bg);
+  color: var(--button-search-color);
 }
 
-.accent:hover {
-	background-color: var(--button-accent-bg-hover);
+.button--search:hover {
+  background-color: var(--button-search-hover-bg);
+  color: var(--button-search-hover-color);
+}
+
+.button-favorite {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-weight: var(--button-favorite-font-weight);
+  font-size: var(--button-favorite-font-size);
+  line-height: var(--button-favorite-line-height);
+  letter-spacing: var(--button-favorite-letter-spacing);
+  color: var(--color-button-favorite);
+  text-align: left;
+  transition: var(--button-favorite-transition);
+}
+
+.button-favorite:hover {
+  text-decoration: underline;
+}
+
+.button-favorite-active {
+  color: var(--color-button-favorite-active);
+}
+
+.button-favorite-movie {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--button-favorite-movie-gap);
+  font-size: var(--button-favorite-movie-font-size);
 }

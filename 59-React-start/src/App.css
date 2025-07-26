@@ -1,10 +1,24 @@
 .search-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--search-row-gap);
 }
 
 .input-wrapper-fixed {
-  width: 384px;
-  height: 64px;
+  width: var(--input-wrapper-fixed-width);
+  height: var(--input-wrapper-fixed-height);
+}
+
+.search-container {
+  margin-left: var(--search-margin-left);
+  margin-top: var(--search-margin-top);
+  width: var(--search-width);
+}
+
+.movies-grid {
+  display: grid;
+  grid-template-columns: var(--movies-grid-columns);
+  row-gap: var(--movies-grid-row-gap);
+  column-gap: var(--movies-grid-column-gap);
+  padding: var(--movies-grid-padding);
 }

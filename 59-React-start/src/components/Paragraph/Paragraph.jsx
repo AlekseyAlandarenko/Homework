@@ -1,12 +1,9 @@
 import './Paragraph.css';
-import { memo } from 'react';
 import PropTypes from 'prop-types';
 
 function Paragraph({ size = 'regular', children, className = '' }) {
-  const sizeClass = `paragraph-${size}`;
-
   return (
-    <p className={`paragraph ${sizeClass} ${className}`.trim()}>
+    <p className={`paragraph paragraph-${size} ${className}`}>
       {children}
     </p>
   );
@@ -18,4 +15,4 @@ Paragraph.propTypes = {
   className: PropTypes.string,
 };
 
-export default memo(Paragraph);
+export default Paragraph;
