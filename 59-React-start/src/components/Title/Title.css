@@ -1,0 +1,23 @@
+.title {
+  color: var(--title-color);
+  font-weight: var(--title-font-weight);
+  margin-bottom: var(--title-margin-bottom);
+}
+
+.title-h1 {
+  font-size: var(--title-h1-size);
+  line-height: var(--title-h1-line-height);
+  letter-spacing: var(--title-h1-letter-spacing);
+}
+
+.title-h2 {
+  font-size: var(--title-h2-size);
+  line-height: var(--title-h2-line-height);
+  letter-spacing: var(--title-h2-letter-spacing);
+}
+
+.title-h3 {
+  font-size: var(--title-h3-size);
+  line-height: var(--title-h3-line-height);
+  letter-spacing: var(--title-h3-letter-spacing);
+}
