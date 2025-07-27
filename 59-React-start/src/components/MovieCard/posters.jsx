@@ -8,14 +8,14 @@ import Poster7 from './poster7.png';
 import Poster8 from './poster8.png';
 
 const posters = [
-  Poster1,
-  Poster2,
-  Poster3,
-  Poster4,
-  Poster5,
-  Poster6,
-  Poster7,
-  Poster8,
+	Poster1,
+	Poster2,
+	Poster3,
+	Poster4,
+	Poster5,
+	Poster6,
+	Poster7,
+	Poster8
 ];
 
 export default posters;

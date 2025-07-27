@@ -10,17 +10,17 @@
   color: var(--color-accent);
 }
 
-.button--search {
+.buttonSearch {
   background-color: var(--button-search-bg);
   color: var(--button-search-color);
 }
 
-.button--search:hover {
+.buttonSearch:hover {
   background-color: var(--button-search-hover-bg);
   color: var(--button-search-hover-color);
 }
 
-.button-favorite {
+.buttonFavorite {
   background-color: transparent;
   border: none;
   padding: 0;
@@ -35,15 +35,15 @@
   transition: var(--button-favorite-transition);
 }
 
-.button-favorite:hover {
+.buttonFavorite:hover {
   text-decoration: underline;
 }
 
-.button-favorite-active {
+.buttonFavoriteActive {
   color: var(--color-button-favorite-active);
 }
 
-.button-favorite-movie {
+.buttonFavoriteMovie {
   display: inline-flex;
   align-items: center;
   gap: var(--button-favorite-movie-gap);

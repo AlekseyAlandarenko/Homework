@@ -1,3 +1,19 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: var(--header-width);
+  margin: 0 auto;
+  z-index: 1000;
+  display: flex;
+  justify-content: var(--header-justify-content);
+  height: var(--header-height);
+  padding: var(--header-padding);
+  background-color: var(--color-background);
+}
+
 .header-logo {
   display: flex;
   align-items: center;
@@ -32,7 +48,10 @@
 .header-link-icon {
   width: var(--header-link-icon-width);
   height: var(--header-link-icon-height);
+  min-width: var(--header-link-icon-width);
+  min-height: var(--header-link-icon-height);
   color: var(--header-link-color);
+  stroke: currentColor;
   transition: var(--header-link-transition);
 }
 

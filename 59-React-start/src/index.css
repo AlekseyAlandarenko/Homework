@@ -147,42 +147,16 @@
   --movies-grid-row-gap: var(--spacing-md);
   --movies-grid-column-gap: var(--spacing-lg);
   --movies-grid-padding: var(--spacing-xl) var(--spacing-xxl);
+
+  --font-family: 'Poppins', sans-serif;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   padding: 0;
   background-color: var(--color-background);
-  font-family: 'Poppins', sans-serif;
-}
-
-.app {
-  width: var(--header-width);
-  min-height: 100vh;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  padding-top: var(--header-height);
-}
-
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  max-width: var(--header-width);
-  margin: 0 auto;
-  z-index: 1000;
-  display: flex;
-  justify-content: var(--header-justify-content);
-  height: var(--header-height);
-  padding: var(--header-padding);
-  background-color: var(--color-background);
-}
-
-.flex-center {
-  display: flex;
-  align-items: center;
+  font-family: var(--font-family);
 }
