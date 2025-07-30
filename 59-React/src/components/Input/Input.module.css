@@ -23,7 +23,7 @@
   line-height: var(--input-line-height);
   border: var(--input-border-width) solid var(--input-border-color);
   background-color: var(--input-bg);
-  border-radius: var(--radius-base);
+  border-radius: var(--input-radius);
   outline: none;
   color: var(--input-color);
 }

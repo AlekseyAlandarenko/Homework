@@ -1,0 +1,4 @@
+.favorites-container {
+  width: var(--container-wide-width);
+  margin-left: 0;
+}

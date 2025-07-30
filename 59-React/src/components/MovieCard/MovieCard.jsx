@@ -2,13 +2,22 @@ import styles from './MovieCard.module.css';
 import PropTypes from 'prop-types';
 import Button from '../Button/Button';
 import Icon from '../Icon/Icon';
-import BookmarkIcon from './BookmarkIcon.svg';
-import ThumbUpIcon from './ThumbUpIcon.svg';
-import ViewsIcon from './ViewsIcon.svg';
+import BookmarkIcon from '../../assets/icons/BookmarkIcon.svg';
+import ThumbUpIcon from '../../assets/icons/ThumbUpIcon.svg';
+import ViewsIcon from '../../assets/icons/ViewsIcon.svg';
+import { useProtectedNavigation } from '../../hooks/useProtectedNavigation.jsx';
+import classNames from 'classnames';
+import { useCallback } from 'react';
 
 function MovieCard({ title, imageSrc, views, onAddToFavorites, isFavorite }) {
+	const protectNavigation = useProtectedNavigation();
+
+	const handleClick = useCallback(() => {
+		protectNavigation(onAddToFavorites);
+	}, [protectNavigation, onAddToFavorites]);
+
 	return (
-		<div className={styles['movie-card']}>
+		<div className={classNames('flex flex-column align-center', styles['movie-card'])}>
 			<div className={styles['movie-card-image-wrapper']}>
 				<img
 					src={imageSrc}
@@ -25,10 +34,10 @@ function MovieCard({ title, imageSrc, views, onAddToFavorites, isFavorite }) {
 					{views}
 				</span>
 			</div>
-			<div className={styles['movie-card-info']}>
-				<div className={styles['movie-card-title']}>{title}</div>
+			<div className={classNames('flex flex-column', styles['movie-card-info'])}>
+				<div className={classNames('text-base', styles['movie-card-title'])}>{title}</div>
 				<Button
-					onClick={onAddToFavorites}
+					onClick={handleClick}
 					modifiers={[
 						'buttonFavorite',
 						'buttonFavoriteMovie',

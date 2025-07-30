@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
-function ProfileIcon({ className = '', ariaLabel = 'Иконка профиля' }) {
+function ProfileIcon({ className }) {
 	return (
 		<svg
 			className={classNames(className)}
@@ -10,11 +10,8 @@ function ProfileIcon({ className = '', ariaLabel = 'Иконка профиля'
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="1.5"
-			strokeLinecap="round"
-			strokeLinejoin="round"
 			xmlns="http://www.w3.org/2000/svg"
-			aria-label={ariaLabel}
+			strokeWidth="1.5"
 		>
 			<path
 				d="M8 16C8 18.8284 8 20.2426 8.87868 21.1213C9.51998 21.7626 10.4466 21.9359 12 21.9827M8 8C8 5.17157 8 3.75736 8.87868 2.87868C9.75736 2 11.1716 2 14 2H15C17.8284 2 19.2426 2 20.1213 2.87868C21 3.75736 21 5.17157 21 8V10V14V16C21 18.8284 21 20.2426 20.1213 21.1213C19.3529 21.8897 18.175 21.9862 16 21.9983"
@@ -31,12 +28,6 @@ function ProfileIcon({ className = '', ariaLabel = 'Иконка профиля'
 
 ProfileIcon.propTypes = {
 	className: PropTypes.string,
-	ariaLabel: PropTypes.string
-};
-
-ProfileIcon.defaultProps = {
-	className: '',
-	ariaLabel: 'Иконка профиля'
 };
 
 export default ProfileIcon;

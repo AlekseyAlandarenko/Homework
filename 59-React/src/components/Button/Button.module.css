@@ -1,18 +1,27 @@
 .button {
   padding: var(--button-padding);
+  width: var(--button-width);
+  height: var(--button-height);
+  transform: rotate(var(--button-angle));
+  opacity: var(--button-opacity);
   border: var(--button-border-width) solid var(--color-accent);
-  border-radius: var(--radius-base);
+  border-radius: var(--button-radius);
   cursor: var(--button-cursor);
   transition: var(--button-transition);
   font-weight: var(--button-font-weight);
   font-size: var(--button-font-size);
   background-color: transparent;
   color: var(--color-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
 }
 
 .buttonSearch {
   background-color: var(--button-search-bg);
   color: var(--button-search-color);
+  border: none;
 }
 
 .buttonSearch:hover {
@@ -20,19 +29,28 @@
   color: var(--button-search-hover-color);
 }
 
-.buttonFavorite {
-  background-color: transparent;
-  border: none;
+.buttonFavoriteBase {
+  min-width: auto;
+  height: auto;
   padding: 0;
-  cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  border: none;
+}
+
+.buttonFavorite {
+  min-width: auto;
+  height: auto;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: var(--button-cursor);
+  font-family: var(--font-family);
   font-weight: var(--button-favorite-font-weight);
   font-size: var(--button-favorite-font-size);
-  line-height: var(--button-favorite-line-height);
   letter-spacing: var(--button-favorite-letter-spacing);
   color: var(--color-button-favorite);
   text-align: left;
   transition: var(--button-favorite-transition);
+  white-space: nowrap;
 }
 
 .buttonFavorite:hover {
@@ -44,6 +62,9 @@
 }
 
 .buttonFavoriteMovie {
+  height: auto;
+  padding: 0;
+  border: none;
   display: inline-flex;
   align-items: center;
   gap: var(--button-favorite-movie-gap);
