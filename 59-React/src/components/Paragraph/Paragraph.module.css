@@ -1,0 +1,19 @@
+.paragraph {
+  color: var(--paragraph-color);
+  margin-bottom: var(--paragraph-margin-bottom);
+}
+
+.paragraph-extra-small {
+  font-size: var(--paragraph-extra-small-size);
+  line-height: var(--paragraph-extra-small-line-height);
+}
+
+.paragraph-regular {
+  font-size: var(--paragraph-regular-size);
+  line-height: var(--paragraph-regular-line-height);
+}
+
+.paragraph-large {
+  font-size: var(--paragraph-large-size);
+  line-height: var(--paragraph-large-line-height);
+}
