@@ -1,5 +1,22 @@
 .login-container {
-  width: var(--container-narrow-width);
+  position: fixed;
+  top: var(--space-80);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: var(--container-width-1440);
+  margin: 0 auto;
+  z-index: 999;
+  background-color: var(--color-background);
+  padding: var(--space-80) var(--space-120) 0;
+}
+
+.login-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: var(--container-width-500);
+  margin: 0 auto 0;
   margin-left: 0;
 }
 
@@ -9,32 +26,28 @@
 }
 
 .input-wrapper-fixed {
-  width: var(--container-narrow-width);
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--search-row-gap);
-}
-
-.login-input {
-  width: 100%;
-  height: var(--input-wrapper-fixed-height);
-  box-sizing: border-box;
+  gap: var(--space-8);
 }
 
 .password-row {
   display: flex;
   align-items: center;
-  gap: var(--search-row-gap);
+  gap: var(--space-8);
+  width: 100%;
+  height: var(--space-64);
 }
 
-.login-button {
-  width: fit-content;
-  height: var(--input-wrapper-fixed-height);
-  box-sizing: border-box;
+.login-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .error {
   color: var(--color-error);
-  font-size: var(--paragraph-regular-size);
-  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-24);
+  width: var(--error-width-400);
 }

@@ -1,0 +1,21 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-8);
+  color: var(--color-movie-card-views);
+  background-color: var(--color-movie-card-views-bg);
+  backdrop-filter: var(--blur-light);
+  font-weight: var(--font-weight-400);
+  border-radius: var(--radius-8);
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-24);
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
