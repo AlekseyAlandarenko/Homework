@@ -1,0 +1,22 @@
+.title {
+  color: var(--color-title);
+  font-weight: var(--font-weight-600);
+}
+
+.title-h1 {
+  font-size: var(--font-size-64);
+  line-height: var(--line-height-80);
+  letter-spacing: var(--letter-spacing-title);
+}
+
+.title-h2 {
+  font-size: var(--font-size-48);
+  line-height: var(--line-height-56);
+  letter-spacing: var(--letter-spacing-title);
+}
+
+.title-h3 {
+  font-size: var(--font-size-32);
+  line-height: var(--line-height-40);
+  letter-spacing: var(--letter-spacing-title);
+}
