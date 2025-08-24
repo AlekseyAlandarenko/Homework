@@ -1,91 +1,85 @@
-import { FC } from 'react';
-import { Title } from '../Title/Title';
-import { Paragraph } from '../Paragraph/Paragraph';
-import { Button } from '../Button/Button';
-import { Input } from '../Input/Input';
-import { MovieCard } from '../MovieCard/MovieCard';
-import { useSearch } from '../../hooks/useSearch';
-import { useMovies } from '../../hooks/useMovies';
-import { TEXT_CONSTANTS } from '../../constants/textConstants';
+import { FC, useState, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { HeaderWrapper } from '../HeaderWrapper/HeaderWrapper';
+import { InputButtonRow } from '../InputButtonRow/InputButtonRow';
+import { SearchResults } from '../SearchResults/SearchResults';
 import { SearchIcon } from '../../assets/icons/SearchIcon';
+import { RootState, AppDispatch } from '../../store/store';
+import { searchMovies, clearError } from '../../store/moviesSlice';
+import { makeSelectSearchResultsWithFavorites } from '../../store/moviesSelectors';
 import styles from './SearchPage.module.css';
+import { TEXT_CONSTANTS } from '../../constants/textConstants';
+import { useFavorite } from '../../hooks/useFavorite';
 
 export const SearchPage: FC = () => {
-	const {
-		searchQuery,
-		filteredMovies,
-		isSearchPerformed,
-		searchInputRef,
-		handleInputChange,
-		handleSearch
-	} = useSearch();
+	const dispatch: AppDispatch = useDispatch();
+	const [searchQuery, setSearchQuery] = useState('');
 
-	const { handleToggleFavorite, isFavorite } = useMovies();
+	const { toggle } = useFavorite();
 
-	const renderSearchInput = () => (
-		<div className={styles['search-row']}>
-			<Input
-				ref={searchInputRef}
-				value={searchQuery}
-				onChange={handleInputChange}
-				placeholder={TEXT_CONSTANTS.SEARCH_PAGE.SEARCH_PLACEHOLDER}
-				variant="search"
-				icon={<SearchIcon className={styles['search-icon']} />}
-				className={styles['search-input']}
-			/>
-			<Button
-				variant="search"
-				onClick={handleSearch}
-			>
-				{TEXT_CONSTANTS.SEARCH_PAGE.SEARCH_BUTTON}
-			</Button>
-		</div>
+	const resultsWithFavorites = useSelector(makeSelectSearchResultsWithFavorites);
+	const isLoading = useSelector((state: RootState) => state.movies.loading);
+	const error = useSelector((state: RootState) => state.movies.error);
+	const isSearchPerformed = useSelector(
+		(state: RootState) => state.movies.search.isSearchPerformed
 	);
 
-	const renderContent = () => {
-		if (isSearchPerformed && filteredMovies.length === 0) {
-			return (
-				<div className={styles['not-found']}>
-					<div className={styles['not-found-container']}>
-						<div className={styles['not-found-text']}>
-							<Title level={2}>{TEXT_CONSTANTS.SEARCH_PAGE.NOT_FOUND_TITLE}</Title>
-							<Paragraph size="large">
-								{TEXT_CONSTANTS.SEARCH_PAGE.NOT_FOUND_DESCRIPTION}
-							</Paragraph>
-						</div>
-					</div>
-				</div>
-			);
-		}
+	const errorMessage =
+	error && error !== TEXT_CONSTANTS.ERRORS.NO_RESULTS
+		? error === TEXT_CONSTANTS.ERRORS.QUERY_TOO_SHORT
+			? TEXT_CONSTANTS.ERRORS.QUERY_TOO_SHORT
+			: TEXT_CONSTANTS.GLOBAL.ERROR_DESCRIPTION
+		: undefined;
 
-		return filteredMovies.map((movie) => (
-			<MovieCard
-				key={movie.id}
-				id={movie.id}
-				title={movie.title}
-				imageSrc={movie.imageSrc}
-				views={movie.views}
-				isFavorite={isFavorite(movie.id)}
-				onAddToFavorites={() => handleToggleFavorite(movie.id)}
-			/>
-		));
-	};
+	const handleInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const value = e.target.value;
+			setSearchQuery(value);
+
+			if (error === TEXT_CONSTANTS.ERRORS.QUERY_TOO_SHORT) {
+				dispatch(clearError());
+			}
+		},
+		[error, dispatch]
+	);
+
+	const handleSearch = useCallback(() => {
+		const trimmedQuery = searchQuery.trim();
+		if (trimmedQuery) {
+			dispatch(searchMovies(trimmedQuery));
+		}
+	}, [searchQuery, dispatch]);
 
 	return (
 		<div>
 			<div className={styles['search-container']}>
-				<div className={styles['search-header']}>
-					<div className={styles['search-header-text']}>
-						<Title level={1}>{TEXT_CONSTANTS.SEARCH_PAGE.TITLE}</Title>
-						<Paragraph size="regular">
-							{TEXT_CONSTANTS.SEARCH_PAGE.DESCRIPTION}
-						</Paragraph>
-					</div>
-					{renderSearchInput()}
-				</div>
+				<HeaderWrapper
+					title={TEXT_CONSTANTS.SEARCH_PAGE.TITLE}
+					description={TEXT_CONSTANTS.SEARCH_PAGE.DESCRIPTION}
+				>
+					<InputButtonRow
+						value={searchQuery}
+						onChange={handleInputChange}
+						placeholder={TEXT_CONSTANTS.SEARCH_PAGE.SEARCH_PLACEHOLDER}
+						name="searchQuery"
+						buttonText={TEXT_CONSTANTS.SEARCH_PAGE.SEARCH_BUTTON}
+						onButtonClick={handleSearch}
+						isLoading={isLoading}
+						icon={<SearchIcon aria-label={TEXT_CONSTANTS.A11Y.SEARCH_ICON} />}
+						error={errorMessage}
+						ariaLabel={TEXT_CONSTANTS.SEARCH_PAGE.SEARCH_INPUT_LABEL}
+					/>
+				</HeaderWrapper>
 			</div>
+
 			<div className={styles['movies-grid']}>
-				{renderContent()}
+				<SearchResults
+					isLoading={isLoading}
+					isSearchPerformed={isSearchPerformed}
+					filteredMovies={resultsWithFavorites}
+					onAddToFavorites={toggle}
+					error={error}
+				/>
 			</div>
 		</div>
 	);

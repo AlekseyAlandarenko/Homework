@@ -1,42 +1,61 @@
-import { forwardRef, ReactNode } from 'react';
+import { forwardRef } from 'react';
 import classNames from 'classnames';
 import styles from './Input.module.css';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  variant?: 'default' | 'search' | 'title' | 'error';
-  icon?: ReactNode;
-  className?: string;
-  inputClassName?: string;
+  icon?: React.ReactNode;
+  variant?: 'default' | 'error';
+  errorMessageId?: string;
+  wrapperClassName?: string;
+  onEnter?: () => void;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
 	(
 		{
-			variant = 'default',
 			icon,
+			variant = 'default',
+			errorMessageId,
 			className,
-			inputClassName,
+			wrapperClassName,
+			onEnter,
 			...props
 		},
 		ref
 	) => {
+		const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === 'Enter') {
+				onEnter?.();
+			}
+		};
+
+		const inputClassName = classNames(
+			styles.input,
+			{
+				[styles['input-with-icon']]: !!icon,
+				[styles['input-error']]: variant === 'error'
+			},
+			className
+		);
+
 		return (
-			<div className={classNames(styles['input-wrapper'], className)}>
-				{icon && <span className={styles['input-icon']}>{icon}</span>}
+			<div className={classNames(styles['input-wrapper'], wrapperClassName)}>
 				<input
 					ref={ref}
-					className={classNames(
-						styles.input,
-						{
-							[styles['input-error']]: variant === 'error',
-							[styles['input-with-icon']]: !!icon
-						},
-						inputClassName
-					)}
+					className={inputClassName}
 					aria-invalid={variant === 'error'}
+					aria-errormessage={variant === 'error' ? errorMessageId : undefined}
+					onKeyDown={handleKeyDown}
 					{...props}
 				/>
+				{icon && (
+					<span className={styles['input-icon']} aria-hidden="true">
+						{icon}
+					</span>
+				)}
 			</div>
 		);
 	}
 );
+
+Input.displayName = 'Input';

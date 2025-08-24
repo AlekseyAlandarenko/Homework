@@ -1,0 +1,27 @@
+.input-button-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--space-64);
+  width: 100%;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.button {
+  height: 100%;
+  width: var(--button-width-120);
+  flex-shrink: 0;
+}
+
+.error-username,
+.error-password,
+.error-searchQuery {
+  width: 100%;
+  color: var(--color-error);
+  white-space: nowrap;
+}

@@ -1,9 +1,57 @@
 .input-wrapper {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   width: 100%;
-  height: 100%;
+  min-height: var(--space-64);
+}
+
+.input {
+  width: 100%;
+  min-height: var(--space-64);
+  padding: var(--space-16);
+  font: inherit;
+  font-weight: var(--font-weight-400);
+  border: var(--border-1) solid var(--color-input-border);
+  background-color: var(--color-input-bg);
+  border-radius: var(--radius-12);
+  outline: none;
+  color: var(--color-white);
+  transition: var(--transition);
+  box-sizing: border-box;
+}
+
+.input-with-icon:placeholder-shown {
+  padding-left: var(--space-56);
+}
+
+.input-with-icon:not(:placeholder-shown) {
+  padding-left: var(--space-16);
+}
+
+.input:focus {
+  border-color: var(--color-accent-hover);
+}
+
+.input-error,
+.input-error:focus {
+  border-color: var(--color-error);
+}
+
+.input-success,
+.input-success:focus {
+  border-color: var(--color-success);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+}
+
+.input::placeholder {
+  color: var(--color-placeholder);
+  font-size: var(--font-size-14);
+  line-height: var(--line-height-16);
+  opacity: 1;
 }
 
 .input-icon {
@@ -11,40 +59,13 @@
   left: var(--space-16);
   display: flex;
   align-items: center;
+  justify-content: center;
   pointer-events: none;
   color: var(--color-placeholder);
+  z-index: 1;
+  opacity: 1;
 }
 
-.input {
-  width: 100%;
-  height: 100%;
-  padding: 0 var(--space-16);
-  font-weight: var(--font-weight-400);
-  font-size: var(--font-size-16);
-  line-height: var(--line-height-24);
-  border: var(--border-1) solid var(--color-input-border);
-  background-color: var(--color-input-bg);
-  border-radius: var(--radius-12);
-  outline: none;
-  color: var(--color-white);
-  transition: var(--transition);
-}
-
-.input-with-icon {
-  padding-left: var(--space-56);
-}
-
-.input-error {
-  border-color: var(--color-error);
-}
-
-.input:focus {
-  border-color: var(--color-accent-hover);
-}
-
-.input::placeholder {
-  font-weight: var(--font-weight-400);
-  font-size: var(--font-size-14);
-  line-height: var(--line-height-24);
-  color: var(--color-placeholder);
+.input:not(:placeholder-shown) ~ .input-icon {
+  opacity: 0;
 }

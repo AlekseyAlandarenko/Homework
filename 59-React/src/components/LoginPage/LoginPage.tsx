@@ -1,73 +1,130 @@
-import { FC } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Title } from '../Title/Title';
-import { Button } from '../Button/Button';
-import { Input } from '../Input/Input';
-import { useAuth } from '../../hooks/useAuth';
-import { useForm } from '../../hooks/useForm';
-import { useLoginValidation } from '../../hooks/useLoginValidation';
+import { FC, ReactElement, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { HeaderWrapper } from '../HeaderWrapper/HeaderWrapper';
+import { InputButtonRow } from '../InputButtonRow/InputButtonRow';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
+import { useForm } from '../../hooks/useForm';
+import { loginAsync, registerAsync, addProfileAsync } from '../../store/usersSlice';
+import { RootState, AppDispatch } from '../../store/store';
+import { useLoginValidation } from '../../hooks/useLoginValidation';
+import { LoadingType } from '../../store/usersSlice';
 import styles from './LoginPage.module.css';
 
-export const LoginPage: FC = () => {
-	const navigate = useNavigate();
-	const { setCurrentUser } = useAuth();
-	const { validate } = useLoginValidation();
+const modeConfig = {
+	login: {
+		title: TEXT_CONSTANTS.LOGIN_PAGE.TITLE,
+		usernamePlaceholder: TEXT_CONSTANTS.LOGIN_PAGE.USERNAME_PLACEHOLDER,
+		buttonText: TEXT_CONSTANTS.LOGIN_PAGE.LOGIN_BUTTON
+	},
+	register: {
+		title: TEXT_CONSTANTS.LOGIN_PAGE.REGISTER,
+		usernamePlaceholder: TEXT_CONSTANTS.LOGIN_PAGE.USERNAME_PLACEHOLDER,
+		buttonText: TEXT_CONSTANTS.LOGIN_PAGE.REGISTER_BUTTON
+	},
+	addProfile: {
+		title: TEXT_CONSTANTS.LOGIN_PAGE.ADD_PROFILE,
+		usernamePlaceholder: TEXT_CONSTANTS.LOGIN_PAGE.PROFILE_NAME_PLACEHOLDER,
+		buttonText: TEXT_CONSTANTS.LOGIN_PAGE.ADD_BUTTON
+	}
+};
 
-	const { formData, error, handleInputChange, handleSubmit } = useForm(
+export const LoginPage: FC = (): ReactElement => {
+	const navigate = useNavigate();
+	const location = useLocation();
+	const dispatch: AppDispatch = useDispatch();
+
+	const mode = new URLSearchParams(location.search).get('mode');
+	const redirectPath = new URLSearchParams(location.search).get('redirect') || '/';
+
+	const isAddingProfile = mode === 'add-profile';
+	const isRegistering = mode === 'register';
+	const currentMode = isAddingProfile ? 'addProfile' : isRegistering ? 'register' : 'login';
+
+	const { validate } = useLoginValidation(isAddingProfile, isRegistering);
+	const isLoading = useSelector((state: RootState) => state.users.loading !== LoadingType.NONE);
+
+	const { formData, errors, variants, handleInputChange, handleSubmit, setErrors, setVariants, setFormData } = useForm(
 		{ username: '', password: '' },
 		validate
 	);
 
-	const handleLoginClick = () => {
-		const success = handleSubmit(() => {
-			setCurrentUser(formData.username);
-			navigate('/');
-		});
-		if (!success) return;
+	useEffect(() => {
+		const resetForm = () => {
+			setFormData({ username: '', password: '' });
+			setErrors({});
+			setVariants({ username: 'default', password: 'default' });
+		};
+		resetForm();
+	}, [mode, setFormData, setErrors, setVariants]);
+
+	const onSubmit = async () => {
+		const thunk = isAddingProfile ? addProfileAsync : isRegistering ? registerAsync : loginAsync;
+		const result = await dispatch(
+			thunk({
+				login: formData.username,
+				password: formData.password
+			})
+		);
+
+		if (thunk.fulfilled.match(result)) {
+			navigate(redirectPath);
+		} else if (thunk.rejected.match(result)) {
+			const payload = result.payload as { username?: string; password?: string };
+
+			setErrors({
+				username: payload?.username || '',
+				password: payload?.password || TEXT_CONSTANTS.ERRORS.INVALID_CREDENTIALS
+			});
+
+			setVariants({
+				username: payload?.username ? 'error' : (payload?.password ? 'error' : 'default'),
+				password: payload?.password ? 'error' : 'default'
+			});
+		}
 	};
 
-	const renderFormInputs = () => (
-		<div className={styles['login-row']}>
-			<div className={styles['input-wrapper-fixed']}>
-				<div className={styles['password-row']}>
-					<Input
-						value={formData.username}
-						onChange={handleInputChange}
-						placeholder="Имя пользователя"
-						variant={error ? 'error' : 'default'}
-						className={styles['login-input']}
-						name="username"
-					/>
-				</div>
-				<div className={styles['password-row']}>
-					<Input
-						value={formData.password}
-						onChange={handleInputChange}
-						placeholder="Пароль"
-						type="password"
-						variant={error ? 'error' : 'default'}
-						className={styles['login-input']}
-						name="password"
-					/>
-					<Button
-						variant="search"
-						onClick={handleLoginClick}
-					>
-						{TEXT_CONSTANTS.LOGIN_PAGE.LOGIN_BUTTON}
-					</Button>
-				</div>
-			</div>
-		</div>
-	);
+	const handleFormSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		handleSubmit(onSubmit);
+	};
 
 	return (
 		<div className={styles['login-container']}>
-			<div className={styles['login-header']}>
-				<Title level={1}>{TEXT_CONSTANTS.LOGIN_PAGE.TITLE}</Title>
-				{error && <p className={styles['error']}>{error}</p>}
-				{renderFormInputs()}
-			</div>
+			<HeaderWrapper title={modeConfig[currentMode].title}>
+				<div className={styles['login-form-wrapper']}>
+					<form onSubmit={handleFormSubmit} className={styles['login-form']}>
+						<InputButtonRow
+							name="username"
+							placeholder={modeConfig[currentMode].usernamePlaceholder}
+							value={formData.username}
+							onChange={handleInputChange}
+							error={errors.username}
+							variant={variants.username}
+							type="text"
+							buttonText={isAddingProfile ? modeConfig.addProfile.buttonText : undefined}
+							buttonType={isAddingProfile ? 'submit' : 'button'}
+							disabled={isLoading}
+							isLoading={isLoading}
+						/>
+						{!isAddingProfile && (
+							<InputButtonRow
+								name="password"
+								placeholder={TEXT_CONSTANTS.LOGIN_PAGE.PASSWORD_PLACEHOLDER}
+								value={formData.password}
+								onChange={handleInputChange}
+								error={errors.password}
+								variant={variants.password}
+								type="password"
+								buttonText={modeConfig[currentMode].buttonText}
+								buttonType="submit"
+								disabled={isLoading}
+								isLoading={isLoading}
+							/>
+						)}
+					</form>
+				</div>
+			</HeaderWrapper>
 		</div>
 	);
 };

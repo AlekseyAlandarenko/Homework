@@ -1,6 +1,13 @@
-.paragraph {
-  color: var(--color-paragraph);
+.paragraph-normal {
   font-weight: var(--font-weight-400);
+}
+
+.paragraph-bold {
+  font-weight: var(--font-weight-600);
+}
+
+.paragraph-extra-bold {
+  font-weight: var(--font-weight-700);
 }
 
 .paragraph-extra-small {

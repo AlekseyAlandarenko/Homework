@@ -1,68 +1,45 @@
-import { FC } from 'react';
-import classNames from 'classnames';
+import { FC, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ToggleButton } from '../ToggleButton/ToggleButton';
+import { useSelector } from 'react-redux';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
-import { ViewsIcon } from '../../assets/icons/ViewsIcon';
 import styles from './MovieCard.module.css';
-import { useNavigation } from '../../hooks/useNavigation';
-import { Badge } from '../Badge/Badge';
+import { MovieCardImage } from '../MovieCardImage/MovieCardImage';
+import { makeSelectMovieDetails } from '../../store/moviesSelectors';
+import { Paragraph } from '../Paragraph/Paragraph';
+import { FavoriteButton } from '../FavoriteButton/FavoriteButton';
 
 interface MovieCardProps {
-  id: number;
-  title: string;
-  imageSrc: string;
-  views: number;
-  onAddToFavorites: () => void;
-  isFavorite: boolean;
+  id: string;
 }
 
-export const MovieCard: FC<MovieCardProps> = ({
-	id,
-	title,
-	imageSrc,
-	views,
-	onAddToFavorites,
-	isFavorite
-}) => {
-	const { protectNavigation } = useNavigation();
+export const MovieCard: FC<MovieCardProps> = memo(({ id }) => {
 	const navigate = useNavigate();
+	const movieDetails = useSelector(makeSelectMovieDetails(id));
 
-	const handleCardClick = () => {
-		navigate(`/movie/${id}`);
-	};
+	if (!movieDetails || !movieDetails.movie) return null;
 
-	const handleFavoriteClick = () => {
-		protectNavigation(onAddToFavorites);
-	};
+	const { displayTitle, displayImage, displayViews } = movieDetails;
 
 	return (
-		<div className={classNames(styles['movie-card'])}>
-			<div className={classNames(styles['movie-card-content'])}>
-				<div className={styles['movie-card-image-wrapper']} onClick={handleCardClick}>
-					<img
-						src={imageSrc}
-						alt={title}
-						className={styles['movie-card-image']}
-						loading="lazy"
-					/>
-					<div className={styles['badge-wrapper']}>
-						<Badge icon={<ViewsIcon />} value={views} />
-					</div>
-				</div>
-
-				<div className={classNames(styles['movie-card-details'])}>
-					<div className={classNames(styles['movie-card-title'])} onClick={handleCardClick}>
-						{title}
-					</div>
-					<ToggleButton
-						isActive={isFavorite}
-						onClick={handleFavoriteClick}
-						activeText={TEXT_CONSTANTS.MOVIE_CARD.IN_FAVORITES}
-						inactiveText={TEXT_CONSTANTS.MOVIE_CARD.ADD_TO_FAVORITES}
-					/>
+		<div className={styles['movie-card']}>
+			<div className={styles['movie-card-content']}>
+				<MovieCardImage
+					imageSrc={displayImage}
+					alt={TEXT_CONSTANTS.MOVIE_CARD.CARD_IMAGE_ALT}
+					views={displayViews}
+					onClick={() => navigate(`/movie/${id}`)}
+				/>
+				<div className={styles['movie-card-details']}>
+					<Paragraph
+						weight="bold"
+						className={styles['movie-card-title']}
+						onClick={() => navigate(`/movie/${id}`)}
+					>
+						{displayTitle}
+					</Paragraph>
+					<FavoriteButton movie={movieDetails.movie} />
 				</div>
 			</div>
 		</div>
 	);
-};
+});

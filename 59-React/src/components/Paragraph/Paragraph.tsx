@@ -1,22 +1,41 @@
-import { FC, ReactNode } from 'react';
+import { FC, ReactNode, ElementType, memo } from 'react';
 import classNames from 'classnames';
 import styles from './Paragraph.module.css';
 
+export type ParagraphSize = 'extra-small' | 'regular' | 'large';
+export type ParagraphWeight = 'normal' | 'bold' | 'extra-bold';
+
 interface ParagraphProps {
-  size?: 'extra-small' | 'regular' | 'large';
-  children: ReactNode;
+  as?: ElementType;
+  size?: ParagraphSize;
+  weight?: ParagraphWeight;
+  children?: ReactNode;
   className?: string;
+  onClick?: () => void;
+  id?: string;
 }
 
-export const Paragraph: FC<ParagraphProps> = ({ size = 'regular', children, className = '' }) => {
-	const validSizes = ['extra-small', 'regular', 'large'];
-	const safeSize = validSizes.includes(size) ? size : 'regular';
+export const Paragraph: FC<ParagraphProps> = memo(
+	({
+		as: Component = 'p',
+		size = 'regular',
+		weight = 'normal',
+		children,
+		className,
+		id,
+		...props
+	}) => {
+		const paragraphClass = classNames(
+			styles.paragraph,
+			styles[`paragraph-${size}`],
+			weight && styles[`paragraph-${weight}`],
+			className
+		);
 
-	const paragraphClass = classNames(
-		styles.paragraph,
-		styles[`paragraph-${safeSize}`],
-		className
-	);
-
-	return <p className={paragraphClass}>{children}</p>;
-};
+		return (
+			<Component className={paragraphClass} id={id} {...props}>
+				{children}
+			</Component>
+		);
+	}
+);

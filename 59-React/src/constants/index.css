@@ -2,7 +2,7 @@
   --color-white: #ffffff;
   --color-accent: #7B6EF6;
   --color-accent-hover: #675be0;
-  --color-error: #e53935;
+  --color-error: #E53E3E;
   --color-paragraph: #8E95A9;
   --color-title: #EBEEF5;
   --color-label: #767E94;
@@ -56,23 +56,25 @@
   --radius-circle: 50%;
 
   --button-width-120: 120px;
+  --button-width-240: 240px;
   --error-width-400: 400px;
   --container-width-500: 500px;
   --container-width-600: 600px;
   --container-width-1440: 1440px;
 
+  --icon-size: 16px;
   --badge-size: 24px;
 
-  --blur-strong: blur(80px);
   --blur-light: blur(8px);
+  --blur-strong: blur(80px);
 
   --movie-card-width: 282px;
   --movie-card-height: 520px;
   --movie-poster-width: 480px;
   --movie-poster-height: 720px;
 
-  --transition: color 0.2s ease;
-  --transition-opacity: opacity 0.2s ease;
+  --transition: color 0.3s ease;
+  --transition-opacity: opacity 0.3s ease;
 
   --font-family: 'Poppins', sans-serif;
 }
@@ -85,4 +87,15 @@ body,
   padding: 0;
   background-color: var(--color-background);
   font-family: var(--font-family);
+}
+
+.error-fallback {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-white);
+  padding: 2rem;
+  text-align: center;
 }

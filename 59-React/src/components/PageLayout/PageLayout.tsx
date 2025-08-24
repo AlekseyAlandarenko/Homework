@@ -1,21 +1,15 @@
-import { FC, ReactNode } from 'react';
+import { FC } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from '../Header/Header';
-import { useAuth } from '../../hooks/useAuth';
+import { ConfirmModal } from '../ConfirmModal/ConfirmModal';
 import styles from './PageLayout.module.css';
 
-interface PageLayoutProps {
-  children?: ReactNode;
-}
-
-export const PageLayout: FC<PageLayoutProps> = ({ children }) => {
-	const { navLinks, favorites } = useAuth();
-
+export const PageLayout: FC = () => {
 	return (
 		<div className={styles['page-container']}>
-			<Header badgeValue={favorites.length} navLinks={navLinks} />
+			<Header />
 			<Outlet />
-			{children}
+			<ConfirmModal />
 		</div>
 	);
 };

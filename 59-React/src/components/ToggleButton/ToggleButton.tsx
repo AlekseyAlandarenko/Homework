@@ -1,61 +1,46 @@
-import { FC } from 'react';
-import classNames from 'classnames';
+import { FC, memo } from 'react';
 import { Button } from '../Button/Button';
-import { BookmarkIcon } from '../../assets/icons/BookmarkIcon';
-import { ThumbUpIcon } from '../../assets/icons//ThumbUpIcon';
+import { Paragraph } from '../Paragraph/Paragraph';
+import classNames from 'classnames';
 import styles from './ToggleButton.module.css';
 
-interface ToggleButtonProps {
+interface ToggleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isActive: boolean;
-  onClick: () => void;
-  activeText: string;
-  inactiveText: string;
+  activeContent: React.ReactNode;
+  inactiveContent: React.ReactNode;
   className?: string;
-  iconWrapperClass?: string;
-  iconClass?: string;
-  variant?: 'default' | 'search' | 'favorite';
 }
 
-export const ToggleButton: FC<ToggleButtonProps> = ({
-	isActive,
-	onClick,
-	activeText,
-	inactiveText,
-	className,
-	iconWrapperClass,
-	iconClass,
-	variant = 'favorite'
-}) => (
-	<Button variant={variant} isActive={isActive} onClick={onClick}>
-		<span className={classNames(styles['toggle-button-content'], className)}>
-			<span
-				className={classNames(styles['state-container'], {
-					[styles['visible']]: isActive,
-					[styles['hidden']]: !isActive
-				})}
+export const ToggleButton: FC<ToggleButtonProps> = memo(
+	({ isActive, activeContent, inactiveContent, className, ...props }) => {
+		return (
+			<Button
+				className={classNames(
+					styles['toggle-wrapper'],
+					className,
+					isActive ? styles.active : styles.inactive
+				)}
+				aria-pressed={isActive}
+				{...props}
 			>
-				<span className={classNames(styles['icon-wrapper'], iconWrapperClass)}>
-					<BookmarkIcon
-						stroke="var(--color-button-favorite-active)"
-						className={classNames(styles['icon'], iconClass)}
-					/>
-				</span>
-				{activeText}
-			</span>
-			<span
-				className={classNames(styles['state-container'], {
-					[styles['visible']]: !isActive,
-					[styles['hidden']]: isActive
-				})}
-			>
-				<span className={classNames(styles['icon-wrapper'], iconWrapperClass)}>
-					<ThumbUpIcon
-						stroke="var(--color-accent)"
-						className={classNames(styles['icon'], iconClass)}
-					/>
-				</span>
-				{inactiveText}
-			</span>
-		</span>
-	</Button>
+				<Paragraph
+					as="span"
+					weight="bold"
+					className={classNames(styles.state, { [styles.visible]: isActive })}
+					aria-hidden={!isActive}
+				>
+					{activeContent}
+				</Paragraph>
+
+				<Paragraph
+					as="span"
+					weight="bold"
+					className={classNames(styles.state, { [styles.visible]: !isActive })}
+					aria-hidden={isActive}
+				>
+					{inactiveContent}
+				</Paragraph>
+			</Button>
+		);
+	}
 );

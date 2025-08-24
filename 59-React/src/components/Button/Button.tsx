@@ -1,33 +1,33 @@
-import { FC, ReactNode, ButtonHTMLAttributes } from 'react';
+import { FC, ReactNode, ButtonHTMLAttributes, memo } from 'react';
 import classNames from 'classnames';
 import styles from './Button.module.css';
+import { Paragraph } from '../Paragraph/Paragraph';
+import { TEXT_CONSTANTS } from '../../constants/textConstants';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   children: ReactNode;
-  onClick: () => void;
-  variant?: 'default' | 'search' | 'favorite';
-  isActive?: boolean;
-  type?: 'button' | 'submit' | 'reset';
+  isLoading?: boolean;
 }
 
-export const Button: FC<ButtonProps> = ({
-	children,
-	onClick,
-	variant = 'default',
-	isActive = false,
-	type = 'button'
-}) => {
-	return (
-		<button
-			type={type}
-			onClick={onClick}
-			className={classNames(styles.button, {
-				[styles['button-search']]: variant === 'search',
-				[styles['button-favorite']]: variant === 'favorite',
-				[styles['button-favorite-active']]: isActive
-			})}
-		>
-			{children}
-		</button>
-	);
-};
+export const Button: FC<ButtonProps> = memo(
+	({ children, isLoading = false, disabled, className, type = 'button', ...props }) => {
+		const isDisabled = disabled || isLoading;
+
+		return (
+			<button
+				type={type}
+				className={classNames(
+					styles.button,
+					{ [styles['button-disabled']]: isDisabled },
+					className
+				)}
+				disabled={isDisabled}
+				{...props}
+			>
+				<Paragraph as="span">
+					{isLoading ? TEXT_CONSTANTS.COMMON.LOADING : children}
+				</Paragraph>
+			</button>
+		);
+	}
+);

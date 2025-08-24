@@ -1,18 +1,20 @@
-import { FC, ReactNode } from 'react';
-import classNames from 'classnames';
+import { FC, ReactNode, memo } from 'react';
 import styles from './Badge.module.css';
+import { Paragraph } from '../Paragraph/Paragraph';
 
 interface BadgeProps {
   icon: ReactNode;
-  value: string | number;
+  value: number;
   className?: string;
 }
 
-export const Badge: FC<BadgeProps> = ({ icon, value, className }) => {
+export const Badge: FC<BadgeProps> = memo(({ icon, value, className }) => {
+	const rootClassName = [styles.badge, className].filter(Boolean).join(' ');
+
 	return (
-		<span className={classNames(styles.badge, className)}>
+		<span className={rootClassName}>
 			<span className={styles.icon}>{icon}</span>
-			{value}
+			<Paragraph as="span">{value}</Paragraph>
 		</span>
 	);
-};
+});

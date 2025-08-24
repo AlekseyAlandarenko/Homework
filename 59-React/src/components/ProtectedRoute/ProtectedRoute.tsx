@@ -1,12 +1,15 @@
 import { FC, ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated } from '../../store/usersSelectors';
 
-interface ProtectedRouteProps {
-  children: ReactNode;
-}
+export const ProtectedRoute: FC<{ children: ReactNode }> = ({ children }) => {
+	const isAuthenticated = useSelector(selectIsAuthenticated);
+	const location = useLocation();
 
-export const ProtectedRoute: FC<ProtectedRouteProps> = ({ children }) => {
-	const { user } = useAuth();
-	return user ? children : <Navigate to="/login" />;
+	if (!isAuthenticated) {
+		return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+	}
+
+	return children;
 };

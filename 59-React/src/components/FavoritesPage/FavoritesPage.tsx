@@ -1,75 +1,51 @@
-import { FC } from 'react';
-import { Title } from '../Title/Title';
-import { Paragraph } from '../Paragraph/Paragraph';
-import { MovieCard } from '../MovieCard/MovieCard';
-import { useMovies } from '../../hooks/useMovies';
+import { FC, useMemo } from 'react';
+import { useSelector } from 'react-redux';
+import { HeaderWrapper } from '../HeaderWrapper/HeaderWrapper';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import styles from './FavoritesPage.module.css';
-
-interface Movie {
-  id: number;
-  title: string;
-  imageSrc: string;
-  views: number;
-}
-
-function getMovieDeclension(count: number): string {
-	const forms = ['избранный фильм', 'избранных фильма', 'избранных фильмов'];
-	if (count % 100 >= 11 && count % 100 <= 14) return forms[2];
-	switch (count % 10) {
-	case 1:
-		return forms[0];
-	case 2:
-	case 3:
-	case 4:
-		return forms[1];
-	default:
-		return forms[2];
-	}
-}
+import { useFavorite } from '../../hooks/useFavorite';
+import { selectCurrentProfile } from '../../store/usersSelectors';
+import { getDeclension } from '../../utils/declensionUtils';
+import { MoviesGrid } from '../MoviesGrid/MoviesGrid';
 
 export const FavoritesPage: FC = () => {
-	const { favoriteMovies, isFavorite, handleToggleFavorite } = useMovies();
+	const { toggle } = useFavorite();
+	const profile = useSelector(selectCurrentProfile);
 
-	const getDescriptionText = () => {
-		return favoriteMovies.length > 0
-			? `У вас ${favoriteMovies.length} ${getMovieDeclension(favoriteMovies.length)}`
-			: TEXT_CONSTANTS.FAVORITES_PAGE.NO_FAVORITES;
-	};
+	const favoriteMovies = useMemo(() => profile?.favorites || [], [profile?.favorites]);
 
-	const renderHeader = () => (
-		<div className={styles['favorites-header']}>
-			<Title level={1}>{TEXT_CONSTANTS.FAVORITES_PAGE.TITLE}</Title>
-			<Paragraph size="regular">
-				{getDescriptionText()}
-			</Paragraph>
-		</div>
+	const count = favoriteMovies.length;
+
+	const description = useMemo(
+		() =>
+			count === 0
+				? TEXT_CONSTANTS.FAVORITES_PAGE.NO_FAVORITES
+				: `У вас ${count} ${getDeclension(count, [
+					'избранный фильм',
+					'избранных фильма',
+					'избранных фильмов'
+				])}`,
+		[count]
 	);
 
-	const renderContent = () => {
-		return favoriteMovies.map((movie: Movie) => (
-			<MovieCard
-				key={movie.id}
-				id={movie.id}
-				title={movie.title}
-				imageSrc={movie.imageSrc}
-				views={movie.views}
-				isFavorite={isFavorite(movie.id)}
-				onAddToFavorites={() => handleToggleFavorite(movie.id)}
-			/>
-		));
-	};
+	const favoriteMoviesWithFlag = useMemo(
+		() =>
+			favoriteMovies.map((movie) => ({
+				...movie,
+				isFavorite: true
+			})),
+		[favoriteMovies]
+	);
 
 	return (
-		<div className={styles.container}>
-			<div className={styles['fixed-section']}>
-				<div>
-					{renderHeader()}
-				</div>
+		<div>
+			<div className={styles['favorites-container']}>
+				<HeaderWrapper title={TEXT_CONSTANTS.FAVORITES_PAGE.TITLE} description={description} />
 			</div>
-			<div className={styles['movies-grid']}>
-				{renderContent()}
-			</div>
+
+			{count > 0 && (
+				<MoviesGrid movies={favoriteMoviesWithFlag} onAddToFavorites={toggle} marginOffset={200} />
+			)}
 		</div>
 	);
 };

@@ -26,35 +26,6 @@
   gap: var(--space-8);
 }
 
-.header-link-container {
-  position: relative;
-}
-
-.header-link {
-  display: flex;
-  gap: var(--space-8);
-  text-decoration: none;
-  transition: var(--transition);
-  cursor: pointer;
-  font-weight: var(--font-weight-600);
-  font-size: var(--font-size-16);
-  line-height: var(--line-height-24);
-  letter-spacing: var(--link-letter-spacing);
-  color: var(--color-link);
-}
-
-.header-link:hover,
-.header-link:hover .header-link-icon {
-  color: var(--color-accent-hover);
-}
-
-.header-link-active,
-.header-link-active .header-link-icon,
-.header-link-open,
-.header-link-open .header-link-icon {
-  color: var(--color-white);
-}
-
 .header-link-badge {
   display: flex;
   align-items: center;
@@ -62,9 +33,6 @@
   width: var(--badge-size);
   height: var(--badge-size);
   border-radius: var(--radius-circle);
-  font-weight: var(--font-weight-600);
-  font-size: var(--font-size-14);
-  line-height: var(--line-height-24);
   letter-spacing: var(--link-letter-spacing);
   background-color: var(--color-accent);
   color: var(--color-white);

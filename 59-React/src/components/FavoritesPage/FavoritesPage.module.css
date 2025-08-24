@@ -1,10 +1,4 @@
-.container {
-  width: var(--container-width-500);
-  margin: 0 auto;
-  margin-left: 0;
-}
-
-.fixed-section {
+.favorites-container {
   position: fixed;
   top: var(--space-80);
   left: 0;
@@ -15,20 +9,4 @@
   z-index: 999;
   background-color: var(--color-background);
   padding: var(--space-80) var(--space-120) 0;
-}
-
-.favorites-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-}
-
-.movies-grid {
-  display: grid;
-  padding-inline: var(--space-120);
-  grid-template-columns: repeat(4, 1fr);
-  row-gap: var(--space-16);
-  column-gap: var(--space-24);
-  width: var(--container-width-1440);
-  margin: calc(var(--space-80) + 150px) auto 0;
 }
