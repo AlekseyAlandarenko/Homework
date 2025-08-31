@@ -1,5 +1,5 @@
 import { FC, ReactNode, memo } from 'react';
-import classNames from 'classnames';
+import { createClassname } from '../../utils/classnameUtils';
 import styles from './Title.module.css';
 
 interface TitleProps {
@@ -14,7 +14,7 @@ export const Title: FC<TitleProps> = memo(({ level = 1, children, className = ''
 	const Tag = `h${safeLevel}` as keyof JSX.IntrinsicElements;
 
 	return (
-		<Tag className={classNames(styles.title, styles[`title-h${safeLevel}`], className)} id={id}>
+		<Tag className={createClassname(styles.title, styles[`title-h${safeLevel}`], className)} id={id}>
 			{children}
 		</Tag>
 	);

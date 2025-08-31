@@ -4,7 +4,7 @@ import { Button } from '../Button/Button';
 import styles from './InputButtonRow.module.css';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import { Paragraph } from '../Paragraph/Paragraph';
-import classNames from 'classnames';
+import { createClassname } from '../../utils/classnameUtils';
 
 export interface InputButtonRowProps {
   value: string;
@@ -75,7 +75,7 @@ export const InputButtonRow: FC<InputButtonRowProps> = memo(
 
 				{error && (
 					<Paragraph
-						className={classNames(styles.error, styles[`error-${name}`])}
+						className={createClassname(styles.error, styles[`error-${name}`])}
 						id={errorMessageId}
 						aria-live="polite"
 					>

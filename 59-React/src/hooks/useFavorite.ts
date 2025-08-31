@@ -1,25 +1,18 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useCallback } from 'react';
-import { RootState } from '../store/store';
 import { toggleFavorite } from '../store/usersSlice';
 import { Movie } from '../interfaces/movie.interface';
 import { useNavigation } from './useNavigation';
+import { selectCurrentProfile, selectCurrentAccountId } from '../store/usersSelectors';
+import { makeSelectIsFavorite } from '../store/moviesSelectors';
 
 export const useFavorite = (movieId?: string) => {
 	const dispatch = useDispatch();
 	const { canAccess, handleNavigate } = useNavigation();
-	const currentAccountId = useSelector((state: RootState) => state.users.currentAccountId);
-	const currentProfileId = useSelector((state: RootState) => state.users.currentProfileId);
-	const profile = useSelector((state: RootState) =>
-		currentProfileId ? state.users.profiles.entities[currentProfileId] : null
-	);
+	const currentAccountId = useSelector(selectCurrentAccountId);
+	const profile = useSelector(selectCurrentProfile);
 
-	const isFavorite = useSelector((state: RootState) => {
-		if (!movieId) return false;
-		if (!currentProfileId) return false;
-		const profile = state.users.profiles.entities[currentProfileId];
-		return profile?.favorites?.some((m) => m.id === movieId) ?? false;
-	});
+	const isFavorite = useSelector(makeSelectIsFavorite(movieId));
 
 	const toggle = useCallback(
 		(movie: Movie) => {

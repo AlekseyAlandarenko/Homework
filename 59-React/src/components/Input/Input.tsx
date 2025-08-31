@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import classNames from 'classnames';
+import { createClassname } from '../../utils/classnameUtils';
 import styles from './Input.module.css';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -29,7 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 			}
 		};
 
-		const inputClassName = classNames(
+		const inputClassName = createClassname(
 			styles.input,
 			{
 				[styles['input-with-icon']]: !!icon,
@@ -39,7 +39,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 		);
 
 		return (
-			<div className={classNames(styles['input-wrapper'], wrapperClassName)}>
+			<div className={createClassname(styles['input-wrapper'], wrapperClassName)}>
 				<input
 					ref={ref}
 					className={inputClassName}
@@ -57,5 +57,3 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 		);
 	}
 );
-
-Input.displayName = 'Input';

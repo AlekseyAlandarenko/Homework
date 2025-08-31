@@ -4,12 +4,13 @@ import { HeaderWrapper } from '../HeaderWrapper/HeaderWrapper';
 import { InputButtonRow } from '../InputButtonRow/InputButtonRow';
 import { SearchResults } from '../SearchResults/SearchResults';
 import { SearchIcon } from '../../assets/icons/SearchIcon';
-import { RootState, AppDispatch } from '../../store/store';
+import { AppDispatch } from '../../store/store';
 import { searchMovies, clearError } from '../../store/moviesSlice';
 import { makeSelectSearchResultsWithFavorites } from '../../store/moviesSelectors';
 import styles from './SearchPage.module.css';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import { useFavorite } from '../../hooks/useFavorite';
+import { selectMoviesLoading, selectMoviesError, selectIsSearchPerformed } from '../../store/moviesSelectors';
 
 export const SearchPage: FC = () => {
 	const dispatch: AppDispatch = useDispatch();
@@ -18,11 +19,9 @@ export const SearchPage: FC = () => {
 	const { toggle } = useFavorite();
 
 	const resultsWithFavorites = useSelector(makeSelectSearchResultsWithFavorites);
-	const isLoading = useSelector((state: RootState) => state.movies.loading);
-	const error = useSelector((state: RootState) => state.movies.error);
-	const isSearchPerformed = useSelector(
-		(state: RootState) => state.movies.search.isSearchPerformed
-	);
+	const isLoading = useSelector(selectMoviesLoading);
+	const error = useSelector(selectMoviesError);
+	const isSearchPerformed = useSelector(selectIsSearchPerformed);
 
 	const errorMessage =
 	error && error !== TEXT_CONSTANTS.ERRORS.NO_RESULTS

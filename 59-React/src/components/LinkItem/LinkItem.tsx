@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import styles from './LinkItem.module.css';
 import { Paragraph } from '../Paragraph/Paragraph';
 import { NavLinkItem } from '../../interfaces/navigation.interface';
+import { createClassname } from '../../utils/classnameUtils';
 
 interface LinkItemProps {
   link: NavLinkItem;
@@ -44,15 +45,13 @@ export const LinkItem: FC<LinkItemProps> = memo(({ link, onClick, onUsernameClic
 			<NavLink
 				to={link.href}
 				className={({ isActive }) =>
-					[
+					createClassname(
 						styles['header-link'],
 						(isActive && link.href !== '/login') || (link.isUserLink && isAddProfilePage)
 							? styles['header-link-active']
-							: '',
-						link.isUserLinkOpen ? styles['header-link-open'] : ''
-					]
-						.filter(Boolean)
-						.join(' ')
+							: null,
+						link.isUserLinkOpen ? styles['header-link-open'] : null
+					)
 				}
 				aria-label={typeof link.label === 'string' ? link.label : undefined}
 				onClick={(e) => onClick(e, link.href!, link.isLogout)}
@@ -69,16 +68,13 @@ export const LinkItem: FC<LinkItemProps> = memo(({ link, onClick, onUsernameClic
 	return (
 		<div className={styles['header-link-container']}>
 			<span
-				className={[
+				className={createClassname(
 					styles['header-link'],
-					link.isUserLinkOpen ? styles['header-link-open'] : '',
+					link.isUserLinkOpen ? styles['header-link-open'] : null,
 					(isLoginOrRegisterPage || isAddProfilePage) && link.isUserLink
 						? styles['header-link-active']
-						: ''
-				]
-					.filter(Boolean)
-					.join(' ')
-				}
+						: null
+				)}
 				onClick={onUsernameClick}
 				onKeyDown={handleKeyDown}
 				role="button"

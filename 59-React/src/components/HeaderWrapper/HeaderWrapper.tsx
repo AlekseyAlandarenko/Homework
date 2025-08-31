@@ -2,6 +2,7 @@ import { FC, ReactNode } from 'react';
 import { Title } from '../Title/Title';
 import { Paragraph } from '../Paragraph/Paragraph';
 import styles from './HeaderWrapper.module.css';
+import { createClassname } from '../../utils/classnameUtils';
 
 interface HeaderWrapperProps {
   title: string;
@@ -16,9 +17,7 @@ export const HeaderWrapper: FC<HeaderWrapperProps> = ({
 	className,
 	children
 }) => {
-	const rootClassName = ['section-header', styles.header, className]
-		.filter(Boolean)
-		.join(' ');
+	const rootClassName = createClassname('section-header', styles.header, className);
 
 	return (
 		<div className={rootClassName}>

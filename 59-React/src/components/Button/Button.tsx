@@ -1,5 +1,5 @@
 import { FC, ReactNode, ButtonHTMLAttributes, memo } from 'react';
-import classNames from 'classnames';
+import { createClassname } from '../../utils/classnameUtils';
 import styles from './Button.module.css';
 import { Paragraph } from '../Paragraph/Paragraph';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
@@ -16,7 +16,7 @@ export const Button: FC<ButtonProps> = memo(
 		return (
 			<button
 				type={type}
-				className={classNames(
+				className={createClassname(
 					styles.button,
 					{ [styles['button-disabled']]: isDisabled },
 					className

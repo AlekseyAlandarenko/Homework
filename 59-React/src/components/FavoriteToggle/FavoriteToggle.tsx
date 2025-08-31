@@ -5,6 +5,20 @@ import styles from './FavoriteToggle.module.css';
 import { BookmarkIcon } from '../../assets/icons/BookmarkIcon';
 import { ThumbUpIcon } from '../../assets/icons/ThumbUpIcon';
 
+const ActiveFavoriteContent: FC = () => (
+	<>
+		<BookmarkIcon className={styles.icon} />
+		{TEXT_CONSTANTS.MOVIE_CARD.IN_FAVORITES}
+	</>
+);
+
+const InactiveFavoriteContent: FC = () => (
+	<>
+		<ThumbUpIcon className={styles.icon} />
+		{TEXT_CONSTANTS.MOVIE_CARD.ADD_TO_FAVORITES}
+	</>
+);
+
 interface FavoriteToggleProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'isActive'> {
   isActive: boolean;
 }
@@ -13,18 +27,8 @@ export const FavoriteToggle: FC<FavoriteToggleProps> = memo(({ isActive, ...prop
 	return (
 		<ToggleButton
 			isActive={isActive}
-			activeContent={
-				<>
-					<BookmarkIcon className={styles.icon} />
-					{TEXT_CONSTANTS.MOVIE_CARD.IN_FAVORITES}
-				</>
-			}
-			inactiveContent={
-				<>
-					<ThumbUpIcon className={styles.icon} />
-					{TEXT_CONSTANTS.MOVIE_CARD.ADD_TO_FAVORITES}
-				</>
-			}
+			activeContent={<ActiveFavoriteContent />}
+			inactiveContent={<InactiveFavoriteContent />}
 			{...props}
 		/>
 	);

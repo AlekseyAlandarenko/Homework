@@ -1,6 +1,6 @@
 import { createSelector } from 'reselect';
 import { RootState } from './store';
-import { profilesAdapter, accountsAdapter } from './usersSlice';
+import { profilesAdapter, accountsAdapter, LoadingType } from './usersSlice';
 
 export const profilesSelectors = profilesAdapter.getSelectors<RootState>(
 	(state) => state.users.profiles
@@ -23,6 +23,18 @@ export const selectCurrentProfile = createSelector(
 	(profiles, profileId) => (profileId ? profiles[profileId] : null)
 );
 
+export const selectCurrentAccount = createSelector(
+	[accountsSelectors.selectEntities, selectCurrentAccountId],
+	(entities, currentAccountId) => (currentAccountId ? entities[currentAccountId] : null)
+);
+
+export const selectCurrentProfileName = createSelector(
+	[profilesSelectors.selectEntities, selectCurrentProfileId],
+	(entities, profileId) => (profileId ? entities[profileId]?.name || '' : '')
+);
+
+export const selectIsUsersLoading = (state: RootState) => state.users.loading !== LoadingType.NONE;
+
 export const makeSelectProfilesForAccount = (accountLogin?: string) => 
 	createSelector(
 		[profilesSelectors.selectAll],
@@ -40,3 +52,5 @@ export const makeSelectFavoritesCount = (profileId?: string) =>
 			return profiles[profileId]?.favorites?.length || 0;
 		}
 	);
+
+export const selectUsersModal = (state: RootState) => state.users.modal;

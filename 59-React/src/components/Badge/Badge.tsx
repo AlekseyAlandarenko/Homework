@@ -1,6 +1,7 @@
 import { FC, ReactNode, memo } from 'react';
 import styles from './Badge.module.css';
 import { Paragraph } from '../Paragraph/Paragraph';
+import { createClassname } from '../../utils/classnameUtils';
 
 interface BadgeProps {
   icon: ReactNode;
@@ -9,7 +10,7 @@ interface BadgeProps {
 }
 
 export const Badge: FC<BadgeProps> = memo(({ icon, value, className }) => {
-	const rootClassName = [styles.badge, className].filter(Boolean).join(' ');
+	const rootClassName = createClassname(styles.badge, className);
 
 	return (
 		<span className={rootClassName}>

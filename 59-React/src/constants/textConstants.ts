@@ -21,7 +21,7 @@ export const TEXT_CONSTANTS = {
 		REGISTER: 'Регистрация',
 		ADD_PROFILE: 'Добавить',
 		USERNAME_PLACEHOLDER: 'Имя пользователя',
-		PROFILE_NAME_PLACEHOLDER: 'Название профиля',
+		PROFILE_NAME_PLACEHOLDER: 'Имя профиля',
 		PASSWORD_PLACEHOLDER: 'Пароль',
 		LOGIN_BUTTON: 'Войти',
 		REGISTER_BUTTON: 'Начать',

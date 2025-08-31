@@ -9,7 +9,8 @@ import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import {
 	selectCurrentAccountId,
 	selectCurrentProfileId,
-	makeSelectFavoritesCount
+	makeSelectFavoritesCount,
+	selectCurrentProfileName
 } from '../../store/usersSelectors';
 import { RootState } from '../../store/store';
 import { Paragraph } from '../Paragraph/Paragraph';
@@ -30,10 +31,7 @@ export const Header: FC = () => {
 		makeSelectFavoritesCount(currentProfileId ?? undefined)(state)
 	);
 
-	const currentProfileName = useSelector(
-		(state: RootState) =>
-			state.users.profiles.entities[currentProfileId ?? '']?.name || ''
-	);
+	const currentProfileName = useSelector(selectCurrentProfileName);
 
 	const logoLink: NavLinkItem = {
 		label: <img src={LogoIcon} alt={TEXT_CONSTANTS.HEADER.LOGO_ALT} />,

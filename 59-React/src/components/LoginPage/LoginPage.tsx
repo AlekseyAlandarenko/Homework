@@ -6,10 +6,10 @@ import { InputButtonRow } from '../InputButtonRow/InputButtonRow';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import { useForm } from '../../hooks/useForm';
 import { loginAsync, registerAsync, addProfileAsync } from '../../store/usersSlice';
-import { RootState, AppDispatch } from '../../store/store';
+import { AppDispatch } from '../../store/store';
 import { useLoginValidation } from '../../hooks/useLoginValidation';
-import { LoadingType } from '../../store/usersSlice';
 import styles from './LoginPage.module.css';
+import { selectIsUsersLoading } from '../../store/usersSelectors';
 
 const modeConfig = {
 	login: {
@@ -42,7 +42,7 @@ export const LoginPage: FC = (): ReactElement => {
 	const currentMode = isAddingProfile ? 'addProfile' : isRegistering ? 'register' : 'login';
 
 	const { validate } = useLoginValidation(isAddingProfile, isRegistering);
-	const isLoading = useSelector((state: RootState) => state.users.loading !== LoadingType.NONE);
+	const isLoading = useSelector(selectIsUsersLoading);
 
 	const { formData, errors, variants, handleInputChange, handleSubmit, setErrors, setVariants, setFormData } = useForm(
 		{ username: '', password: '' },

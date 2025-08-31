@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../../store/store';
+import { AppDispatch } from '../../store/store';
 import { closeModal, removeProfileAsync, deleteAccountAsync } from '../../store/usersSlice';
 import styles from './ConfirmModal.module.css';
 import { Button } from '../Button/Button';
@@ -9,6 +9,7 @@ import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { selectUsersModal } from '../../store/usersSelectors';
 
 type ModalData =
   | {
@@ -27,9 +28,7 @@ type ModalData =
 export const ConfirmModal: FC = () => {
 	const dispatch: AppDispatch = useDispatch();
 	const navigate = useNavigate();
-	const { modal } = useSelector((state: RootState) => state.users) as {
-    modal: ModalData & { isOpen: boolean };
-  };
+	const modal = useSelector(selectUsersModal) as ModalData & { isOpen: boolean };
 
 	const modalRef = useFocusTrap<HTMLDivElement>(modal.isOpen);
 

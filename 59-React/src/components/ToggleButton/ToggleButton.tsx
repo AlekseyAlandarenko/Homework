@@ -1,7 +1,7 @@
 import { FC, memo } from 'react';
 import { Button } from '../Button/Button';
 import { Paragraph } from '../Paragraph/Paragraph';
-import classNames from 'classnames';
+import { createClassname } from '../../utils/classnameUtils';
 import styles from './ToggleButton.module.css';
 
 interface ToggleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,7 +15,7 @@ export const ToggleButton: FC<ToggleButtonProps> = memo(
 	({ isActive, activeContent, inactiveContent, className, ...props }) => {
 		return (
 			<Button
-				className={classNames(
+				className={createClassname(
 					styles['toggle-wrapper'],
 					className,
 					isActive ? styles.active : styles.inactive
@@ -26,7 +26,7 @@ export const ToggleButton: FC<ToggleButtonProps> = memo(
 				<Paragraph
 					as="span"
 					weight="bold"
-					className={classNames(styles.state, { [styles.visible]: isActive })}
+					className={createClassname(styles.state, { [styles.visible]: isActive })}
 					aria-hidden={!isActive}
 				>
 					{activeContent}
@@ -35,7 +35,7 @@ export const ToggleButton: FC<ToggleButtonProps> = memo(
 				<Paragraph
 					as="span"
 					weight="bold"
-					className={classNames(styles.state, { [styles.visible]: !isActive })}
+					className={createClassname(styles.state, { [styles.visible]: !isActive })}
 					aria-hidden={isActive}
 				>
 					{inactiveContent}

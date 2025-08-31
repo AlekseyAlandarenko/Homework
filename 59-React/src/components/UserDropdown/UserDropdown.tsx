@@ -1,14 +1,13 @@
 import { FC, useEffect, useRef, ReactNode, useCallback } from 'react';
-import classNames from 'classnames';
+import { createClassname } from '../../utils/classnameUtils';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigation } from '../../hooks/useNavigation';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import styles from './UserDropdown.module.css';
 import { switchProfile } from '../../store/usersSlice';
-import { RootState } from '../../store/store';
 import { makeSelectProfilesForAccount } from '../../store/usersSelectors';
-import { accountsAdapter, profilesAdapter } from '../../store/usersSlice';
 import { showDeleteAccountModal, showRemoveProfileModal } from '../../utils/modalUtils';
+import { selectCurrentAccount, selectCurrentProfile } from '../../store/usersSelectors';
 
 interface DropdownItemProps {
   children: ReactNode;
@@ -19,7 +18,7 @@ interface DropdownItemProps {
 
 const DropdownItem: FC<DropdownItemProps> = ({ children, onClick, isActive = false, isLast = false }) => (
 	<button
-		className={classNames(styles['dropdown-item'], {
+		className={createClassname(styles['dropdown-item'], {
 			[styles['dropdown-item-active']]: isActive,
 			[styles['dropdown-item-last']]: isLast
 		})}
@@ -52,17 +51,9 @@ export const UserDropdown: FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
 		};
 	}, [isOpen, onClose]);
 
-	const account = useSelector((state: RootState) =>
-		state.users.currentAccountId
-			? accountsAdapter.getSelectors().selectById(state.users.accounts, state.users.currentAccountId)
-			: null
-	);
+	const account = useSelector(selectCurrentAccount);
 
-	const profile = useSelector((state: RootState) =>
-		state.users.currentProfileId
-			? profilesAdapter.getSelectors().selectById(state.users.profiles, state.users.currentProfileId)
-			: null
-	);
+	const profile = useSelector(selectCurrentProfile);
 
 	const selectProfilesForAccount = makeSelectProfilesForAccount(account?.login);
 	const profiles = useSelector(selectProfilesForAccount);

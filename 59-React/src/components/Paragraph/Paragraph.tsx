@@ -1,5 +1,5 @@
 import { FC, ReactNode, ElementType, memo } from 'react';
-import classNames from 'classnames';
+import { createClassname } from '../../utils/classnameUtils';
 import styles from './Paragraph.module.css';
 
 export type ParagraphSize = 'extra-small' | 'regular' | 'large';
@@ -25,10 +25,10 @@ export const Paragraph: FC<ParagraphProps> = memo(
 		id,
 		...props
 	}) => {
-		const paragraphClass = classNames(
+		const paragraphClass = createClassname(
 			styles.paragraph,
 			styles[`paragraph-${size}`],
-			weight && styles[`paragraph-${weight}`],
+			weight ? styles[`paragraph-${weight}`] : null,
 			className
 		);
 

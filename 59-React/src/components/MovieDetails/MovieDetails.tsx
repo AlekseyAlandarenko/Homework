@@ -9,6 +9,20 @@ export interface Field<MovieType> {
   format?: (value: unknown) => React.ReactNode;
 }
 
+interface MovieDetailItemProps {
+  label: string;
+  value: React.ReactNode;
+}
+
+const MovieDetailItem: FC<MovieDetailItemProps> = ({ label, value }) => (
+	<div className={styles['movie-detail']}>
+		<Paragraph className={styles['movie-detail-label']}>{label}</Paragraph>
+		<Paragraph size="large" className={styles['movie-detail-value']}>
+			{value}
+		</Paragraph>
+	</div>
+);
+
 interface MovieDetailsProps {
   movie: Movie;
   fields: readonly Field<Movie>[];
@@ -25,14 +39,7 @@ export const MovieDetails: FC<MovieDetailsProps> = ({ movie, fields }) => {
 						? rawValue.join(', ')
 						: String(rawValue ?? 'N/A');
 
-				return (
-					<div className={styles['movie-detail']} key={idx}>
-						<Paragraph className={styles['movie-detail-label']}>{label}</Paragraph>
-						<Paragraph size="large" className={styles['movie-detail-value']}>
-							{value}
-						</Paragraph>
-					</div>
-				);
+				return <MovieDetailItem key={idx} label={label} value={value} />;
 			}),
 		[movie, fields]
 	);

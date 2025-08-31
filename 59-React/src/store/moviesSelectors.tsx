@@ -49,3 +49,21 @@ export const makeSelectSearchResultsWithFavorites = createSelector(
 			}));
 	}
 );
+
+export const selectMoviesLoading = (state: RootState) => state.movies.loading;
+
+export const selectMoviesError = (state: RootState) => state.movies.error;
+
+export const makeSelectIsFavorite = (movieId?: string) =>
+	createSelector(
+		[(state: RootState) => state.users.currentProfileId, (state: RootState) => state.users.profiles.entities],
+		(currentProfileId, profiles) => {
+			if (!movieId) return false;
+			if (!currentProfileId) return false;
+			const profile = profiles[currentProfileId];
+			return profile?.favorites?.some((m) => m.id === movieId) ?? false;
+		}
+	);
+
+export const selectIsSearchPerformed = (state: RootState) =>
+	state.movies.search.isSearchPerformed;

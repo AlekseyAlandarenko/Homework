@@ -6,66 +6,97 @@ import { Button } from '../Button/Button';
 import { TEXT_CONSTANTS } from '../../constants/textConstants';
 import styles from './GlobalErrorFallback.module.css';
 
+const Error404: FC = () => (
+	<>
+		<Title level={2}>{TEXT_CONSTANTS.GLOBAL.ERROR_404_TITLE}</Title>
+		<Paragraph size="large" className={styles['error-fallback-description']}>
+			{TEXT_CONSTANTS.GLOBAL.ERROR_404_DESCRIPTION}
+		</Paragraph>
+	</>
+);
+
+const Error400: FC<{ message?: string }> = ({ message }) => (
+	<>
+		<Title level={2}>{TEXT_CONSTANTS.GLOBAL.ERROR_400_TITLE}</Title>
+		<Paragraph size="large" className={styles['error-fallback-description']}>
+			{message || TEXT_CONSTANTS.GLOBAL.ERROR_400_DESCRIPTION}
+		</Paragraph>
+	</>
+);
+
+const Error500: FC = () => (
+	<>
+		<Title level={2}>{TEXT_CONSTANTS.GLOBAL.ERROR_500_TITLE}</Title>
+		<Paragraph size="large" className={styles['error-fallback-description']}>
+			{TEXT_CONSTANTS.GLOBAL.ERROR_500_DESCRIPTION}
+		</Paragraph>
+		<Button onClick={() => window.location.reload()} className={styles['retry-button']}>
+			{TEXT_CONSTANTS.BUTTONS.TRY_AGAIN}
+		</Button>
+	</>
+);
+
+const GenericError: FC<{ title: string; description: string; showRetry?: boolean }> = ({ title, description, showRetry }) => (
+	<>
+		<Title level={2}>{title}</Title>
+		<Paragraph size="large" className={styles['error-fallback-description']}>
+			{description}
+		</Paragraph>
+		{showRetry && (
+			<Button onClick={() => window.location.reload()} className={styles['retry-button']}>
+				{TEXT_CONSTANTS.BUTTONS.TRY_AGAIN}
+			</Button>
+		)}
+	</>
+);
+
+const ErrorWrapper: FC<{ children: React.ReactNode }> = ({ children }) => (
+	<div className={styles['error-fallback']}>
+		<div className={styles['error-fallback-container']}>
+			<div className={styles['error-fallback-text']}>
+				{children}
+			</div>
+		</div>
+	</div>
+);
+
 export const GlobalErrorFallback: FC = () => {
 	const error = useRouteError();
 
-	let title: string = TEXT_CONSTANTS.GLOBAL.ERROR_TITLE;
-	let description: string = TEXT_CONSTANTS.GLOBAL.ERROR_DESCRIPTION;
-	let showRetry = false;
-
-	const errorStatusMap: Record<number, 
-	{ title: string; description: string; retry?: boolean }
-	> = {
-		404: {
-			title: TEXT_CONSTANTS.GLOBAL.ERROR_404_TITLE,
-			description: TEXT_CONSTANTS.GLOBAL.ERROR_404_DESCRIPTION
-		},
-		400: {
-			title: TEXT_CONSTANTS.GLOBAL.ERROR_400_TITLE,
-			description: TEXT_CONSTANTS.GLOBAL.ERROR_400_DESCRIPTION
-		},
-		500: {
-			title: TEXT_CONSTANTS.GLOBAL.ERROR_500_TITLE,
-			description: TEXT_CONSTANTS.GLOBAL.ERROR_500_DESCRIPTION,
-			retry: true
-		}
-	};
-
 	if (isRouteErrorResponse(error)) {
-		const statusConfig = errorStatusMap[error.status];
-		if (statusConfig) {
-			title = statusConfig.title;
-			description = error.status === 400 && error.data?.message
-				? error.data.message
-				: statusConfig.description;
-			showRetry = !!statusConfig.retry;
-		} else {
-			title = TEXT_CONSTANTS.GLOBAL.ERROR_TITLE;
-			description = `Ошибка ${error.status}: ${TEXT_CONSTANTS.GLOBAL.ERROR_DESCRIPTION}`;
-			showRetry = true;
-		}
-	} else if (error instanceof Error) {
-		description = error.message || description;
-		showRetry = true;
+		if (error.status === 404) return <ErrorWrapper><Error404 /></ErrorWrapper>;
+		if (error.status === 400) return <ErrorWrapper><Error400 message={error.data?.message} /></ErrorWrapper>;
+		if (error.status === 500) return <ErrorWrapper><Error500 /></ErrorWrapper>;
+
+		return (
+			<ErrorWrapper>
+				<GenericError 
+					title={TEXT_CONSTANTS.GLOBAL.ERROR_TITLE} 
+					description={`Ошибка ${error.status}: ${TEXT_CONSTANTS.GLOBAL.ERROR_DESCRIPTION}`} 
+					showRetry 
+				/>
+			</ErrorWrapper>
+		);
 	}
 
-	const handleRetry = () => window.location.reload();
+	if (error instanceof Error) {
+		return (
+			<ErrorWrapper>
+				<GenericError 
+					title={TEXT_CONSTANTS.GLOBAL.ERROR_TITLE} 
+					description={error.message || TEXT_CONSTANTS.GLOBAL.ERROR_DESCRIPTION} 
+					showRetry 
+				/>
+			</ErrorWrapper>
+		);
+	}
 
 	return (
-		<div className={styles['error-fallback']}>
-			<div className={styles['error-fallback-container']}>
-				<div className={styles['error-fallback-text']}>
-					<Title level={2}>{title}</Title>
-					<Paragraph size="large" className={styles['error-fallback-description']}>
-						{description}
-					</Paragraph>
-					{showRetry && (
-						<Button onClick={handleRetry} className={styles['retry-button']}>
-							{TEXT_CONSTANTS.BUTTONS.TRY_AGAIN}
-						</Button>
-					)}
-				</div>
-			</div>
-		</div>
+		<ErrorWrapper>
+			<GenericError 
+				title={TEXT_CONSTANTS.GLOBAL.ERROR_TITLE} 
+				description={TEXT_CONSTANTS.GLOBAL.ERROR_DESCRIPTION} 
+			/>
+		</ErrorWrapper>
 	);
 };
