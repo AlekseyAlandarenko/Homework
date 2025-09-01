@@ -1,0 +1,101 @@
+:root {
+  --color-white: #ffffff;
+  --color-accent: #7B6EF6;
+  --color-accent-hover: #675be0;
+  --color-error: #E53E3E;
+  --color-paragraph: #8E95A9;
+  --color-title: #EBEEF5;
+  --color-label: #767E94;
+  --color-link: #A8AEBF;
+  --color-value: #C3C8D4;
+  --color-input-border: #323B54;
+  --color-input-bg: rgba(0, 0, 0, 0.1);
+  --color-placeholder: #475069;
+  --color-background: #121829;
+  --color-movie-card-bg: rgba(32, 40, 62, 0.8);
+  --color-movie-card-views-bg: rgba(0, 0, 0, 0.65);
+  --color-movie-card-views: #FFAD49;
+  --color-button-favorite-active: #37D8A7;
+  
+  --font-size-14: 14px;
+  --font-size-16: 16px;
+  --font-size-20: 20px;
+  --font-size-32: 32px;
+  --font-size-48: 48px;
+  --font-size-64: 64px;
+  --line-height-16: 16px;
+  --line-height-24: 24px;
+  --line-height-32: 32px;
+  --line-height-40: 40px;
+  --line-height-56: 56px;
+  --line-height-80: 80px;
+  --font-weight-400: 400;
+  --font-weight-600: 600;
+  --font-weight-700: 700;
+  --title-letter-spacing: -0.02em;
+  --link-letter-spacing: 0.02em;
+
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-50: 50px;
+  --space-56: 56px;
+  --space-64: 64px;
+  --space-80: 80px;
+  --space-120: 120px;
+  --space-200: 200px;
+
+  --border-1: 1px;
+  --border-2: 2px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-circle: 50%;
+
+  --button-width-120: 120px;
+  --button-width-240: 240px;
+  --error-width-400: 400px;
+  --container-width-500: 500px;
+  --container-width-600: 600px;
+  --container-width-1440: 1440px;
+
+  --icon-size: 16px;
+  --badge-size: 24px;
+
+  --blur-light: blur(8px);
+  --blur-strong: blur(80px);
+
+  --movie-card-width: 282px;
+  --movie-card-height: 520px;
+  --movie-poster-width: 480px;
+  --movie-poster-height: 720px;
+
+  --transition: color 0.3s ease;
+  --transition-opacity: opacity 0.3s ease;
+
+  --font-family: 'Poppins', sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-background);
+  font-family: var(--font-family);
+}
+
+.error-fallback {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-white);
+  padding: 2rem;
+  text-align: center;
+}

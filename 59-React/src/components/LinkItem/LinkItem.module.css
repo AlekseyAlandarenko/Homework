@@ -1,0 +1,25 @@
+.header-link-container {
+  position: relative;
+}
+
+.header-link {
+  display: flex;
+  gap: var(--space-8);
+  text-decoration: none;
+  transition: var(--transition);
+  cursor: pointer;
+  letter-spacing: var(--link-letter-spacing);
+  color: var(--color-link);
+}
+
+.header-link:hover,
+.header-link:hover .header-link-icon {
+  color: var(--color-accent-hover);
+}
+
+.header-link-active,
+.header-link-active .header-link-icon,
+.header-link-open,
+.header-link-open .header-link-icon {
+  color: var(--color-white);
+}

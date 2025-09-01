@@ -1,0 +1,44 @@
+.toggle-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.toggle-wrapper.active,
+.toggle-wrapper.active:hover {
+  color: var(--color-button-favorite-active);
+  background-color: transparent;
+  border: none;
+}
+
+.toggle-wrapper.inactive,
+.toggle-wrapper.inactive:hover {
+  color: var(--color-accent);
+  background-color: transparent;
+  border: none;
+}
+
+.state {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  opacity: 0;
+  transition: var(--transition-opacity);
+}
+
+.state.visible {
+  opacity: 1;
+}
+
+.icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--badge-size);
+  height: var(--badge-size);
+}

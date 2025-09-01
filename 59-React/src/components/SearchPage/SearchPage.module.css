@@ -1,0 +1,12 @@
+.search-container {
+  position: fixed;
+  top: var(--space-80);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: var(--container-width-1440);
+  margin: 0 auto;
+  z-index: 999;
+  background-color: var(--color-background);
+  padding: var(--space-80) var(--space-120) 0;
+}

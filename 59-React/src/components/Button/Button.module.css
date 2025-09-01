@@ -1,0 +1,27 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+  transition: var(--transition);
+  padding: var(--space-16) var(--space-24);
+  gap: var(--space-8);
+  border: var(--border-2) solid var(--color-accent);
+  border-radius: var(--radius-12);
+  color: var(--color-white);
+  background-color: var(--color-accent);
+}
+
+.button:disabled,
+.button-disabled {
+  cursor: not-allowed;
+  background-color: var(--color-accent-hover);
+  color: var(--color-title);
+}
+
+.button-default:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+  color: var(--color-title);
+}

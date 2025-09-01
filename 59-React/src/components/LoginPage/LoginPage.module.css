@@ -1,0 +1,45 @@
+.login-container {
+  position: fixed;
+  top: var(--space-80);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: var(--container-width-1440);
+  margin: 0 auto;
+  z-index: 999;
+  background-color: var(--color-background);
+  padding: var(--space-80) var(--space-120) 0;
+}
+
+.login-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  align-items: flex-start;
+  max-width: var(--container-width-500);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  width: 100%;
+}
+
+.login-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  width: 100%;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  height: var(--space-64);
+  width: 100%;
+}
+
+.single-field-row {
+  justify-content: flex-end;
+}

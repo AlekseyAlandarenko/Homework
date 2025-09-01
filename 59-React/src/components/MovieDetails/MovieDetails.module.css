@@ -1,0 +1,19 @@
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+}
+
+.movie-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.movie-detail-label {
+  color: var(--color-label);
+}
+
+.movie-detail-value {
+  color: var(--color-value);
+}

@@ -1,0 +1,26 @@
+.paragraph-normal {
+  font-weight: var(--font-weight-400);
+}
+
+.paragraph-bold {
+  font-weight: var(--font-weight-600);
+}
+
+.paragraph-extra-bold {
+  font-weight: var(--font-weight-700);
+}
+
+.paragraph-extra-small {
+  font-size: var(--font-size-14);
+  line-height: var(--line-height-16);
+}
+
+.paragraph-regular {
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-24);
+}
+
+.paragraph-large {
+  font-size: var(--font-size-20);
+  line-height: var(--line-height-32);
+}

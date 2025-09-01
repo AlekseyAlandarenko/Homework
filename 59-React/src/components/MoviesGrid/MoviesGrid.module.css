@@ -1,0 +1,8 @@
+.movies-grid {
+  display: grid;
+  padding-inline: var(--space-120);
+  grid-template-columns: repeat(4, 1fr);
+  row-gap: var(--space-16);
+  column-gap: var(--space-24);
+  width: var(--container-width-1440);
+}

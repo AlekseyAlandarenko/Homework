@@ -1,0 +1,50 @@
+.reviews-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  background: var(--color-movie-card-bg);
+  padding: var(--space-40);
+  border-radius: var(--radius-12);
+  position: relative;
+}
+
+.reviews-title {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: var(--space-8);
+  color: var(--color-label);
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+}
+
+.review-item {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.no-reviews,
+.review-body {
+  color: var(--color-paragraph);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-title {
+  color: var(--color-value);
+}
+
+.review-date {
+  color: var(--color-label);
+}
